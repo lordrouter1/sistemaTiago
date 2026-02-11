@@ -3,31 +3,33 @@
     
     <form id="orderForm" method="post" action="/sistemaTiago/?page=orders&action=store">
         <div class="row">
-            <div class="col-lg-8">
-                <!-- Seleção do Cliente -->
-                <fieldset class="p-4 mb-4">
-                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-user me-2"></i>Dados do Cliente</legend>
-                    <div class="mb-3">
-                        <label for="customer_id" class="form-label">Cliente <span class="text-danger">*</span></label>
-                        <select class="form-select" id="customer_id" name="customer_id" required>
-                            <option value="">Selecione um cliente...</option>
-                            <?php if(isset($customers)): ?>
-                                <?php foreach($customers as $customer): ?>
-                                    <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?> (<?= $customer['document'] ?? 'N/A' ?>)</option>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </select>
-                        <div class="form-text"><a href="/sistemaTiago/?page=customers&action=create" target="_blank"><i class="fas fa-plus-circle"></i> Cadastrar novo cliente</a></div>
+            <div class="col-md-9 offset-md-2">
+                 <!-- Seleção de Cliente -->
+                 <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 text-primary fw-bold"><i class="fas fa-user-tag me-2"></i>Dados do Cliente</legend>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label for="customer_id" class="form-label fw-bold">Cliente <span class="text-danger">*</span></label>
+                            <select class="form-select" id="customer_id" name="customer_id" required>
+                                <option value="">Selecione um cliente...</option>
+                                <?php if(isset($customers)): ?>
+                                    <?php foreach($customers as $customer): ?>
+                                        <option value="<?= $customer['id'] ?>"><?= $customer['name'] ?> (<?= $customer['document'] ?? 'N/A' ?>)</option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                            <div class="form-text"><a href="/sistemaTiago/?page=customers&action=create" target="_blank"><i class="fas fa-plus-circle"></i> Cadastrar novo cliente</a></div>
+                        </div>
                     </div>
-                </fieldset>
+                 </fieldset>
 
-                <!-- Itens do Pedido -->
-                <fieldset class="p-4 mb-4">
-                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-list-ol me-2"></i>Itens do Pedido</legend>
+                 <!-- Itens do Pedido -->
+                 <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 text-primary fw-bold"><i class="fas fa-list-alt me-2"></i>Itens do Pedido</legend>
                     
                     <div class="table-responsive mb-3">
-                        <table class="table table-bordered" id="orderItemsTable">
-                            <thead>
+                        <table class="table table-bordered table-hover" id="orderItemsTable">
+                             <thead class="table-light">
                                 <tr>
                                     <th width="40%">Produto</th>
                                     <th width="15%">Qtd</th>
@@ -65,40 +67,13 @@
                 </fieldset>
             </div>
 
-            <div class="col-lg-4">
-                <!-- Resumo e Pagamento -->
-                <fieldset class="p-4 mb-4 h-100">
-                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-calculator me-2"></i>Total e Status</legend>
-                    
-                    <div class="d-flex justify-content-between mb-3 fs-5 fw-bold">
-                        <span>Total:</span>
-                        <span class="text-success" id="orderTotal">R$ 0,00</span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Status do Pedido</label>
-                        <select class="form-select" id="status" name="status">
-                            <option value="orcamento">Orçamento</option>
-                            <option value="pendente">Pendente</option>
-                            <option value="aprovado">Aprovado</option>
-                            <option value="em_producao">Em Produção</option>
-                            <option value="concluido">Concluído</option>
-                            <option value="cancelado">Cancelado</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="notes" class="form-label">Observações Internas</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
-                    </div>
-
-                    <hr>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-check-circle me-2"></i>Gerar Pedido</button>
-                        <a href="/sistemaTiago/?page=orders" class="btn btn-outline-secondary">Cancelar</a>
-                    </div>
-                </fieldset>
+            <div class="col-12 mt-4 text-end">
+                <div class="d-flex justify-content-end gap-2 align-items-center">
+                    <h4 class="mb-0 me-3">Total: <span class="text-primary fw-bold" id="grandTotalDisplay">R$ 0,00</span></h4>
+                    <input type="hidden" name="total_amount" id="totalAmountInput" value="0">
+                    <a href="/sistemaTiago/?page=orders" class="btn btn-secondary px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-success px-4 btn-lg"><i class="fas fa-check-circle me-2"></i>Finalizar Pedido</button>
+                </div>
             </div>
         </div>
     </form>
@@ -175,7 +150,21 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.item-subtotal').forEach(input => {
             total += parseFloat(input.value) || 0;
         });
-        document.getElementById('orderTotal').innerText = 'R$ ' + total.toFixed(2);
+        document.getElementById('grandTotalDisplay').innerText = 'R$ ' + total.toFixed(2).replace('.', ',');
+        document.getElementById('totalAmountInput').value = total.toFixed(2);
     }
+
+    // Remover item
+    document.querySelector('#orderItemsTable').addEventListener('click', function(e) {
+        if(e.target.closest('.btn-remove-item')) {
+            const tbody = document.querySelector('#orderItemsTable tbody');
+            if(tbody.rows.length > 1) {
+                e.target.closest('tr').remove();
+                calculateTotal();
+            } else {
+                Swal.fire({ icon: 'warning', title: 'Atenção', text: 'O pedido deve ter pelo menos um item.' });
+            }
+        }
+    });
 });
 </script>

@@ -12,11 +12,19 @@ class Customer {
         $this->conn = $db;
     }
 
-    function readAll() {
+    public function readAll() {
         $query = "SELECT * FROM " . $this->table_name . " ORDER BY created_at DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt;
+    }
+
+    public function readOne($id) {
+        $query = "SELECT * FROM " . $this->table_name . " WHERE id = :id LIMIT 0,1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function create($data) {
@@ -31,5 +39,29 @@ class Customer {
             $data['photo']
         ]);
         return $this->conn->lastInsertId();
+    }
+
+    public function update($data) {
+        $query = "UPDATE " . $this->table_name . " 
+                  SET name = ?, email = ?, phone = ?, document = ?, address = ?";
+        $params = [$data['name'], $data['email'], $data['phone'], $data['document'], $data['address']];
+        
+        if (isset($data['photo']) && $data['photo']) {
+            $query .= ", photo = ?";
+            $params[] = $data['photo'];
+        }
+        
+        $query .= " WHERE id = ?";
+        $params[] = $data['id'];
+        
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute($params);
+    }
+
+    public function delete($id) {
+        $query = "DELETE FROM " . $this->table_name . " WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
     }
 }

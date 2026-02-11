@@ -1,0 +1,95 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-users-cog me-2"></i>Gestão de Usuários</h1>
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        <a href="/sistemaTiago/?page=users&action=groups" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-layer-group"></i> Grupos e Permissões
+        </a>
+        <a href="/sistemaTiago/?page=users&action=create" class="btn btn-sm btn-primary">
+            <i class="fas fa-user-plus"></i> Novo Usuário
+        </a>
+    </div>
+</div>
+
+<div class="table-responsive bg-white rounded shadow-sm">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+            <tr>
+                <th class="py-3 ps-4">Nome</th>
+                <th class="py-3">E-mail</th>
+                <th class="py-3">Função</th>
+                <th class="py-3">Grupo</th>
+                <th class="py-3 text-end pe-4">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach($users as $user): ?>
+            <tr>
+                <td class="ps-4 fw-bold">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <?= strtoupper(substr($user['name'], 0, 1)) ?>
+                        </div>
+                        <?= $user['name'] ?>
+                    </div>
+                </td>
+                <td><?= $user['email'] ?></td>
+                <td>
+                    <?php if($user['role'] === 'admin'): ?>
+                        <span class="badge bg-danger rounded-pill px-3">Administrador</span>
+                    <?php else: ?>
+                        <span class="badge bg-secondary rounded-pill px-3">Usuário Padrão</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if($user['role'] === 'admin'): ?>
+                        <span class="text-muted small fst-italic">Acesso Total</span>
+                    <?php else: ?>
+                        <?= $user['group_name'] ?? '<span class="text-muted">-</span>' ?>
+                    <?php endif; ?>
+                </td>
+                <td class="text-end pe-4">
+                    <div class="btn-group">
+                        <a href="/sistemaTiago/?page=users&action=edit&id=<?= $user['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <?php if($user['id'] != $_SESSION['user_id']): ?>
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-1 btn-delete-user" data-id="<?= $user['id'] ?>" data-name="<?= $user['name'] ?>" title="Excluir">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if(isset($_GET['status']) && $_GET['status'] == 'success'): ?>
+    Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Usuário salvo com sucesso!', timer: 2000, showConfirmButton: false });
+    <?php endif; ?>
+
+    document.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            Swal.fire({
+                title: 'Excluir usuário?',
+                html: `Deseja realmente excluir <strong>${name}</strong>?<br>Esta ação não pode ser desfeita.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#c0392b',
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: '<i class="fas fa-trash me-1"></i> Sim, excluir',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/sistemaTiago/?page=users&action=delete&id=${id}`;
+                }
+            });
+        });
+    });
+});
+</script>

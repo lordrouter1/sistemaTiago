@@ -1,7 +1,11 @@
 <div class="container py-4">
-    <h2 class="mb-4 text-primary"><i class="fas fa-user-plus me-2"></i>Novo Cliente</h2>
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="fas fa-user-edit me-2"></i>Editar Cliente</h1>
+        <a href="/sistemaTiago/?page=customers" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
+    </div>
     
-    <form id="customerForm" method="post" action="/sistemaTiago/?page=customers&action=store" enctype="multipart/form-data">
+    <form id="customerForm" method="post" action="/sistemaTiago/?page=customers&action=update" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="<?= $customer['id'] ?>">
         <div class="row">
             <div class="col-md-3">
                 <!-- Foto do Cliente -->
@@ -9,7 +13,7 @@
                     <legend class="float-none w-auto px-2 fs-5 text-primary fw-bold text-center"><i class="fas fa-camera"></i> Foto</legend>
                     <div class="text-center">
                         <div class="mb-3 position-relative d-inline-block">
-                             <img id="preview-photo" src="assets/img/default-avatar.png" class="rounded-circle border border-3 border-light shadow-sm" style="width: 150px; height: 150px; object-fit: cover; background-color: #f8f9fa;">
+                             <img id="preview-photo" src="<?= !empty($customer['photo']) ? $customer['photo'] : 'assets/img/default-avatar.png' ?>" class="rounded-circle border border-3 border-light shadow-sm" style="width: 150px; height: 150px; object-fit: cover; background-color: #f8f9fa;">
                              <label for="photo" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 shadow-sm" style="cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                 <i class="fas fa-camera"></i>
                              </label>
@@ -27,11 +31,11 @@
                     <div class="row mb-3">
                         <div class="col-md-8">
                             <label for="name" class="form-label fw-bold">Nome Completo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" required placeholder="Nome do cliente ou empresa">
+                            <input type="text" class="form-control" id="name" name="name" required value="<?= $customer['name'] ?>">
                         </div>
                         <div class="col-md-4">
                             <label for="document" class="form-label fw-bold">CPF / CNPJ</label>
-                            <input type="text" class="form-control" id="document" name="document" placeholder="000.000.000-00">
+                            <input type="text" class="form-control" id="document" name="document" value="<?= $customer['document'] ?? '' ?>">
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -39,73 +43,75 @@
                             <label for="email" class="form-label fw-bold">E-mail</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="fas fa-envelope"></i></span>
-                                <input type="email" class="form-control" id="email" name="email" placeholder="email@exemplo.com">
+                                <input type="email" class="form-control" id="email" name="email" value="<?= $customer['email'] ?>">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <label for="phone" class="form-label fw-bold">Telefone / WhatsApp</label>
                              <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="fas fa-phone"></i></span>
-                                <input type="text" class="form-control" id="phone" name="phone" placeholder="(00) 00000-0000">
+                                <input type="text" class="form-control" id="phone" name="phone" value="<?= $customer['phone'] ?>">
                             </div>
                         </div>
                     </div>
                 </fieldset>
 
                 <!-- Endereço -->
+                <?php $addr = $customer['address_data'] ?? []; ?>
                 <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
                     <legend class="float-none w-auto px-2 fs-5 text-primary fw-bold"><i class="fas fa-map-marker-alt me-2"></i>Endereço</legend>
                     <div class="row mb-3">
                         <div class="col-md-3">
                             <label for="zipcode" class="form-label">CEP</label>
-                            <input type="text" class="form-control" id="zipcode" name="zipcode">
+                            <input type="text" class="form-control" id="zipcode" name="zipcode" value="<?= $addr['zipcode'] ?? '' ?>">
                         </div>
                         <div class="col-md-3">
                             <label for="address_type" class="form-label">Tipo Logradouro</label>
                             <select class="form-select" id="address_type" name="address_type">
                                 <option value="">Selecione...</option>
-                                <option value="Rua">Rua</option>
-                                <option value="Avenida">Avenida</option>
-                                <option value="Travessa">Travessa</option>
-                                <option value="Praça">Praça</option>
-                                <option value="Alameda">Alameda</option>
-                                <option value="Rodovia">Rodovia</option>
-                                <option value="Outro">Outro</option>
+                                <?php foreach(['Rua','Avenida','Travessa','Praça','Alameda','Rodovia','Outro'] as $t): ?>
+                                    <option value="<?= $t ?>" <?= ($addr['address_type'] ?? '') == $t ? 'selected' : '' ?>><?= $t ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="address_name" class="form-label">Nome do Logradouro</label>
-                            <input type="text" class="form-control" id="address_name" name="address_name">
+                            <input type="text" class="form-control" id="address_name" name="address_name" value="<?= $addr['address_name'] ?? '' ?>">
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-2">
                             <label for="address_number" class="form-label">Número</label>
-                            <input type="text" class="form-control" id="address_number" name="address_number">
+                            <input type="text" class="form-control" id="address_number" name="address_number" value="<?= $addr['address_number'] ?? '' ?>">
                         </div>
                         <div class="col-md-5">
                             <label for="neighborhood" class="form-label">Bairro</label>
-                            <input type="text" class="form-control" id="neighborhood" name="neighborhood">
+                            <input type="text" class="form-control" id="neighborhood" name="neighborhood" value="<?= $addr['neighborhood'] ?? '' ?>">
                         </div>
                         <div class="col-md-5">
                             <label for="complement" class="form-label">Complemento</label>
-                            <input type="text" class="form-control" id="complement" name="complement">
+                            <input type="text" class="form-control" id="complement" name="complement" value="<?= $addr['complement'] ?? '' ?>">
                         </div>
                     </div>
                 </fieldset>
-                <fieldset class="border rounded p-3 mb-2">
-                    <legend class="float-none w-auto px-2 fs-6">Observações</legend>
-                    <div class="mb-3">
-                        <textarea class="form-control" id="observations" name="observations" rows="3" style="resize: none; height: 80px; background: #f8f9fa;" readonly></textarea>
-                    </div>
-                </fieldset>
+
                 <div class="col-12 mt-4 text-end">
                     <div class="d-flex justify-content-end gap-2">
                         <a href="/sistemaTiago/?page=customers" class="btn btn-secondary px-4">Cancelar</a>
-                        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i>Salvar Cliente</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold"><i class="fas fa-save me-2"></i>Salvar Alterações</button>
                     </div>
                 </div>
             </div>
         </div>
     </form>
 </div>
+
+<script>
+document.getElementById('photo').addEventListener('change', function(e) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        document.getElementById('preview-photo').src = event.target.result;
+    };
+    if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+});
+</script>

@@ -12,7 +12,6 @@ class CustomerController {
     }
 
     public function index() {
-        // Buscar clientes do banco
         $stmt = $this->customerModel->readAll();
         $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -29,22 +28,7 @@ class CustomerController {
 
     public function store() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Upload da Imagem
-            $photoPath = null;
-            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = 'assets/uploads/customers/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
-                
-                $fileExtension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-                $fileName = uniqid() . '.' . $fileExtension;
-                $targetFile = $uploadDir . $fileName;
-
-                if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetFile)) {
-                    $photoPath = $targetFile;
-                }
-            }
+            $photoPath = $this->handlePhotoUpload();
 
             $address = json_encode([
                 'zipcode' => $_POST['zipcode'] ?? '',
@@ -64,8 +48,90 @@ class CustomerController {
                 'photo' => $photoPath
             ]);
             
+            header('Location: /sistemaTiago/?page=customers&status=success');
+            exit;
+        }
+    }
+
+    public function edit() {
+        if (!isset($_GET['id'])) {
             header('Location: /sistemaTiago/?page=customers');
             exit;
         }
+        
+        $customer = $this->customerModel->readOne($_GET['id']);
+        if (!$customer) {
+            header('Location: /sistemaTiago/?page=customers');
+            exit;
+        }
+
+        // Decode address JSON for the form
+        $customer['address_data'] = json_decode($customer['address'] ?? '{}', true) ?: [];
+        
+        require 'app/views/layout/header.php';
+        require 'app/views/customers/edit.php';
+        require 'app/views/layout/footer.php';
+    }
+
+    public function update() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $photoPath = $this->handlePhotoUpload();
+
+            $address = json_encode([
+                'zipcode' => $_POST['zipcode'] ?? '',
+                'address_type' => $_POST['address_type'] ?? '',
+                'address_name' => $_POST['address_name'] ?? '',
+                'address_number' => $_POST['address_number'] ?? '',
+                'neighborhood' => $_POST['neighborhood'] ?? '',
+                'complement' => $_POST['complement'] ?? ''
+            ]);
+            
+            $this->customerModel->update([
+                'id' => $_POST['id'],
+                'name' => $_POST['name'],
+                'email' => $_POST['email'],
+                'phone' => $_POST['phone'],
+                'document' => $_POST['document'],
+                'address' => $address,
+                'photo' => $photoPath
+            ]);
+            
+            header('Location: /sistemaTiago/?page=customers&status=success');
+            exit;
+        }
+    }
+
+    public function delete() {
+        if (isset($_GET['id'])) {
+            $this->customerModel->delete($_GET['id']);
+            header('Location: /sistemaTiago/?page=customers&status=success');
+            exit;
+        }
+    }
+
+    private function handlePhotoUpload() {
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            $maxSize = 5 * 1024 * 1024;
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+            $fileType = mime_content_type($_FILES['photo']['tmp_name']);
+            
+            if ($_FILES['photo']['size'] > $maxSize || !in_array($fileType, $allowedTypes)) {
+                return null;
+            }
+
+            $uploadDir = 'assets/uploads/customers/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            
+            $fileExtension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
+            $fileName = uniqid() . '.' . $fileExtension;
+            $targetFile = $uploadDir . $fileName;
+
+            if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetFile)) {
+                return $targetFile;
+            }
+        }
+        return null;
     }
 }

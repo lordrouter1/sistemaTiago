@@ -1,7 +1,8 @@
 <div class="container py-4">
-    <h2 class="mb-4 text-primary"><i class="fas fa-box-open me-2"></i>Novo Produto</h2>
+    <h2 class="mb-4 text-primary"><i class="fas fa-edit me-2"></i>Editar Produto</h2>
     
-    <form id="productForm" method="post" action="/sistemaTiago/?page=products&action=store" enctype="multipart/form-data">
+    <form id="productForm" method="post" action="/sistemaTiago/?page=products&action=update" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="<?= $product['id'] ?>">
         <div class="row">
             <div class="col-md-8">
                 <!-- Informações Básicas -->
@@ -10,7 +11,7 @@
                     <div class="row mb-3">
                         <div class="col-md-12">
                             <label for="name" class="form-label">Nome do Produto <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" required placeholder="Ex: Cartão de Visita">
+                            <input type="text" class="form-control" id="name" name="name" required placeholder="Ex: Cartão de Visita" value="<?= $product['name'] ?>">
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -20,7 +21,7 @@
                                 <select class="form-select" id="category_id" name="category_id">
                                     <option value="">Selecione...</option>
                                     <?php foreach ($categories as $category): ?>
-                                        <option value="<?= $category['id'] ?>"><?= $category['name'] ?></option>
+                                        <option value="<?= $category['id'] ?>" <?= $product['category_id'] == $category['id'] ? 'selected' : '' ?>><?= $category['name'] ?></option>
                                     <?php endforeach; ?>
                                     <option value="new">+ Nova Categoria</option>
                                 </select>
@@ -31,8 +32,12 @@
                         <div class="col-md-6">
                             <label for="subcategory_id" class="form-label">Subcategoria</label>
                              <div class="input-group">
-                                <select class="form-select" id="subcategory_id" name="subcategory_id" disabled>
-                                    <option value="">Selecione uma categoria primeiro</option>
+                                <select class="form-select" id="subcategory_id" name="subcategory_id">
+                                    <option value="">Selecione...</option>
+                                    <?php foreach($subcategories as $sub): ?>
+                                        <option value="<?= $sub['id'] ?>" <?= $product['subcategory_id'] == $sub['id'] ? 'selected' : '' ?>><?= $sub['name'] ?></option>
+                                    <?php endforeach; ?>
+                                    <option value="new">+ Nova Subcategoria</option>
                                 </select>
                              </div>
                              <input type="text" class="form-control mt-2" id="new_subcategory_name" name="new_subcategory_name" placeholder="Nome da nova subcategoria" style="display: none;">
@@ -40,7 +45,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">Descrição Detalhada</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Detalhes técnicos, acabamentos, etc."></textarea>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Detalhes técnicos, acabamentos, etc."><?= $product['description'] ?></textarea>
                     </div>
                 </fieldset>
 
@@ -52,19 +57,19 @@
                             <label for="price" class="form-label">Preço de Venda (R$) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
-                                <input type="number" step="0.01" class="form-control" id="price" name="price" required placeholder="0.00">
+                                <input type="number" step="0.01" class="form-control" id="price" name="price" required placeholder="0.00" value="<?= $product['price'] ?>">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <label for="cost_price" class="form-label">Preço de Custo (R$)</label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
-                                <input type="number" step="0.01" class="form-control" id="cost_price" name="cost_price" placeholder="0.00">
+                                <input type="number" step="0.01" class="form-control" id="cost_price" name="cost_price" placeholder="0.00" value="<?= $product['cost_price'] ?? '' ?>">
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label for="stock_quantity" class="form-label">Estoque Inicial</label>
-                            <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="0">
+                            <label for="stock_quantity" class="form-label">Estoque</label>
+                            <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="<?= $product['stock_quantity'] ?>">
                         </div>
                     </div>
                 </fieldset>
@@ -75,11 +80,11 @@
                     <div class="row mb-3">
                          <div class="col-md-6">
                             <label for="format" class="form-label">Formato/Dimensões</label>
-                            <input type="text" class="form-control" id="format" name="format" placeholder="Ex: A4, 9x5cm">
+                            <input type="text" class="form-control" id="format" name="format" placeholder="Ex: A4, 9x5cm" value="<?= $product['format'] ?? '' ?>">
                          </div>
                          <div class="col-md-6">
                             <label for="material" class="form-label">Material/Papel</label>
-                            <input type="text" class="form-control" id="material" name="material" placeholder="Ex: Couché 300g">
+                            <input type="text" class="form-control" id="material" name="material" placeholder="Ex: Couché 300g" value="<?= $product['material'] ?? '' ?>">
                          </div>
                     </div>
                 </fieldset>
@@ -90,6 +95,32 @@
                  <fieldset class="p-4 mb-4 h-100">
                     <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-camera me-2"></i>Galeria de Imagens</legend>
                     
+                    <!-- Imagens Existentes -->
+                    <?php if(!empty($images)): ?>
+                    <label class="form-label small fw-bold text-muted mb-2">Imagens Atuais</label>
+                    <div class="d-flex flex-wrap gap-2 mb-3" id="existing-images">
+                        <?php foreach($images as $img): ?>
+                        <div class="position-relative border rounded p-1" id="img-cont-<?= $img['id'] ?>" style="width: 80px; height: 80px;">
+                            <img src="<?= $img['image_path'] ?>" class="w-100 h-100 object-fit-cover rounded">
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 p-0 d-flex align-items-center justify-content-center" 
+                                    style="width: 20px; height: 20px; transform: translate(30%, -30%); border-radius: 50%;"
+                                    onclick="deleteImage(<?= $img['id'] ?>)">
+                                <i class="fas fa-times" style="font-size: 10px;"></i>
+                            </button>
+                            <div class="form-check position-absolute bottom-0 start-0 m-1 bg-white rounded-circle shadow-sm" style="padding: 2px;">
+                                <input class="form-check-input m-0" type="radio" name="main_image_id" value="<?= $img['id'] ?>" <?= $img['is_main'] ? 'checked' : '' ?> title="Definir como principal">
+                            </div>
+                            <?php if($img['is_main']): ?>
+                            <span class="badge bg-success position-absolute top-0 start-0 m-1" style="font-size: 8px;">Principal</span>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <hr>
+                    <?php endif; ?>
+
+                    <!-- Upload de Novas Imagens -->
+                    <label class="form-label small fw-bold text-muted mb-2">Adicionar Novas Fotos</label>
                     <div class="text-center mb-3">
                         <div id="product-img-dropbox" class="border rounded p-3 d-flex flex-column align-items-center justify-content-center bg-white" style="height: 150px; border-style: dashed !important; cursor: pointer; position: relative; overflow: hidden;">
                              <div id="dropbox-placeholder" class="text-secondary small">
@@ -101,7 +132,7 @@
                     </div>
                     
                     <div id="image-gallery-preview" class="row g-2 overflow-auto" style="max-height: 400px;">
-                        <!-- Imagens serão listadas aqui via JS -->
+                        <!-- Novas imagens serão listadas aqui via JS -->
                     </div>
                  </fieldset>
             </div>
@@ -109,7 +140,7 @@
             <div class="col-12 mt-3 text-end">
                  <div class="d-flex justify-content-end gap-2">
                     <a href="/sistemaTiago/?page=products" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Salvar Produto</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Salvar Alterações</button>
                 </div>
             </div>
         </div>
@@ -130,34 +161,31 @@ document.addEventListener('DOMContentLoaded', function() {
         if (categoryId === 'new') {
             newCategoryInput.style.display = 'block';
             newCategoryInput.required = true;
-            subcategorySelect.disabled = false;
             subcategorySelect.innerHTML = '<option value="new">+ Nova Subcategoria</option>';
             subcategorySelect.value = 'new';
-            subcategorySelect.dispatchEvent(new Event('change')); // Trigger subcategory change
+            subcategorySelect.dispatchEvent(new Event('change'));
         } else {
             newCategoryInput.style.display = 'none';
             newCategoryInput.required = false;
             newCategoryInput.value = '';
             
             if (categoryId) {
-                subcategorySelect.disabled = false;
                 fetchSubcategories(categoryId);
             } else {
-                subcategorySelect.disabled = true;
                 subcategorySelect.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
             }
         }
     });
     
     // Handle Subcategory Selection
-     subcategorySelect.addEventListener('change', function() {
+    subcategorySelect.addEventListener('change', function() {
         if (this.value === 'new') {
             newSubcategoryInput.style.display = 'block';
-             newSubcategoryInput.required = true;
+            newSubcategoryInput.required = true;
         } else {
             newSubcategoryInput.style.display = 'none';
-             newSubcategoryInput.required = false;
-             newSubcategoryInput.value = '';
+            newSubcategoryInput.required = false;
+            newSubcategoryInput.value = '';
         }
     });
 
@@ -175,14 +203,12 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => console.error('Error fetching subcategories:', error));
     }
 
-    // Drag and Drop Logic (existing)
+    // Drag and Drop Logic for new images
     const dropbox = document.getElementById('product-img-dropbox');
     const input = document.getElementById('product_photos');
     const gallery = document.getElementById('image-gallery-preview');
-    // DataTransfer object to hold all selected files incrementally
     const dt = new DataTransfer();
 
-    // Efeitos de Drag & Drop (mesmo anterior)
     dropbox.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropbox.classList.add('bg-light');
@@ -202,9 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
         handleFiles(e.dataTransfer.files);
     });
 
-    // Handle click uploads
     input.addEventListener('change', function(e) {
-        // Standard input replaces files, so we capture the new ones and add to our set
         handleFiles(this.files);
     });
 
@@ -213,7 +237,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         Array.from(newFiles).forEach(file => {
             if (file.type.startsWith('image/')) {
-                // Check if file already exists (simple check by name and size)
                 const exists = Array.from(dt.files).some(f => f.name === file.name && f.size === file.size);
                 if (!exists) {
                     dt.items.add(file);
@@ -223,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (hasNewValidFiles) {
-             // Update the input with the accumulated files
              input.files = dt.files;
              renderGallery();
         }
@@ -233,23 +255,11 @@ document.addEventListener('DOMContentLoaded', function() {
         gallery.innerHTML = '';
         const files = input.files;
         
-        // Preserve selected main image index if possible, else default to 0
-        // Since we re-render, we need to know what was checked. 
-        // We'll rely on the logic that if we are adding, we keep the old check unless it was removed.
-        // Simpler for MVP: Default to 0 (first image) if the previously checked index is no longer valid or unset.
-        // Optimization: We could store the name/size of the "main" image to restore it. 
-        // For now, let's default to the *current* checked radio before clean, or 0.
-        
         let currentChecked = document.querySelector('input[name="main_image_index"]:checked');
         let checkedValue = currentChecked ? parseInt(currentChecked.value) : 0;
         
-        // If checking logic gets complex with removals, defaulting to 0 is safest visual feedback 
-        // (the first image becomes main if the main was deleted).
-        // If we added images, file list grew. If we removed, it shrank.
-        
         if (files.length === 0) return;
         
-        // Ensure checkedValue is within bounds
         if (checkedValue >= files.length) checkedValue = 0;
 
         Array.from(files).forEach((file, index) => {
@@ -263,19 +273,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const img = document.createElement('img');
             img.className = 'w-100 h-100 object-fit-cover';
             
-            // Read file for preview
             const reader = new FileReader();
             reader.onload = function(e) {
                 img.src = e.target.result;
             }
             reader.readAsDataURL(file);
 
-            // Controls overlay
             const controlsDiv = document.createElement('div');
             controlsDiv.className = 'position-absolute top-0 w-100 d-flex justify-content-between p-1';
             controlsDiv.style.background = 'linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0))';
 
-            // Radio for Main Image
             const radioWrapper = document.createElement('div');
             radioWrapper.className = 'form-check form-check-inline m-0 bg-white rounded-circle p-1 d-flex align-items-center justify-content-center shadow-sm';
             radioWrapper.style.width = '24px';
@@ -287,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input class="form-check-input m-0" type="radio" name="main_image_index" value="${index}" ${isChecked} style="cursor: pointer;" title="Definir como principal">
             `;
 
-            // Delete button
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
             deleteBtn.className = 'btn btn-danger btn-sm p-0 d-flex align-items-center justify-content-center rounded-circle shadow-sm';
@@ -315,4 +321,40 @@ document.addEventListener('DOMContentLoaded', function() {
         renderGallery();
     }
 });
+
+// Delete existing image with SweetAlert2
+function deleteImage(imageId) {
+    Swal.fire({
+        title: 'Excluir imagem?',
+        text: 'Deseja realmente excluir esta imagem? Esta ação não pode ser desfeita.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#c0392b',
+        cancelButtonColor: '#95a5a6',
+        confirmButtonText: '<i class="fas fa-trash me-1"></i> Sim, excluir',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formData = new FormData();
+            formData.append('image_id', imageId);
+            
+            fetch('/sistemaTiago/?page=products&action=deleteImage', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('img-cont-' + imageId).remove();
+                    Swal.fire({ icon: 'success', title: 'Imagem excluída!', timer: 1500, showConfirmButton: false });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Erro!', text: 'Não foi possível excluir a imagem.' });
+                }
+            })
+            .catch(() => {
+                Swal.fire({ icon: 'error', title: 'Erro!', text: 'Erro de comunicação com o servidor.' });
+            });
+        }
+    });
+}
 </script>

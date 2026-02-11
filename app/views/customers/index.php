@@ -1,45 +1,88 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Clientes</h1>
+    <h1 class="h2"><i class="fas fa-users me-2"></i>Clientes</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <a href="/sistemaTiago/?page=customers&action=create" class="btn btn-sm btn-primary">
-            <i class="fas fa-plus"></i> Novo Cliente
+            <i class="fas fa-plus me-1"></i> Novo Cliente
         </a>
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead>
+<div class="table-responsive bg-white rounded shadow-sm">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
             <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Telefone</th>
-                <th>Ações</th>
+                <th class="py-3 ps-4">Nome</th>
+                <th class="py-3">E-mail</th>
+                <th class="py-3">Telefone</th>
+                <th class="py-3">Documento</th>
+                <th class="py-3 text-end pe-4">Ações</th>
             </tr>
         </thead>
         <tbody>
             <?php if(count($customers) > 0): ?>
             <?php foreach($customers as $customer): ?>
             <tr>
-                <td><?= $customer['id'] ?></td>
-                <td><?= $customer['name'] ?></td>
-                <td><?= $customer['email'] ?></td>
-                <td><?= $customer['phone'] ?></td>
-                <td>
-                    <button class="btn btn-sm btn-info text-white"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger btn-delete"><i class="fas fa-trash"></i></button>
+                <td class="ps-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <?= strtoupper(substr($customer['name'], 0, 1)) ?>
+                        </div>
+                        <span class="fw-bold"><?= $customer['name'] ?></span>
+                    </div>
+                </td>
+                <td><?= $customer['email'] ?: '<span class="text-muted">—</span>' ?></td>
+                <td><?= $customer['phone'] ?: '<span class="text-muted">—</span>' ?></td>
+                <td><span class="badge bg-light text-dark border"><?= $customer['document'] ?: '—' ?></span></td>
+                <td class="text-end pe-4">
+                    <div class="btn-group">
+                        <a href="/sistemaTiago/?page=customers&action=edit&id=<?= $customer['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-1 btn-delete-customer" data-id="<?= $customer['id'] ?>" data-name="<?= $customer['name'] ?>" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
             <?php endforeach; ?>
             <?php else: ?>
             <tr>
-                <td colspan="5" class="text-center text-muted py-4">Nenhum cliente cadastrado.</td>
+                <td colspan="5" class="text-center text-muted py-5">
+                    <i class="fas fa-users fa-3x mb-3 d-block text-secondary"></i>
+                    Nenhum cliente cadastrado ainda.
+                </td>
             </tr>
             <?php endif; ?>
         </tbody>
     </table>
 </div>
 
-<!-- Modal Cadastro de Cliente -->
-<!-- Modal removido -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if(isset($_GET['status']) && $_GET['status'] == 'success'): ?>
+    Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Cliente salvo com sucesso!', timer: 2000, showConfirmButton: false });
+    <?php endif; ?>
+
+    // Botão excluir cliente com SweetAlert2
+    document.querySelectorAll('.btn-delete-customer').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            Swal.fire({
+                title: 'Excluir cliente?',
+                html: `Deseja realmente excluir <strong>${name}</strong>?<br>Esta ação não pode ser desfeita.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#c0392b',
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: '<i class="fas fa-trash me-1"></i> Sim, excluir',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/sistemaTiago/?page=customers&action=delete&id=${id}`;
+                }
+            });
+        });
+    });
+});
+</script>

@@ -1,0 +1,16 @@
+:root {
+    /* Cores Profissionais - Tema Azul Corporativo e Cinza */
+    --primary-color: #2c3e50; /* Azul Escuro Profundo (Sidebar/Navbars) */
+    --secondary-color: #95a5a6; /* Cinza Metálico (Texto secundário/Bordas) */
+    --accent-color: #3498db; /* Azul Brilhante (Botões principais/Destaques) */
+    --success-color: #27ae60; /* Verde Esmeralda (Sucesso/Confirmação) */
+    --warning-color: #f39c12; /* Laranja (Avisos) */
+    --danger-color: #c0392b; /* Vermelho (Erros/Delete) */
+    
+    --bg-body: #f4f6f9; /* Fundo cinza muito claro para o corpo */
+    --bg-card: #ffffff; /* Fundo branco para cards e containers */
+    
+    --text-main: #34495e; /* Cinza Escuro (Texto principal) */
+    --text-muted: #7f8c8d; /* Cinza (Texto secundário) */
+    --border-color: #dee2e6; /* Cor de borda suave */
+}

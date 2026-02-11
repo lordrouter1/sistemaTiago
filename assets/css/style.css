@@ -1,0 +1,90 @@
+/* Reset e Estilos Globais */
+/* Variáveis importadas de theme.css */
+
+body {
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Navbar Customization Override */
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+}
+.navbar-dark .navbar-nav .nav-link:hover, 
+.navbar-dark .navbar-nav .nav-link.active {
+    color: #fff;
+    border-bottom: 2px solid var(--accent-color);
+}
+
+/* Botões Personalizados */
+.btn-primary {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+.btn-primary:hover {
+    background-color: #2980b9; /* Darker accent */
+    border-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+/* Cards e Containers */
+.card, .table-responsive, fieldset {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+}
+
+/* Sidebar Customizado (se houver) */
+.sidebar {
+    min-height: 100vh;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.content-wrapper {
+    padding: 20px;
+}
+
+/* Ajustes de Tables */
+.table-responsive {
+    padding: 15px;
+}
+
+.table thead th {
+    background-color: var(--bg-body);
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+}
+
+/* Formulários */
+.form-label {
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+}

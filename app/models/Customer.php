@@ -64,4 +64,14 @@ class Customer {
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
+
+    /**
+     * Total de clientes
+     */
+    public function countAll() {
+        $query = "SELECT COUNT(*) FROM " . $this->table_name;
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchColumn();
+    }
 }

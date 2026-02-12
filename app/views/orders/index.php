@@ -1,6 +1,9 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-shopping-cart me-2"></i>Pedidos</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-outline-info">
+            <i class="fas fa-stream me-1"></i> Ver na Produção
+        </a>
         <a href="/sistemaTiago/?page=orders&action=create" class="btn btn-sm btn-primary">
             <i class="fas fa-plus me-1"></i> Novo Pedido
         </a>
@@ -15,13 +18,40 @@
                 <th class="py-3">Cliente</th>
                 <th class="py-3">Data</th>
                 <th class="py-3">Valor Total</th>
+                <th class="py-3">Etapa</th>
                 <th class="py-3">Status</th>
+                <th class="py-3">Prioridade</th>
                 <th class="py-3 text-end pe-4">Ações</th>
             </tr>
         </thead>
         <tbody>
+            <?php 
+            // Mapa de cores e ícones das etapas do pipeline
+            $pipelineStageMap = [
+                'contato'    => ['label' => 'Contato',       'color' => '#9b59b6', 'icon' => 'fas fa-phone'],
+                'orcamento'  => ['label' => 'Orçamento',     'color' => '#3498db', 'icon' => 'fas fa-file-invoice-dollar'],
+                'venda'      => ['label' => 'Venda',         'color' => '#2ecc71', 'icon' => 'fas fa-handshake'],
+                'producao'   => ['label' => 'Produção',      'color' => '#e67e22', 'icon' => 'fas fa-industry'],
+                'preparacao' => ['label' => 'Preparação',    'color' => '#1abc9c', 'icon' => 'fas fa-boxes-packing'],
+                'envio'      => ['label' => 'Envio/Entrega', 'color' => '#e74c3c', 'icon' => 'fas fa-truck'],
+                'financeiro' => ['label' => 'Financeiro',    'color' => '#f39c12', 'icon' => 'fas fa-coins'],
+                'concluido'  => ['label' => 'Concluído',     'color' => '#27ae60', 'icon' => 'fas fa-check-double'],
+            ];
+            $priorityMap = [
+                'baixa'   => ['badge' => 'bg-secondary', 'label' => 'Baixa'],
+                'normal'  => ['badge' => 'bg-primary',   'label' => 'Normal'],
+                'alta'    => ['badge' => 'bg-warning text-dark', 'label' => 'Alta'],
+                'urgente' => ['badge' => 'bg-danger',    'label' => 'Urgente'],
+            ];
+            ?>
             <?php if(count($orders) > 0): ?>
             <?php foreach($orders as $order): ?>
+            <?php
+                $stage = $order['pipeline_stage'] ?? 'contato';
+                $stageData = $pipelineStageMap[$stage] ?? ['label' => ucfirst($stage), 'color' => '#999', 'icon' => 'fas fa-circle'];
+                $prio = $order['priority'] ?? 'normal';
+                $prioData = $priorityMap[$prio] ?? $priorityMap['normal'];
+            ?>
             <tr>
                 <td class="ps-4 fw-bold">#<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?></td>
                 <td>
@@ -32,13 +62,22 @@
                         <?= $order['customer_name'] ?: '<span class="text-muted">Cliente Removido</span>' ?>
                     </div>
                 </td>
-                <td><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></td>
+                <td class="small"><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></td>
                 <td class="fw-bold">R$ <?= number_format($order['total_amount'], 2, ',', '.') ?></td>
+                <td>
+                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none">
+                        <span class="badge rounded-pill px-2 py-1" style="background:<?= $stageData['color'] ?>;font-size:0.72rem;">
+                            <i class="<?= $stageData['icon'] ?> me-1"></i><?= $stageData['label'] ?>
+                        </span>
+                    </a>
+                </td>
                 <td>
                     <?php 
                     $statusMap = [
+                        'orcamento'    => ['bg-info text-white', 'fas fa-file-alt'],
                         'Pendente'     => ['bg-warning text-dark', 'fas fa-clock'],
                         'pendente'     => ['bg-warning text-dark', 'fas fa-clock'],
+                        'aprovado'     => ['bg-primary', 'fas fa-thumbs-up'],
                         'em_producao'  => ['bg-info text-white', 'fas fa-cogs'],
                         'concluido'    => ['bg-success', 'fas fa-check-circle'],
                         'cancelado'    => ['bg-danger', 'fas fa-times-circle'],
@@ -47,16 +86,24 @@
                     $badgeClass = $statusMap[$statusKey][0] ?? 'bg-secondary';
                     $statusIcon = $statusMap[$statusKey][1] ?? 'fas fa-info-circle';
                     ?>
-                    <span class="badge <?= $badgeClass ?> px-3 py-2">
+                    <span class="badge <?= $badgeClass ?> px-2 py-1" style="font-size:0.72rem;">
                         <i class="<?= $statusIcon ?> me-1"></i><?= ucfirst(str_replace('_', ' ', $order['status'])) ?>
+                    </span>
+                </td>
+                <td>
+                    <span class="badge <?= $prioData['badge'] ?> rounded-pill px-2 py-1" style="font-size:0.7rem;">
+                        <?= $prioData['label'] ?>
                     </span>
                 </td>
                 <td class="text-end pe-4">
                     <div class="btn-group">
+                        <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-info" title="Ver no Pipeline">
+                            <i class="fas fa-stream"></i>
+                        </a>
                         <a href="/sistemaTiago/?page=orders&action=edit&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <button type="button" class="btn btn-sm btn-outline-danger ms-1 btn-delete-order" data-id="<?= $order['id'] ?>" title="Excluir">
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-order" data-id="<?= $order['id'] ?>" title="Excluir">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -65,9 +112,12 @@
             <?php endforeach; ?>
             <?php else: ?>
             <tr>
-                <td colspan="6" class="text-center text-muted py-5">
+                <td colspan="8" class="text-center text-muted py-5">
                     <i class="fas fa-shopping-cart fa-3x mb-3 d-block text-secondary"></i>
                     Nenhum pedido encontrado.
+                    <div class="mt-3">
+                        <a href="/sistemaTiago/?page=orders&action=create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Criar Primeiro Pedido</a>
+                    </div>
                 </td>
             </tr>
             <?php endif; ?>

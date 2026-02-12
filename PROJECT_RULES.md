@@ -100,6 +100,7 @@ O roteamento é baseado nos parâmetros `page` e `action` via GET.
 | `customers`| CRUD de Clientes                  | Sim          | Por grupo  |
 | `products` | CRUD de Produtos                  | Sim          | Por grupo  |
 | `orders`   | CRUD de Pedidos                   | Sim          | Por grupo  |
+| `pipeline` | Linha de Produção (Pipeline)      | Sim          | Livre      |
 | `users`    | Gestão de Usuários/Grupos (Admin) | Sim          | Admin only |
 
 ### Padrão de Actions por módulo
@@ -109,6 +110,50 @@ O roteamento é baseado nos parâmetros `page` e `action` via GET.
 - `edit` → Exibir formulário de edição
 - `update` → Processar formulário de edição (POST)
 - `delete` → Excluir registro
+
+### Actions do Pipeline (`?page=pipeline`)
+- `index` → Kanban Board (visão principal)
+- `detail` → Detalhe completo do pedido no pipeline (GET `&id=X`)
+- `move` → Mover pedido para outra etapa (GET `&id=X&stage=Y`)
+- `updateDetails` → Atualizar dados extras do pedido (POST)
+- `settings` → Configuração de metas de tempo por etapa
+- `saveSettings` → Salvar configurações de metas (POST)
+- `alerts` → JSON com pedidos atrasados (para notificações)
+
+## Módulo: Linha de Produção (Pipeline)
+
+### Conceito
+O Pipeline controla o fluxo completo de cada pedido da gráfica, desde o primeiro contato com o cliente até a conclusão financeira. Cada pedido passa pelas seguintes etapas:
+
+1. **Contato** (📞) — Primeiro contato com cliente, entendimento da necessidade
+2. **Orçamento** (📄) — Elaboração e envio do orçamento ao cliente
+3. **Venda** (🤝) — Orçamento aprovado, venda confirmada
+4. **Produção** (🏭) — Pedido em produção na gráfica
+5. **Preparação** (📦) — Acabamento, corte, empacotamento
+6. **Envio/Entrega** (🚚) — Pronto para envio ou entrega ao cliente
+7. **Financeiro** (💰) — Cobrança, conferência de pagamento
+8. **Concluído** (✅) — Pedido finalizado com sucesso
+
+### Tabelas no Banco de Dados
+- `orders` — Colunas adicionadas: `pipeline_stage`, `pipeline_entered_at`, `deadline`, `priority`, `notes`, `assigned_to`, `payment_status`, `payment_method`, `discount`, `shipping_type`, `shipping_address`, `tracking_code`
+- `pipeline_history` — Histórico de movimentação (de qual etapa para qual, por quem, quando)
+- `pipeline_stage_goals` — Metas configuráveis de tempo máximo (em horas) por etapa
+
+### Regras de Negócio
+- Ao criar um pedido, ele entra automaticamente na etapa "Contato"
+- Mover entre etapas registra no histórico com timestamp e usuário
+- Pedidos que ultrapassam a meta de horas de uma etapa são marcados como **atrasados**
+- Alertas visuais aparecem no Kanban e no Dashboard quando há atrasos
+- Cada pedido pode ter prioridade (baixa, normal, alta, urgente), responsável, prazo e notas internas
+- Dados de financeiro (pagamento) e envio (endereço, rastreio) são gerenciados pelo detalhe do pipeline
+
+### Arquivos do Módulo
+- `sql/pipeline.sql` — Script de migração do banco
+- `app/models/Pipeline.php` — Model com métodos de consulta e movimentação
+- `app/controllers/PipelineController.php` — Controller com actions do pipeline
+- `app/views/pipeline/index.php` — Kanban Board visual
+- `app/views/pipeline/detail.php` — Detalhe completo do pedido
+- `app/views/pipeline/settings.php` — Configuração de metas por etapa
 
 ## Bibliotecas e Frameworks Frontend
 - **Bootstrap 5** — Layout e componentes UI

@@ -1,0 +1,338 @@
+<div class="container py-4">
+    <?php
+        $currentStage = $order['pipeline_stage'] ?? 'contato';
+        $stageInfo = $stages[$currentStage] ?? ['label' => $currentStage, 'color' => '#999', 'icon' => 'fas fa-circle'];
+        $hoursInStage = (int)$order['hours_in_stage'];
+        $stageGoal = isset($goals[$currentStage]) ? (int)$goals[$currentStage]['max_hours'] : 24;
+        $isDelayed = ($stageGoal > 0 && $hoursInStage > $stageGoal);
+    ?>
+
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center pt-2 pb-2 mb-3 border-bottom">
+        <div>
+            <h1 class="h2 mb-0">
+                <i class="<?= $stageInfo['icon'] ?> me-2" style="color:<?= $stageInfo['color'] ?>;"></i>
+                Pedido #<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?>
+            </h1>
+            <small class="text-muted">Criado em <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/sistemaTiago/?page=pipeline" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
+            <a href="/sistemaTiago/?page=orders&action=edit&id=<?= $order['id'] ?>" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit me-1"></i> Editar Pedido</a>
+        </div>
+    </div>
+
+    <!-- Progress Bar do Pipeline -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3">
+            <div class="pipeline-progress d-flex align-items-center justify-content-between position-relative">
+                <?php 
+                $stageKeys = array_keys($stages);
+                $currentIdx = array_search($currentStage, $stageKeys);
+                $totalStages = count($stageKeys);
+                foreach ($stages as $sKey => $sInfo):
+                    $sIdx = array_search($sKey, $stageKeys);
+                    $isCompleted = $sIdx < $currentIdx;
+                    $isCurrent = $sKey === $currentStage;
+                    $isFuture = $sIdx > $currentIdx;
+                ?>
+                <div class="pipeline-step text-center flex-fill position-relative" style="z-index:1;">
+                    <div class="pipeline-step-icon mx-auto mb-1 rounded-circle d-flex align-items-center justify-content-center 
+                        <?php if($isCurrent): ?>border border-3<?php endif; ?>"
+                        style="width:40px; height:40px; font-size:0.85rem;
+                        background: <?= $isCompleted ? $sInfo['color'] : ($isCurrent ? '#fff' : '#e9ecef') ?>;
+                        color: <?= $isCompleted ? '#fff' : ($isCurrent ? $sInfo['color'] : '#adb5bd') ?>;
+                        border-color: <?= $isCurrent ? $sInfo['color'] : 'transparent' ?> !important;">
+                        <i class="<?= $isCompleted ? 'fas fa-check' : $sInfo['icon'] ?>"></i>
+                    </div>
+                    <div class="small <?= $isCurrent ? 'fw-bold' : ($isFuture ? 'text-muted' : '') ?>" style="font-size:0.7rem;color:<?= $isCurrent ? $sInfo['color'] : '' ?>;">
+                        <?= $sInfo['label'] ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <!-- Linha de progresso -->
+                <div class="position-absolute w-100" style="height:3px; top:20px; z-index:0;">
+                    <div class="bg-light w-100 rounded" style="height:3px;"></div>
+                    <div class="rounded position-absolute top-0 start-0" 
+                         style="height:3px; width:<?= ($currentIdx / max($totalStages - 1, 1)) * 100 ?>%; background: var(--accent-color);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações rápidas de movimentação -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <span class="badge fs-6 py-2 px-3" style="background:<?= $stageInfo['color'] ?>;">
+                        <i class="<?= $stageInfo['icon'] ?> me-1"></i> <?= $stageInfo['label'] ?>
+                    </span>
+                    <span class="ms-2 small <?= $isDelayed ? 'text-danger fw-bold' : 'text-muted' ?>">
+                        <i class="fas fa-clock me-1"></i>
+                        <?= ($hoursInStage >= 24) ? floor($hoursInStage/24).'d '.($hoursInStage%24).'h' : $hoursInStage.'h' ?>
+                        na etapa
+                        <?php if($isDelayed): ?>
+                            <span class="badge bg-danger ms-1">ATRASADO +<?= $hoursInStage - $stageGoal ?>h</span>
+                        <?php endif; ?>
+                    </span>
+                </div>
+                <div class="d-flex gap-2">
+                    <!-- Botão retroceder -->
+                    <?php if ($currentIdx > 0): ?>
+                    <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $stageKeys[$currentIdx - 1] ?>" 
+                       class="btn btn-sm btn-outline-secondary btn-move-stage" data-dir="Retroceder" data-stage="<?= $stages[$stageKeys[$currentIdx - 1]]['label'] ?>">
+                        <i class="fas fa-arrow-left me-1"></i> <?= $stages[$stageKeys[$currentIdx - 1]]['label'] ?>
+                    </a>
+                    <?php endif; ?>
+                    
+                    <!-- Botão avançar -->
+                    <?php if ($currentIdx < $totalStages - 1): ?>
+                    <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $stageKeys[$currentIdx + 1] ?>" 
+                       class="btn btn-sm btn-success btn-move-stage" data-dir="Avançar" data-stage="<?= $stages[$stageKeys[$currentIdx + 1]]['label'] ?>">
+                        <?= $stages[$stageKeys[$currentIdx + 1]]['label'] ?> <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                    <?php endif; ?>
+
+                    <!-- Mover para qualquer etapa -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-random me-1"></i> Mover para...
+                        </button>
+                        <ul class="dropdown-menu">
+                            <?php foreach ($stages as $sKey => $sInfo): ?>
+                            <?php if ($sKey !== $currentStage): ?>
+                            <li>
+                                <a class="dropdown-item btn-move-stage" href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $sKey ?>" data-dir="Mover" data-stage="<?= $sInfo['label'] ?>">
+                                    <i class="<?= $sInfo['icon'] ?> me-2" style="color:<?= $sInfo['color'] ?>;"></i> <?= $sInfo['label'] ?>
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Coluna Esquerda: Informações e Formulário -->
+        <div class="col-lg-8">
+            <form method="POST" action="/sistemaTiago/?page=pipeline&action=updateDetails">
+                <input type="hidden" name="id" value="<?= $order['id'] ?>">
+
+                <!-- Dados do Cliente -->
+                <fieldset class="p-4 mb-4">
+                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-user-tag me-2"></i>Cliente</legend>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Nome</label>
+                            <input type="text" class="form-control" value="<?= $order['customer_name'] ?? '—' ?>" disabled>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Telefone</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="<?= $order['customer_phone'] ?? '—' ?>" disabled>
+                                <?php if (!empty($order['customer_phone'])): ?>
+                                <a href="https://wa.me/55<?= preg_replace('/\D/', '', $order['customer_phone']) ?>" target="_blank" class="btn btn-success btn-sm" title="WhatsApp">
+                                    <i class="fab fa-whatsapp"></i>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">CPF/CNPJ</label>
+                            <input type="text" class="form-control" value="<?= $order['customer_document'] ?? '—' ?>" disabled>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Gerenciamento do Pedido -->
+                <fieldset class="p-4 mb-4">
+                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-sliders-h me-2"></i>Gerenciamento</legend>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Prioridade</label>
+                            <select class="form-select" name="priority">
+                                <option value="baixa" <?= ($order['priority'] ?? '') == 'baixa' ? 'selected' : '' ?>>🟢 Baixa</option>
+                                <option value="normal" <?= ($order['priority'] ?? 'normal') == 'normal' ? 'selected' : '' ?>>🔵 Normal</option>
+                                <option value="alta" <?= ($order['priority'] ?? '') == 'alta' ? 'selected' : '' ?>>🟡 Alta</option>
+                                <option value="urgente" <?= ($order['priority'] ?? '') == 'urgente' ? 'selected' : '' ?>>🔴 Urgente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Prazo (Deadline)</label>
+                            <input type="date" class="form-control" name="deadline" value="<?= $order['deadline'] ?? '' ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Responsável</label>
+                            <select class="form-select" name="assigned_to">
+                                <option value="">Sem responsável</option>
+                                <?php foreach ($users as $u): ?>
+                                <option value="<?= $u['id'] ?>" <?= ($order['assigned_to'] ?? '') == $u['id'] ? 'selected' : '' ?>>
+                                    <?= $u['name'] ?> (<?= $u['role'] ?>)
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted">Observações Internas</label>
+                            <textarea class="form-control" name="notes" rows="3" placeholder="Notas internas sobre este pedido..."><?= $order['notes'] ?? '' ?></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Financeiro -->
+                <fieldset class="p-4 mb-4">
+                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-coins me-2"></i>Financeiro</legend>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Valor Total</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control fw-bold" value="<?= number_format($order['total_amount'], 2, ',', '.') ?>" disabled>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Desconto (R$)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" step="0.01" class="form-control" name="discount" value="<?= $order['discount'] ?? 0 ?>">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Status Pagamento</label>
+                            <select class="form-select" name="payment_status">
+                                <option value="pendente" <?= ($order['payment_status'] ?? '') == 'pendente' ? 'selected' : '' ?>>⏳ Pendente</option>
+                                <option value="parcial" <?= ($order['payment_status'] ?? '') == 'parcial' ? 'selected' : '' ?>>💳 Parcial</option>
+                                <option value="pago" <?= ($order['payment_status'] ?? '') == 'pago' ? 'selected' : '' ?>>✅ Pago</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Forma de Pagamento</label>
+                            <select class="form-select" name="payment_method">
+                                <option value="">Selecione...</option>
+                                <option value="dinheiro" <?= ($order['payment_method'] ?? '') == 'dinheiro' ? 'selected' : '' ?>>Dinheiro</option>
+                                <option value="pix" <?= ($order['payment_method'] ?? '') == 'pix' ? 'selected' : '' ?>>PIX</option>
+                                <option value="cartao_credito" <?= ($order['payment_method'] ?? '') == 'cartao_credito' ? 'selected' : '' ?>>Cartão Crédito</option>
+                                <option value="cartao_debito" <?= ($order['payment_method'] ?? '') == 'cartao_debito' ? 'selected' : '' ?>>Cartão Débito</option>
+                                <option value="boleto" <?= ($order['payment_method'] ?? '') == 'boleto' ? 'selected' : '' ?>>Boleto</option>
+                                <option value="transferencia" <?= ($order['payment_method'] ?? '') == 'transferencia' ? 'selected' : '' ?>>Transferência</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Envio / Entrega -->
+                <fieldset class="p-4 mb-4">
+                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-truck me-2"></i>Envio / Entrega</legend>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Tipo de Envio</label>
+                            <select class="form-select" name="shipping_type" id="shippingType">
+                                <option value="retirada" <?= ($order['shipping_type'] ?? '') == 'retirada' ? 'selected' : '' ?>>🏪 Retirada na loja</option>
+                                <option value="entrega" <?= ($order['shipping_type'] ?? '') == 'entrega' ? 'selected' : '' ?>>🏍️ Entrega própria</option>
+                                <option value="correios" <?= ($order['shipping_type'] ?? '') == 'correios' ? 'selected' : '' ?>>📦 Correios</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Código de Rastreio</label>
+                            <input type="text" class="form-control" name="tracking_code" placeholder="Ex: BR123456789" value="<?= $order['tracking_code'] ?? '' ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Endereço de Entrega</label>
+                            <textarea class="form-control" name="shipping_address" rows="1" placeholder="Endereço completo..."><?= $order['shipping_address'] ?? ($order['customer_address'] ?? '') ?></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="text-end mb-4">
+                    <button type="submit" class="btn btn-primary px-4 fw-bold"><i class="fas fa-save me-2"></i>Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Coluna Direita: Timeline / Histórico -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom p-3">
+                    <h6 class="mb-0 text-primary fw-bold"><i class="fas fa-history me-2"></i>Histórico de Movimentação</h6>
+                </div>
+                <div class="card-body p-3" style="max-height: 600px; overflow-y: auto;">
+                    <?php if (empty($history)): ?>
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-stream d-block mb-2" style="font-size:2rem;"></i>
+                            Nenhuma movimentação registrada.
+                        </div>
+                    <?php else: ?>
+                        <div class="timeline">
+                            <?php foreach ($history as $h): ?>
+                            <?php 
+                                $toInfo = $stages[$h['to_stage']] ?? ['label' => $h['to_stage'], 'color' => '#999', 'icon' => 'fas fa-circle'];
+                                $fromInfo = $stages[$h['from_stage'] ?? ''] ?? ['label' => '—', 'color' => '#ccc', 'icon' => ''];
+                            ?>
+                            <div class="timeline-item d-flex mb-3">
+                                <div class="timeline-icon me-3 flex-shrink-0">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width:32px;height:32px;background:<?= $toInfo['color'] ?>;color:#fff;font-size:0.75rem;">
+                                        <i class="<?= $toInfo['icon'] ?>"></i>
+                                    </div>
+                                </div>
+                                <div class="timeline-content flex-grow-1">
+                                    <div class="small fw-bold"><?= $toInfo['label'] ?></div>
+                                    <div class="small text-muted">
+                                        <?php if ($h['from_stage']): ?>
+                                            De: <?= $fromInfo['label'] ?> → <?= $toInfo['label'] ?>
+                                        <?php else: ?>
+                                            Etapa inicial
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php if (!empty($h['notes'])): ?>
+                                    <div class="small fst-italic mt-1">"<?= $h['notes'] ?>"</div>
+                                    <?php endif; ?>
+                                    <div class="text-muted" style="font-size:0.65rem;">
+                                        <i class="fas fa-user me-1"></i><?= $h['user_name'] ?? 'Sistema' ?>
+                                        · <?= date('d/m/Y H:i', strtotime($h['created_at'])) ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if(isset($_GET['status']) && $_GET['status'] == 'success'): ?>
+    Swal.fire({ icon: 'success', title: 'Salvo!', text: 'Detalhes atualizados com sucesso.', timer: 2000, showConfirmButton: false });
+    <?php endif; ?>
+
+    // Confirmação ao mover etapa
+    document.querySelectorAll('.btn-move-stage').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.href;
+            const dir = this.dataset.dir;
+            const stage = this.dataset.stage;
+            Swal.fire({
+                title: dir + ' pedido?',
+                html: `${dir} para <strong>${stage}</strong>?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-check me-1"></i> Confirmar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#27ae60'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = href;
+                }
+            });
+        });
+    });
+});
+</script>

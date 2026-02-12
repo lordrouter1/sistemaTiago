@@ -23,7 +23,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Permission Check (skip for login, home, dashboard, profile, and logout)
-if (isset($_SESSION['user_id']) && $page !== 'login' && $page !== 'home' && $page !== 'dashboard' && $page !== 'profile' && $action !== 'logout' && $action !== 'getSubcategories') {
+if (isset($_SESSION['user_id']) && $page !== 'login' && $page !== 'home' && $page !== 'dashboard' && $page !== 'profile' && $page !== 'pipeline' && $action !== 'logout' && $action !== 'getSubcategories') {
     $db = (new Database())->getConnection();
     $user = new User($db);
     if (!$user->checkPermission($_SESSION['user_id'], $page)) {
@@ -124,6 +124,27 @@ switch ($page) {
             $controller->update();
         } elseif ($action == 'delete') {
             $controller->delete();
+        } else {
+            $controller->index();
+        }
+        break;
+
+    // ── Linha de Produção (Pipeline) ──
+    case 'pipeline':
+        require_once 'app/controllers/PipelineController.php';
+        $controller = new PipelineController();
+        if ($action == 'move') {
+            $controller->move();
+        } elseif ($action == 'detail') {
+            $controller->detail();
+        } elseif ($action == 'updateDetails') {
+            $controller->updateDetails();
+        } elseif ($action == 'settings') {
+            $controller->settings();
+        } elseif ($action == 'saveSettings') {
+            $controller->saveSettings();
+        } elseif ($action == 'alerts') {
+            $controller->alerts();
         } else {
             $controller->index();
         }

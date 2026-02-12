@@ -88,3 +88,211 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--accent-color);
     box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
 }
+
+/* ========================================
+   PIPELINE / LINHA DE PRODUÇÃO
+   ======================================== */
+
+/* Kanban Board Wrapper */
+.pipeline-board-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) #e9ecef;
+}
+
+.pipeline-board-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+
+.pipeline-board-wrapper::-webkit-scrollbar-track {
+    background: #e9ecef;
+    border-radius: 4px;
+}
+
+.pipeline-board-wrapper::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 4px;
+}
+
+/* Colunas do Pipeline */
+.pipeline-column {
+    transition: transform 0.2s ease;
+}
+
+.pipeline-column-header {
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+}
+
+.pipeline-column-body {
+    scrollbar-width: thin;
+}
+
+.pipeline-column-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.pipeline-column-body::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 4px;
+}
+
+/* Cards dos Pedidos no Kanban */
+.pipeline-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border-left: 3px solid transparent !important;
+}
+
+.pipeline-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+}
+
+.pipeline-card-delayed {
+    border-left: 3px solid var(--danger-color) !important;
+    animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% { border-left-color: var(--danger-color); }
+    50% { border-left-color: #e74c3c55; }
+}
+
+/* Progress bar do detalhe */
+.pipeline-progress {
+    padding: 10px 0;
+}
+
+.pipeline-step {
+    position: relative;
+}
+
+.pipeline-step::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: #e9ecef;
+    z-index: -1;
+}
+
+.pipeline-step:last-child::after {
+    display: none;
+}
+
+/* Timeline do histórico */
+.timeline-item {
+    position: relative;
+    padding-left: 5px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 32px;
+    width: 2px;
+    height: calc(100% - 10px);
+    background: #e9ecef;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+/* Pipeline card priority indicator */
+.pipeline-card[data-priority="urgente"] {
+    border-left-color: var(--danger-color) !important;
+}
+
+.pipeline-card[data-priority="alta"] {
+    border-left-color: var(--warning-color) !important;
+}
+
+/* Responsividade do pipeline */
+@media (max-width: 768px) {
+    .pipeline-column {
+        min-width: 260px !important;
+        width: 260px !important;
+    }
+    
+    .pipeline-board {
+        padding-bottom: 15px;
+    }
+}
+
+/* ========================================
+   DASHBOARD MELHORADO
+   ======================================== */
+.border-4 {
+    border-width: 4px !important;
+}
+
+/* Dashboard cards animação */
+.card.border-start {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card.border-start:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.12) !important;
+}
+
+/* Pipeline mini cards no dashboard */
+.pipeline-mini-card {
+    border-radius: 0.5rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pipeline-mini-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+/* Alertas atrasados pulsam */
+.btn-danger.position-relative {
+    animation: pulse-danger 2s infinite;
+}
+
+@keyframes pulse-danger {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0); }
+}
+
+/* Badge do pipeline nas tabelas */
+.badge[style*="background"] {
+    transition: transform 0.15s ease;
+}
+
+.badge[style*="background"]:hover {
+    transform: scale(1.08);
+}
+
+/* Fieldset custom para formulários pipeline */
+fieldset {
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+fieldset legend {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Print styles */
+@media print {
+    .navbar, .btn-toolbar, .btn-group, .btn {
+        display: none !important;
+    }
+    .pipeline-board-wrapper {
+        overflow: visible;
+    }
+    .pipeline-column {
+        break-inside: avoid;
+    }
+}

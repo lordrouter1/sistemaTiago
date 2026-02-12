@@ -96,7 +96,7 @@
                 <fieldset class="border rounded p-3 mb-2">
                     <legend class="float-none w-auto px-2 fs-6">Observações</legend>
                     <div class="mb-3">
-                        <textarea class="form-control" id="observations" name="observations" rows="3" style="resize: none; height: 80px; background: #f8f9fa;" readonly></textarea>
+                        <textarea class="form-control" id="observations" name="observations" rows="3" style="resize: none; height: 80px; background: #f8f9fa;"></textarea>
                     </div>
                 </fieldset>
                 <div class="col-12 mt-4 text-end">

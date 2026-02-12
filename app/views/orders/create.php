@@ -7,8 +7,8 @@
                  <!-- Seleção de Cliente -->
                  <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
                     <legend class="float-none w-auto px-2 fs-5 text-primary fw-bold"><i class="fas fa-user-tag me-2"></i>Dados do Cliente</legend>
-                    <div class="row">
-                        <div class="col-md-12">
+                    <div class="row g-3">
+                        <div class="col-md-8">
                             <label for="customer_id" class="form-label fw-bold">Cliente <span class="text-danger">*</span></label>
                             <select class="form-select" id="customer_id" name="customer_id" required>
                                 <option value="">Selecione um cliente...</option>
@@ -20,8 +20,24 @@
                             </select>
                             <div class="form-text"><a href="/sistemaTiago/?page=customers&action=create" target="_blank"><i class="fas fa-plus-circle"></i> Cadastrar novo cliente</a></div>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Prioridade</label>
+                            <select class="form-select" name="priority">
+                                <option value="baixa">🟢 Baixa</option>
+                                <option value="normal" selected>🔵 Normal</option>
+                                <option value="alta">🟡 Alta</option>
+                                <option value="urgente">🔴 Urgente</option>
+                            </select>
+                        </div>
                     </div>
                  </fieldset>
+
+                 <!-- Info Pipeline -->
+                 <div class="alert alert-info border-0 shadow-sm mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Ao criar o pedido, ele será automaticamente inserido na <strong>Linha de Produção</strong> na etapa <span class="badge bg-purple" style="background:#9b59b6;"><i class="fas fa-phone me-1"></i>Contato</span>.
+                    Você poderá gerenciar as etapas pelo <a href="/sistemaTiago/?page=pipeline" class="fw-bold text-info">Painel de Produção</a>.
+                 </div>
 
                  <!-- Itens do Pedido -->
                  <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">

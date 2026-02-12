@@ -28,29 +28,35 @@
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Permissões de Acesso</label>
-                        <div class="border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
+                        <div class="border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
                             <?php 
-                            $pages = [
-                                'dashboard' => 'Dashboard',
-                                'customers' => 'Gestão de Clientes',
-                                'products'  => 'Gestão de Produtos',
-                                'orders'    => 'Gestão de Pedidos',
-                                'users'     => 'Gestão de Usuários'
-                            ];
+                            // Carrega páginas dinamicamente do registro centralizado
+                            $menuPages = require 'app/config/menu.php';
+                            
+                            // Filtra apenas as páginas que possuem controle de permissão
+                            $pages = [];
+                            foreach ($menuPages as $key => $info) {
+                                if (!empty($info['permission'])) {
+                                    $pages[$key] = $info['label'];
+                                }
+                            }
                             
                             $currentPermissions = isset($editGroup) ? $editGroup['permissions'] : [];
                             
                             foreach($pages as $key => $label): 
                                 $checked = in_array($key, $currentPermissions) ? 'checked' : '';
+                                $icon = $menuPages[$key]['icon'] ?? 'fas fa-circle';
                             ?>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" name="permissions[]" value="<?= $key ?>" id="perm_<?= $key ?>" <?= $checked ?>>
-                                <label class="form-check-label" for="perm_<?= $key ?>">
+                            <div class="form-check mb-2 d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" name="permissions[]" value="<?= $key ?>" id="perm_<?= $key ?>" <?= $checked ?>>
+                                <label class="form-check-label d-flex align-items-center" for="perm_<?= $key ?>">
+                                    <i class="<?= $icon ?> me-2 text-primary" style="width:18px;text-align:center;font-size:0.85rem;"></i>
                                     <?= $label ?>
                                 </label>
                             </div>
                             <?php endforeach; ?>
                         </div>
+                        <div class="form-text"><i class="fas fa-info-circle me-1"></i>Novas páginas adicionadas ao sistema aparecerão automaticamente aqui.</div>
                     </div>
 
                     <div class="d-grid gap-2">
@@ -109,8 +115,13 @@
                                             <span class="text-muted small fst-italic">Sem permissões específicas</span>
                                         <?php else: ?>
                                             <div class="d-flex flex-wrap gap-1">
-                                                <?php foreach($group2['permissions'] as $perm): ?>
-                                                    <span class="badge bg-light text-dark border"><?= $pages[$perm] ?? $perm ?></span>
+                                                <?php foreach($group2['permissions'] as $perm): 
+                                                    $permIcon = $menuPages[$perm]['icon'] ?? 'fas fa-circle';
+                                                    $permLabel = $pages[$perm] ?? $perm;
+                                                ?>
+                                                    <span class="badge bg-light text-dark border">
+                                                        <i class="<?= $permIcon ?> me-1" style="font-size:0.7rem;"></i><?= $permLabel ?>
+                                                    </span>
                                                 <?php endforeach; ?>
                                             </div>
                                         <?php endif; ?>

@@ -148,7 +148,7 @@
             </div>
 
             <div class="d-grid mb-4">
-                <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm" style="border-radius: 10px;">
+                <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm bg-primary" style="border-radius: 10px;">
                     ENTRAR NO SISTEMA
                 </button>
             </div>

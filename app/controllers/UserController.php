@@ -255,7 +255,7 @@ class UserController {
     // Login
     public function login() {
         if (isset($_SESSION['user_id'])) {
-            header('Location: /sistemaTiago/?page=dashboard');
+            header('Location: /sistemaTiago/');
             exit;
         }
 
@@ -271,7 +271,7 @@ class UserController {
 
                  $this->logger->log('LOGIN', 'User logged in: ' . $email, $this->userModel->id);
                  
-                 header('Location: /sistemaTiago/?page=dashboard');
+                 header('Location: /sistemaTiago/');
                  exit;
              } else {
                  $this->logger->log('LOGIN_FAIL', 'Failed login attempt for: ' . $email);

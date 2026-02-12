@@ -17,13 +17,17 @@ if (!isset($_SESSION['user_id'])) {
     }
 } else {
     if ($page === 'login' && $action !== 'logout') {
-        header('Location: /sistemaTiago/?page=dashboard');
+        header('Location: /sistemaTiago/');
         exit;
     }
 }
 
-// Permission Check (skip for login, home, dashboard, profile, and logout)
-if (isset($_SESSION['user_id']) && $page !== 'login' && $page !== 'home' && $page !== 'dashboard' && $page !== 'profile' && $page !== 'pipeline' && $action !== 'logout' && $action !== 'getSubcategories') {
+// Permission Check — usa o registro centralizado de menu.php
+// Páginas com 'permission' => false são acessíveis por todos os logados
+$menuConfig = require 'app/config/menu.php';
+$needsPermission = isset($menuConfig[$page]) && !empty($menuConfig[$page]['permission']);
+
+if (isset($_SESSION['user_id']) && $page !== 'login' && $action !== 'logout' && $action !== 'getSubcategories' && $needsPermission) {
     $db = (new Database())->getConnection();
     $user = new User($db);
     if (!$user->checkPermission($_SESSION['user_id'], $page)) {

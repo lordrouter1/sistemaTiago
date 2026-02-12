@@ -16,7 +16,44 @@
 </head>
 <body>
 
-<?php $currentPage = isset($_GET['page']) ? $_GET['page'] : 'home'; ?>
+<?php
+    $currentPage = isset($_GET['page']) ? $_GET['page'] : 'home';
+    $menuPages = require 'app/config/menu.php';
+
+    // Carrega as permissões do usuário logado para filtrar o menu
+    $userPermissions = [];
+    $isAdmin = (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin');
+    
+    if (!$isAdmin && isset($_SESSION['user_id'])) {
+        // Busca as permissões do grupo do usuário
+        $dbMenu = (new Database())->getConnection();
+        if (!empty($_SESSION['group_id'])) {
+            $stmtMenu = $dbMenu->prepare("SELECT page_name FROM group_permissions WHERE group_id = :gid");
+            $stmtMenu->bindParam(':gid', $_SESSION['group_id']);
+            $stmtMenu->execute();
+            $userPermissions = $stmtMenu->fetchAll(PDO::FETCH_COLUMN);
+        }
+    }
+    
+    /**
+     * Verifica se o usuário pode ver determinada página no menu.
+     * - Admin vê tudo.
+     * - Páginas sem controle de permissão (permission=false) são visíveis para todos.
+     * - Páginas com controle de permissão só aparecem se o usuário tiver acesso.
+     */
+    function canShowInMenu($pageKey, $pageInfo, $isAdmin, $userPermissions) {
+        // Páginas sem controle de permissão são visíveis para todos
+        if (empty($pageInfo['permission'])) {
+            return true;
+        }
+        // Admin vê tudo
+        if ($isAdmin) {
+            return true;
+        }
+        // Verifica se o usuário tem permissão
+        return in_array($pageKey, $userPermissions);
+    }
+?>
 
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm" style="background-color: var(--primary-color);">
   <div class="container-fluid">
@@ -28,44 +65,26 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
 
-      <!-- ── Menu Principal (igual para admin e funcionário) ── -->
+      <!-- ── Menu Principal (gerado automaticamente de config/menu.php) ── -->
       <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link <?= ($currentPage == 'home') ? 'active' : '' ?>" href="/sistemaTiago/">
-            <i class="fas fa-home me-1"></i>Início
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= ($currentPage == 'dashboard') ? 'active' : '' ?>" href="/sistemaTiago/?page=dashboard">
-            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= ($currentPage == 'customers') ? 'active' : '' ?>" href="/sistemaTiago/?page=customers">
-            <i class="fas fa-users me-1"></i>Clientes
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= ($currentPage == 'products') ? 'active' : '' ?>" href="/sistemaTiago/?page=products">
-            <i class="fas fa-box-open me-1"></i>Produtos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= ($currentPage == 'orders') ? 'active' : '' ?>" href="/sistemaTiago/?page=orders">
-            <i class="fas fa-shopping-cart me-1"></i>Pedidos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= ($currentPage == 'pipeline') ? 'active' : '' ?>" href="/sistemaTiago/?page=pipeline">
-            <i class="fas fa-stream me-1"></i>Produção
-          </a>
-        </li>
+        <?php foreach ($menuPages as $pageKey => $pageInfo): ?>
+          <?php if (!$pageInfo['menu']) continue; ?>
+          <?php if (!canShowInMenu($pageKey, $pageInfo, $isAdmin, $userPermissions)) continue; ?>
+          <li class="nav-item">
+            <a class="nav-link <?= ($currentPage == $pageKey) ? 'active' : '' ?>"
+               href="/sistemaTiago/<?= $pageKey === 'home' ? '' : '?page=' . $pageKey ?>">
+              <i class="<?= $pageInfo['icon'] ?> me-1"></i><?= $pageInfo['label'] ?>
+            </a>
+          </li>
+        <?php endforeach; ?>
       </ul>
 
-      <!-- ── Menu Direito (Usuário / Config / Sair) ── -->
+      <!-- ── Menu Direito (Perfil / Config / Sair) ── -->
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
         <li class="nav-item">
-          <a href="/sistemaTiago/?page=profile" class="nav-link text-white small me-2 text-decoration-none" title="Meu Perfil">
+          <a href="/sistemaTiago/?page=profile"
+             class="nav-link small me-2 text-decoration-none <?= ($currentPage == 'profile') ? 'active' : 'text-white' ?>"
+             title="Meu Perfil">
             <i class="fas fa-user-circle me-1"></i>
             <?= $_SESSION['user_name'] ?? 'Visitante' ?>
             <span class="badge bg-light text-dark ms-1" style="font-size: 0.65rem;">
@@ -73,9 +92,11 @@
             </span>
           </a>
         </li>
-        <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
+        <?php if($isAdmin || in_array('users', $userPermissions)): ?>
         <li class="nav-item">
-          <a href="/sistemaTiago/?page=users" class="nav-link text-white btn btn-sm px-3 me-1 border-0 <?= ($currentPage == 'users') ? 'active' : '' ?>" title="Gestão de Usuários">
+          <a href="/sistemaTiago/?page=users"
+             class="nav-link btn btn-sm px-3 me-1 border-0 <?= ($currentPage == 'users') ? 'active' : 'text-white' ?>"
+             title="Gestão de Usuários">
             <i class="fas fa-cog"></i>
           </a>
         </li>

@@ -156,7 +156,7 @@
             <div class="text-center text-muted small">
                  &copy; <?= date('Y') ?> Sistema de Gestão Gráfica
             </div>
-        </form
+        </form>
     </div>
 </div>
 

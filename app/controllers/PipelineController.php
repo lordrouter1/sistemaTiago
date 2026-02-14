@@ -79,6 +79,15 @@ class PipelineController {
         $usersStmt = $userModel->readAll();
         $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Buscar produtos e itens do pedido (para seção de orçamento)
+        require_once 'app/models/Product.php';
+        $productModel = new Product($this->db);
+        $stmt_products = $productModel->readAll();
+        $products = $stmt_products->fetchAll(PDO::FETCH_ASSOC);
+
+        $orderModel = new Order($this->db);
+        $orderItems = $orderModel->getItems($_GET['id']);
+
         require 'app/views/layout/header.php';
         require 'app/views/pipeline/detail.php';
         require 'app/views/layout/footer.php';

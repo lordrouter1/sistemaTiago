@@ -100,4 +100,147 @@
             </div>
         </div>
     </form>
+
+    <?php
+    // Mostrar seção de produtos quando o pedido está na etapa de orçamento ou posterior (exceto contato)
+    $showProducts = ($currentStage !== 'contato');
+    ?>
+
+    <?php if ($showProducts): ?>
+    <div class="row mt-4">
+        <div class="col-md-8 mx-auto">
+            <!-- Itens do Orçamento -->
+            <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                <legend class="float-none w-auto px-2 fs-5 text-primary fw-bold">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Produtos do Orçamento
+                    <a href="/sistemaTiago/?page=orders&action=printQuote&id=<?= $order['id'] ?>" target="_blank" class="btn btn-sm btn-outline-success ms-3">
+                        <i class="fas fa-print me-1"></i> Imprimir Orçamento
+                    </a>
+                </legend>
+
+                <!-- Tabela de Itens Existentes -->
+                <?php if (!empty($orderItems)): ?>
+                <div class="table-responsive mb-3">
+                    <table class="table table-hover table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Produto</th>
+                                <th class="text-center" style="width:100px;">Qtd</th>
+                                <th class="text-end" style="width:130px;">Preço Unit.</th>
+                                <th class="text-end" style="width:130px;">Subtotal</th>
+                                <th class="text-center" style="width:80px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $totalItems = 0; ?>
+                            <?php foreach ($orderItems as $item): ?>
+                            <?php $subtotal = $item['quantity'] * $item['unit_price']; $totalItems += $subtotal; ?>
+                            <tr>
+                                <td>
+                                    <strong><?= htmlspecialchars($item['product_name']) ?></strong>
+                                </td>
+                                <td class="text-center"><?= $item['quantity'] ?></td>
+                                <td class="text-end">R$ <?= number_format($item['unit_price'], 2, ',', '.') ?></td>
+                                <td class="text-end fw-bold">R$ <?= number_format($subtotal, 2, ',', '.') ?></td>
+                                <td class="text-center">
+                                    <a href="/sistemaTiago/?page=orders&action=deleteItem&item_id=<?= $item['id'] ?>&order_id=<?= $order['id'] ?>&redirect=orders" 
+                                       class="btn btn-sm btn-outline-danger btn-delete-item" title="Remover item">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-success">
+                                <td colspan="3" class="text-end fw-bold">Total:</td>
+                                <td class="text-end fw-bold fs-5">R$ <?= number_format($totalItems, 2, ',', '.') ?></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <?php else: ?>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Nenhum produto adicionado ao orçamento ainda.
+                </div>
+                <?php endif; ?>
+
+                <!-- Formulário Adicionar Item -->
+                <div class="card border-primary border-opacity-25">
+                    <div class="card-header bg-primary bg-opacity-10 py-2">
+                        <h6 class="mb-0 text-primary"><i class="fas fa-plus-circle me-2"></i>Adicionar Produto</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <form method="POST" action="/sistemaTiago/?page=orders&action=addItem" id="formAddItemEdit">
+                            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                            <input type="hidden" name="redirect" value="orders">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold text-muted">Produto</label>
+                                    <select class="form-select form-select-sm" name="product_id" id="productSelectEdit" required>
+                                        <option value="">Selecione um produto...</option>
+                                        <?php foreach ($products as $prod): ?>
+                                        <option value="<?= $prod['id'] ?>" data-price="<?= $prod['price'] ?>">
+                                            <?= htmlspecialchars($prod['name']) ?> — R$ <?= number_format($prod['price'], 2, ',', '.') ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-bold text-muted">Quantidade</label>
+                                    <input type="number" min="1" class="form-control form-control-sm" name="quantity" id="qtyInputEdit" value="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Preço Unitário</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" step="0.01" class="form-control" name="unit_price" id="priceInputEdit" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                        <i class="fas fa-plus me-1"></i> Adicionar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-preencher preço ao selecionar produto
+        const productSelect = document.getElementById('productSelectEdit');
+        const priceInput = document.getElementById('priceInputEdit');
+        if (productSelect && priceInput) {
+            productSelect.addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                if (opt && opt.dataset.price) {
+                    priceInput.value = parseFloat(opt.dataset.price).toFixed(2);
+                }
+            });
+        }
+        // Confirmar remoção de item
+        document.querySelectorAll('.btn-delete-item').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.href;
+                Swal.fire({
+                    title: 'Remover item?',
+                    text: 'O item será removido do orçamento.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-trash me-1"></i> Remover',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#e74c3c'
+                }).then(r => { if (r.isConfirmed) window.location.href = href; });
+            });
+        });
+    });
+    </script>
+    <?php endif; ?>
 </div>

@@ -150,6 +150,21 @@
                                     R$ <?= number_format($order['total_amount'], 2, ',', '.') ?>
                                 </div>
 
+                                <!-- Agendamento (para contatos) -->
+                                <?php if ($stageKey === 'contato' && !empty($order['scheduled_date'])): ?>
+                                <div class="small mb-1">
+                                    <span class="badge bg-light text-dark border" style="font-size:0.65rem;">
+                                        <i class="fas fa-calendar-check me-1" style="color:#9b59b6;"></i>
+                                        Agendado: <?= date('d/m/Y', strtotime($order['scheduled_date'])) ?>
+                                        <?php if ($order['scheduled_date'] > date('Y-m-d')): ?>
+                                            <span class="text-success ms-1">(futuro)</span>
+                                        <?php elseif ($order['scheduled_date'] == date('Y-m-d')): ?>
+                                            <span class="text-primary ms-1 fw-bold">(HOJE)</span>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                                <?php endif; ?>
+
                                 <!-- Tempo na etapa -->
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="small <?= $isDelayed ? 'text-danger fw-bold' : 'text-muted' ?>">

@@ -9,6 +9,8 @@ class Order {
     public $status;
     public $pipeline_stage;
     public $priority;
+    public $notes;
+    public $scheduled_date;
     public $created_at;
 
     public function __construct($db) {
@@ -17,8 +19,8 @@ class Order {
 
     public function create() {
         $query = "INSERT INTO " . $this->table_name . " 
-                  (customer_id, total_amount, status, pipeline_stage, pipeline_entered_at, priority, created_at) 
-                  VALUES (:customer_id, :total_amount, :status, :pipeline_stage, NOW(), :priority, NOW())";
+                  (customer_id, total_amount, status, pipeline_stage, pipeline_entered_at, priority, notes, scheduled_date, created_at) 
+                  VALUES (:customer_id, :total_amount, :status, :pipeline_stage, NOW(), :priority, :notes, :scheduled_date, NOW())";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':customer_id', $this->customer_id);
         $stmt->bindParam(':total_amount', $this->total_amount);
@@ -27,11 +29,60 @@ class Order {
         $stmt->bindParam(':pipeline_stage', $pipelineStage);
         $priority = $this->priority ?? 'normal';
         $stmt->bindParam(':priority', $priority);
+        $notes = $this->notes ?? null;
+        $stmt->bindParam(':notes', $notes);
+        $scheduledDate = !empty($this->scheduled_date) ? $this->scheduled_date : null;
+        $stmt->bindParam(':scheduled_date', $scheduledDate);
         if ($stmt->execute()) {
             $this->id = $this->conn->lastInsertId();
             return true;
         }
         return false;
+    }
+
+    /**
+     * Busca contatos agendados para um determinado mês/ano
+     */
+    public function getScheduledContacts($month = null, $year = null) {
+        if (!$month) $month = date('m');
+        if (!$year) $year = date('Y');
+        
+        $query = "SELECT o.id, o.scheduled_date, o.notes, o.priority, o.created_at, o.pipeline_stage,
+                         c.name as customer_name, c.phone as customer_phone, c.email as customer_email
+                  FROM " . $this->table_name . " o
+                  LEFT JOIN customers c ON o.customer_id = c.id
+                  WHERE o.scheduled_date IS NOT NULL
+                    AND MONTH(o.scheduled_date) = :month 
+                    AND YEAR(o.scheduled_date) = :year
+                    AND o.pipeline_stage = 'contato'
+                    AND o.status != 'cancelado'
+                  ORDER BY o.scheduled_date ASC, o.priority DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':month', $month, PDO::PARAM_INT);
+        $stmt->bindParam(':year', $year, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Busca contatos agendados para um dia específico (para relatório)
+     */
+    public function getScheduledContactsByDate($date) {
+        $query = "SELECT o.id, o.scheduled_date, o.notes, o.priority, o.created_at, o.pipeline_stage,
+                         o.total_amount,
+                         c.name as customer_name, c.phone as customer_phone, 
+                         c.email as customer_email, c.document as customer_document,
+                         c.address as customer_address
+                  FROM " . $this->table_name . " o
+                  LEFT JOIN customers c ON o.customer_id = c.id
+                  WHERE o.scheduled_date = :date
+                    AND o.pipeline_stage = 'contato'
+                    AND o.status != 'cancelado'
+                  ORDER BY o.priority DESC, c.name ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':date', $date);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function readAll() {
@@ -103,5 +154,107 @@ class Order {
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchColumn();
+    }
+
+    // ─────────────────────────────────────────────────
+    // Itens do Pedido (order_items)
+    // ─────────────────────────────────────────────────
+
+    /**
+     * Busca os itens de um pedido com nome do produto
+     */
+    public function getItems($orderId) {
+        $query = "SELECT oi.*, p.name as product_name 
+                  FROM order_items oi
+                  LEFT JOIN products p ON oi.product_id = p.id
+                  WHERE oi.order_id = :order_id
+                  ORDER BY oi.id ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Adiciona um item ao pedido
+     */
+    public function addItem($orderId, $productId, $quantity, $unitPrice) {
+        $subtotal = $quantity * $unitPrice;
+        $query = "INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
+                  VALUES (:order_id, :product_id, :quantity, :unit_price, :subtotal)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+        $stmt->bindParam(':product_id', $productId, PDO::PARAM_INT);
+        $stmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
+        $stmt->bindParam(':unit_price', $unitPrice);
+        $stmt->bindParam(':subtotal', $subtotal);
+        $result = $stmt->execute();
+        if ($result) {
+            $this->recalculateTotal($orderId);
+        }
+        return $result;
+    }
+
+    /**
+     * Atualiza um item do pedido
+     */
+    public function updateItem($itemId, $quantity, $unitPrice) {
+        $subtotal = $quantity * $unitPrice;
+        $query = "UPDATE order_items SET quantity = :quantity, unit_price = :unit_price, subtotal = :subtotal WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
+        $stmt->bindParam(':unit_price', $unitPrice);
+        $stmt->bindParam(':subtotal', $subtotal);
+        $stmt->bindParam(':id', $itemId, PDO::PARAM_INT);
+        $result = $stmt->execute();
+        if ($result) {
+            // Buscar order_id do item para recalcular total
+            $q = "SELECT order_id FROM order_items WHERE id = :id";
+            $s = $this->conn->prepare($q);
+            $s->bindParam(':id', $itemId, PDO::PARAM_INT);
+            $s->execute();
+            $row = $s->fetch(PDO::FETCH_ASSOC);
+            if ($row) $this->recalculateTotal($row['order_id']);
+        }
+        return $result;
+    }
+
+    /**
+     * Remove um item do pedido
+     */
+    public function deleteItem($itemId) {
+        // Buscar order_id antes de deletar
+        $q = "SELECT order_id FROM order_items WHERE id = :id";
+        $s = $this->conn->prepare($q);
+        $s->bindParam(':id', $itemId, PDO::PARAM_INT);
+        $s->execute();
+        $row = $s->fetch(PDO::FETCH_ASSOC);
+
+        $query = "DELETE FROM order_items WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $itemId, PDO::PARAM_INT);
+        $result = $stmt->execute();
+        
+        if ($result && $row) {
+            $this->recalculateTotal($row['order_id']);
+        }
+        return $result;
+    }
+
+    /**
+     * Recalcula o total do pedido com base nos itens
+     */
+    public function recalculateTotal($orderId) {
+        $query = "SELECT COALESCE(SUM(subtotal), 0) FROM order_items WHERE order_id = :order_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+        $stmt->execute();
+        $total = $stmt->fetchColumn();
+
+        $update = "UPDATE orders SET total_amount = :total WHERE id = :id";
+        $stmt2 = $this->conn->prepare($update);
+        $stmt2->bindParam(':total', $total);
+        $stmt2->bindParam(':id', $orderId, PDO::PARAM_INT);
+        return $stmt2->execute();
     }
 }

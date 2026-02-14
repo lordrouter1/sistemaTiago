@@ -1,6 +1,13 @@
 CREATE DATABASE IF NOT EXISTS sistema_grafica;
 USE sistema_grafica;
 
+-- Tabela de Grupos de Usuários (deve ser criada ANTES de users)
+CREATE TABLE IF NOT EXISTS user_groups (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT
+);
+
 -- Tabela de Usuários (Administradores/Funcionários)
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -11,13 +18,6 @@ CREATE TABLE IF NOT EXISTS users (
     group_id INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (group_id) REFERENCES user_groups(id) ON DELETE SET NULL
-);
-
--- Tabela de Grupos de Usuários
-CREATE TABLE IF NOT EXISTS user_groups (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    description TEXT
 );
 
 -- Tabela de Permissões dos Grupos

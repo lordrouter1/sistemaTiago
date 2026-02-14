@@ -1,6 +1,9 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-shopping-cart me-2"></i>Pedidos</h1>
     <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        <a href="/sistemaTiago/?page=orders&action=agenda" class="btn btn-sm btn-outline-purple" style="border-color:#9b59b6;color:#9b59b6;">
+            <i class="fas fa-calendar-alt me-1"></i> Agenda
+        </a>
         <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-outline-info">
             <i class="fas fa-stream me-1"></i> Ver na Produção
         </a>

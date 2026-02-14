@@ -128,6 +128,18 @@ switch ($page) {
             $controller->update();
         } elseif ($action == 'delete') {
             $controller->delete();
+        } elseif ($action == 'addItem') {
+            $controller->addItem();
+        } elseif ($action == 'updateItem') {
+            $controller->updateItem();
+        } elseif ($action == 'deleteItem') {
+            $controller->deleteItem();
+        } elseif ($action == 'printQuote') {
+            $controller->printQuote();
+        } elseif ($action == 'agenda') {
+            $controller->agenda();
+        } elseif ($action == 'report') {
+            $controller->report();
         } else {
             $controller->index();
         }

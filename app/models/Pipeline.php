@@ -20,12 +20,19 @@ class Pipeline {
 
     /**
      * Busca todos os pedidos ativos no pipeline (não concluídos/cancelados) 
-     * agrupados por etapa, com dados do cliente e responsável
+     * agrupados por etapa, com dados do cliente e responsável.
+     * Para contatos agendados, usa scheduled_date para calcular horas na etapa.
      */
     public function getOrdersByStage() {
         $query = "SELECT o.*, c.name as customer_name, c.phone as customer_phone,
                          u.name as assigned_name,
-                         TIMESTAMPDIFF(HOUR, o.pipeline_entered_at, NOW()) as hours_in_stage
+                         CASE 
+                            WHEN o.pipeline_stage = 'contato' AND o.scheduled_date IS NOT NULL AND o.scheduled_date > CURDATE()
+                                THEN 0
+                            WHEN o.pipeline_stage = 'contato' AND o.scheduled_date IS NOT NULL 
+                                THEN TIMESTAMPDIFF(HOUR, o.scheduled_date, NOW())
+                            ELSE TIMESTAMPDIFF(HOUR, o.pipeline_entered_at, NOW())
+                         END as hours_in_stage
                   FROM orders o
                   LEFT JOIN customers c ON o.customer_id = c.id
                   LEFT JOIN users u ON o.assigned_to = u.id
@@ -161,7 +168,13 @@ class Pipeline {
                          c.phone as customer_phone, c.document as customer_document,
                          c.address as customer_address,
                          u.name as assigned_name,
-                         TIMESTAMPDIFF(HOUR, o.pipeline_entered_at, NOW()) as hours_in_stage
+                         CASE 
+                            WHEN o.pipeline_stage = 'contato' AND o.scheduled_date IS NOT NULL AND o.scheduled_date > CURDATE()
+                                THEN 0
+                            WHEN o.pipeline_stage = 'contato' AND o.scheduled_date IS NOT NULL 
+                                THEN TIMESTAMPDIFF(HOUR, o.scheduled_date, NOW())
+                            ELSE TIMESTAMPDIFF(HOUR, o.pipeline_entered_at, NOW())
+                         END as hours_in_stage
                   FROM orders o
                   LEFT JOIN customers c ON o.customer_id = c.id
                   LEFT JOIN users u ON o.assigned_to = u.id
@@ -205,11 +218,18 @@ class Pipeline {
 
     /**
      * Conta pedidos atrasados (acima da meta de horas por etapa)
+     * Para contatos agendados, respeita a scheduled_date
      */
     public function getDelayedOrders() {
         $goals = $this->getStageGoals();
         $query = "SELECT o.*, c.name as customer_name,
-                         TIMESTAMPDIFF(HOUR, o.pipeline_entered_at, NOW()) as hours_in_stage
+                         CASE 
+                            WHEN o.pipeline_stage = 'contato' AND o.scheduled_date IS NOT NULL AND o.scheduled_date > CURDATE()
+                                THEN 0
+                            WHEN o.pipeline_stage = 'contato' AND o.scheduled_date IS NOT NULL 
+                                THEN TIMESTAMPDIFF(HOUR, o.scheduled_date, NOW())
+                            ELSE TIMESTAMPDIFF(HOUR, o.pipeline_entered_at, NOW())
+                         END as hours_in_stage
                   FROM orders o
                   LEFT JOIN customers c ON o.customer_id = c.id
                   WHERE o.pipeline_stage != 'concluido' AND o.status != 'cancelado'

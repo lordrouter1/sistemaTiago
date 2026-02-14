@@ -35,6 +35,11 @@ class OrderController {
         $stmt_customers = $customerModel->readAll();
         $customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC);
 
+        // Buscar contatos agendados para a agenda
+        $agendaMonth = isset($_GET['agenda_month']) ? (int)$_GET['agenda_month'] : (int)date('m');
+        $agendaYear = isset($_GET['agenda_year']) ? (int)$_GET['agenda_year'] : (int)date('Y');
+        $scheduledContacts = $this->orderModel->getScheduledContacts($agendaMonth, $agendaYear);
+
         require 'app/views/layout/header.php';
         require 'app/views/orders/create.php';
         require 'app/views/layout/footer.php';
@@ -42,11 +47,25 @@ class OrderController {
 
     public function store() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $initialStage = $_POST['initial_stage'] ?? 'contato';
+            
             $this->orderModel->customer_id = $_POST['customer_id'];
-            $this->orderModel->total_amount = $_POST['total_amount'] ?? 0;
-            $this->orderModel->status = 'orcamento';
-            $this->orderModel->pipeline_stage = 'contato';
             $this->orderModel->priority = $_POST['priority'] ?? 'normal';
+            $this->orderModel->notes = $_POST['notes'] ?? null;
+            
+            if ($initialStage === 'contato') {
+                // Contato: sem produtos, valor zerado, com agendamento opcional
+                $this->orderModel->total_amount = 0;
+                $this->orderModel->status = 'orcamento';
+                $this->orderModel->pipeline_stage = 'contato';
+                $this->orderModel->scheduled_date = !empty($_POST['scheduled_date']) ? $_POST['scheduled_date'] : null;
+            } else {
+                // Orçamento: com produtos e valor
+                $this->orderModel->total_amount = $_POST['total_amount'] ?? 0;
+                $this->orderModel->status = 'orcamento';
+                $this->orderModel->pipeline_stage = 'orcamento';
+                $this->orderModel->scheduled_date = null;
+            }
             
             if ($this->orderModel->create()) {
                 // Registrar entrada no pipeline
@@ -54,12 +73,13 @@ class OrderController {
                 $db = $database->getConnection();
                 require_once 'app/models/Pipeline.php';
                 $pipeline = new Pipeline($db);
-                $pipeline->addHistory($this->orderModel->id, null, 'contato', $_SESSION['user_id'] ?? null, 'Pedido criado');
+                $stageLabel = $initialStage === 'contato' ? 'Pedido criado como Contato' : 'Pedido criado como Orçamento';
+                $pipeline->addHistory($this->orderModel->id, null, $initialStage, $_SESSION['user_id'] ?? null, $stageLabel);
 
                 // Log
                 require_once 'app/models/Logger.php';
                 $logger = new Logger($db);
-                $logger->log('ORDER_CREATE', "Pedido #{$this->orderModel->id} criado e inserido no pipeline");
+                $logger->log('ORDER_CREATE', "Pedido #{$this->orderModel->id} criado na etapa " . ucfirst($initialStage));
 
                 header('Location: /sistemaTiago/?page=orders&status=success');
                 exit;
@@ -81,11 +101,20 @@ class OrderController {
         }
 
         require_once 'app/models/Customer.php';
+        require_once 'app/models/Product.php';
         $database = new Database();
         $db = $database->getConnection();
         $customerModel = new Customer($db);
         $stmt_customers = $customerModel->readAll();
         $customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC);
+
+        // Buscar itens do pedido
+        $orderItems = $this->orderModel->getItems($order['id']);
+
+        // Buscar produtos para o select
+        $productModel = new Product($db);
+        $stmt_products = $productModel->readAll();
+        $products = $stmt_products->fetchAll(PDO::FETCH_ASSOC);
 
         require 'app/views/layout/header.php';
         require 'app/views/orders/edit.php';
@@ -108,11 +137,118 @@ class OrderController {
         }
     }
 
+    /**
+     * Adicionar item ao pedido (POST via AJAX ou form)
+     */
+    public function addItem() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $orderId = $_POST['order_id'];
+            $productId = $_POST['product_id'];
+            $quantity = (int)($_POST['quantity'] ?? 1);
+            $unitPrice = (float)($_POST['unit_price'] ?? 0);
+
+            $this->orderModel->addItem($orderId, $productId, $quantity, $unitPrice);
+
+            $redirect = $_POST['redirect'] ?? 'orders';
+            if ($redirect === 'pipeline') {
+                header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=item_added');
+            } else {
+                header('Location: /sistemaTiago/?page=orders&action=edit&id=' . $orderId . '&status=item_added');
+            }
+            exit;
+        }
+    }
+
+    /**
+     * Atualizar item do pedido (POST)
+     */
+    public function updateItem() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $itemId = $_POST['item_id'];
+            $quantity = (int)($_POST['quantity'] ?? 1);
+            $unitPrice = (float)($_POST['unit_price'] ?? 0);
+            $orderId = $_POST['order_id'];
+
+            $this->orderModel->updateItem($itemId, $quantity, $unitPrice);
+
+            $redirect = $_POST['redirect'] ?? 'orders';
+            if ($redirect === 'pipeline') {
+                header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=item_updated');
+            } else {
+                header('Location: /sistemaTiago/?page=orders&action=edit&id=' . $orderId . '&status=item_updated');
+            }
+            exit;
+        }
+    }
+
+    /**
+     * Remover item do pedido
+     */
+    public function deleteItem() {
+        $itemId = $_GET['item_id'] ?? null;
+        $orderId = $_GET['order_id'] ?? null;
+        $redirect = $_GET['redirect'] ?? 'orders';
+
+        if ($itemId) {
+            $this->orderModel->deleteItem($itemId);
+        }
+
+        if ($redirect === 'pipeline') {
+            header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=item_deleted');
+        } else {
+            header('Location: /sistemaTiago/?page=orders&action=edit&id=' . $orderId . '&status=item_deleted');
+        }
+        exit;
+    }
+
+    /**
+     * Imprimir orçamento
+     */
+    public function printQuote() {
+        $orderId = $_GET['id'] ?? null;
+        if (!$orderId) {
+            header('Location: /sistemaTiago/?page=orders');
+            exit;
+        }
+        $order = $this->orderModel->readOne($orderId);
+        if (!$order) {
+            header('Location: /sistemaTiago/?page=orders');
+            exit;
+        }
+        $orderItems = $this->orderModel->getItems($orderId);
+        
+        require 'app/views/orders/print_quote.php';
+    }
+
     public function delete() {
         if (isset($_GET['id'])) {
             $this->orderModel->delete($_GET['id']);
             header('Location: /sistemaTiago/?page=orders&status=success');
             exit;
         }
+    }
+
+    /**
+     * Agenda de contatos agendados
+     */
+    public function agenda() {
+        $agendaMonth = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('m');
+        $agendaYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+        
+        $scheduledContacts = $this->orderModel->getScheduledContacts($agendaMonth, $agendaYear);
+        
+        require 'app/views/layout/header.php';
+        require 'app/views/orders/agenda.php';
+        require 'app/views/layout/footer.php';
+    }
+
+    /**
+     * Relatório de contatos para impressão
+     */
+    public function report() {
+        $date = $_GET['date'] ?? date('Y-m-d');
+        $contacts = $this->orderModel->getScheduledContactsByDate($date);
+        
+        require 'app/views/orders/report.php';
     }
 }

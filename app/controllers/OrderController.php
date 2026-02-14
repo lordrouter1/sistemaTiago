@@ -51,7 +51,7 @@ class OrderController {
             
             $this->orderModel->customer_id = $_POST['customer_id'];
             $this->orderModel->priority = $_POST['priority'] ?? 'normal';
-            $this->orderModel->notes = $_POST['notes'] ?? null;
+            $this->orderModel->internal_notes = $_POST['notes'] ?? null;
             
             if ($initialStage === 'contato') {
                 // Contato: sem produtos, valor zerado, com agendamento opcional
@@ -102,6 +102,7 @@ class OrderController {
 
         require_once 'app/models/Customer.php';
         require_once 'app/models/Product.php';
+        require_once 'app/models/PriceTable.php';
         $database = new Database();
         $db = $database->getConnection();
         $customerModel = new Customer($db);
@@ -115,6 +116,13 @@ class OrderController {
         $productModel = new Product($db);
         $stmt_products = $productModel->readAll();
         $products = $stmt_products->fetchAll(PDO::FETCH_ASSOC);
+
+        // Carregar preços específicos do cliente (tabela de preço)
+        $customerPrices = [];
+        if (!empty($order['customer_id'])) {
+            $priceTableModel = new PriceTable($db);
+            $customerPrices = $priceTableModel->getAllPricesForCustomer($order['customer_id']);
+        }
 
         require 'app/views/layout/header.php';
         require 'app/views/orders/edit.php';
@@ -216,6 +224,15 @@ class OrderController {
             exit;
         }
         $orderItems = $this->orderModel->getItems($orderId);
+        $extraCosts = $this->orderModel->getExtraCosts($orderId);
+
+        // Carregar dados da empresa
+        require_once 'app/models/CompanySettings.php';
+        $database = new Database();
+        $db = $database->getConnection();
+        $companyModel = new CompanySettings($db);
+        $company = $companyModel->getAll();
+        $companyAddress = $companyModel->getFormattedAddress();
         
         require 'app/views/orders/print_quote.php';
     }

@@ -54,11 +54,12 @@
                     <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-dollar-sign me-2"></i>Valores e Estoque</legend>
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <label for="price" class="form-label">Preço de Venda (R$) <span class="text-danger">*</span></label>
+                            <label for="price" class="form-label">Preço Padrão (R$) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
                                 <input type="number" step="0.01" class="form-control" id="price" name="price" required placeholder="0.00" value="<?= $product['price'] ?>">
                             </div>
+                            <small class="text-muted">Usado quando não há preço específico na tabela.</small>
                         </div>
                         <div class="col-md-4">
                             <label for="cost_price" class="form-label">Preço de Custo (R$)</label>
@@ -73,6 +74,45 @@
                         </div>
                     </div>
                 </fieldset>
+
+                <!-- Preços por Tabela -->
+                <?php if (!empty($priceTables)): ?>
+                <fieldset class="p-4 mb-4">
+                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-tags me-2"></i>Preços por Tabela</legend>
+                    <p class="text-muted small mb-3">Defina preços específicos para cada tabela de preço. Deixe em branco para usar o <strong>preço padrão</strong> do produto.</p>
+                    <div class="row g-3">
+                        <?php foreach ($priceTables as $pt): ?>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">
+                                <?= htmlspecialchars($pt['name']) ?>
+                                <?php if ($pt['is_default']): ?>
+                                    <span class="badge bg-success" style="font-size:0.65rem;">Padrão</span>
+                                <?php endif; ?>
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" step="0.01" class="form-control table-price-input" 
+                                       name="table_prices[<?= $pt['id'] ?>]" 
+                                       placeholder="<?= number_format($product['price'], 2, '.', '') ?>"
+                                       value="<?= isset($productPrices[$pt['id']]) ? number_format($productPrices[$pt['id']], 2, '.', '') : '' ?>"
+                                       data-table-id="<?= $pt['id'] ?>">
+                            </div>
+                            <?php if (isset($productPrices[$pt['id']])): ?>
+                                <?php 
+                                    $diff = $productPrices[$pt['id']] - $product['price'];
+                                    $diffPercent = $product['price'] > 0 ? round(($diff / $product['price']) * 100, 1) : 0;
+                                ?>
+                                <small class="<?= $diff < 0 ? 'text-success' : ($diff > 0 ? 'text-danger' : 'text-muted') ?>">
+                                    <?= $diff > 0 ? '+' : '' ?><?= $diffPercent ?>% em relação ao padrão
+                                </small>
+                            <?php else: ?>
+                                <small class="text-muted">Usando preço padrão</small>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+                <?php endif; ?>
 
                 <!-- Detalhes Técnicos (Opcional) -->
                 <fieldset class="p-4 mb-4">

@@ -9,7 +9,8 @@ class Order {
     public $status;
     public $pipeline_stage;
     public $priority;
-    public $notes;
+    public $internal_notes;
+    public $quote_notes;
     public $scheduled_date;
     public $created_at;
 
@@ -19,8 +20,8 @@ class Order {
 
     public function create() {
         $query = "INSERT INTO " . $this->table_name . " 
-                  (customer_id, total_amount, status, pipeline_stage, pipeline_entered_at, priority, notes, scheduled_date, created_at) 
-                  VALUES (:customer_id, :total_amount, :status, :pipeline_stage, NOW(), :priority, :notes, :scheduled_date, NOW())";
+                  (customer_id, total_amount, status, pipeline_stage, pipeline_entered_at, priority, internal_notes, scheduled_date, created_at) 
+                  VALUES (:customer_id, :total_amount, :status, :pipeline_stage, NOW(), :priority, :internal_notes, :scheduled_date, NOW())";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':customer_id', $this->customer_id);
         $stmt->bindParam(':total_amount', $this->total_amount);
@@ -29,8 +30,8 @@ class Order {
         $stmt->bindParam(':pipeline_stage', $pipelineStage);
         $priority = $this->priority ?? 'normal';
         $stmt->bindParam(':priority', $priority);
-        $notes = $this->notes ?? null;
-        $stmt->bindParam(':notes', $notes);
+        $internalNotes = $this->internal_notes ?? null;
+        $stmt->bindParam(':internal_notes', $internalNotes);
         $scheduledDate = !empty($this->scheduled_date) ? $this->scheduled_date : null;
         $stmt->bindParam(':scheduled_date', $scheduledDate);
         if ($stmt->execute()) {
@@ -47,7 +48,7 @@ class Order {
         if (!$month) $month = date('m');
         if (!$year) $year = date('Y');
         
-        $query = "SELECT o.id, o.scheduled_date, o.notes, o.priority, o.created_at, o.pipeline_stage,
+        $query = "SELECT o.id, o.scheduled_date, o.internal_notes as notes, o.priority, o.created_at, o.pipeline_stage,
                          c.name as customer_name, c.phone as customer_phone, c.email as customer_email
                   FROM " . $this->table_name . " o
                   LEFT JOIN customers c ON o.customer_id = c.id
@@ -68,7 +69,7 @@ class Order {
      * Busca contatos agendados para um dia específico (para relatório)
      */
     public function getScheduledContactsByDate($date) {
-        $query = "SELECT o.id, o.scheduled_date, o.notes, o.priority, o.created_at, o.pipeline_stage,
+        $query = "SELECT o.id, o.scheduled_date, o.internal_notes as notes, o.priority, o.created_at, o.pipeline_stage,
                          o.total_amount,
                          c.name as customer_name, c.phone as customer_phone, 
                          c.email as customer_email, c.document as customer_document,
@@ -97,7 +98,9 @@ class Order {
     }
 
     public function readOne($id) {
-        $query = "SELECT o.*, c.name as customer_name 
+        $query = "SELECT o.*, c.name as customer_name, c.phone as customer_phone, 
+                         c.document as customer_document, c.email as customer_email, 
+                         c.address as customer_address
                   FROM " . $this->table_name . " o 
                   LEFT JOIN customers c ON o.customer_id = c.id 
                   WHERE o.id = :id LIMIT 0,1";
@@ -242,19 +245,81 @@ class Order {
     }
 
     /**
-     * Recalcula o total do pedido com base nos itens
+     * Recalcula o total do pedido com base nos itens + custos extras
      */
     public function recalculateTotal($orderId) {
         $query = "SELECT COALESCE(SUM(subtotal), 0) FROM order_items WHERE order_id = :order_id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
         $stmt->execute();
-        $total = $stmt->fetchColumn();
+        $totalItems = $stmt->fetchColumn();
+
+        // Somar custos extras
+        $query2 = "SELECT COALESCE(SUM(amount), 0) FROM order_extra_costs WHERE order_id = :order_id";
+        $stmt2 = $this->conn->prepare($query2);
+        $stmt2->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+        $stmt2->execute();
+        $totalExtras = $stmt2->fetchColumn();
+
+        $total = $totalItems + $totalExtras;
 
         $update = "UPDATE orders SET total_amount = :total WHERE id = :id";
-        $stmt2 = $this->conn->prepare($update);
-        $stmt2->bindParam(':total', $total);
-        $stmt2->bindParam(':id', $orderId, PDO::PARAM_INT);
-        return $stmt2->execute();
+        $stmt3 = $this->conn->prepare($update);
+        $stmt3->bindParam(':total', $total);
+        $stmt3->bindParam(':id', $orderId, PDO::PARAM_INT);
+        return $stmt3->execute();
+    }
+
+    // ─────────────────────────────────────────────────
+    // Custos Extras do Pedido (order_extra_costs)
+    // ─────────────────────────────────────────────────
+
+    /**
+     * Busca os custos extras de um pedido
+     */
+    public function getExtraCosts($orderId) {
+        $query = "SELECT * FROM order_extra_costs WHERE order_id = :order_id ORDER BY id ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Adiciona um custo extra ao pedido
+     */
+    public function addExtraCost($orderId, $description, $amount) {
+        $query = "INSERT INTO order_extra_costs (order_id, description, amount) VALUES (:order_id, :description, :amount)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':amount', $amount);
+        $result = $stmt->execute();
+        if ($result) {
+            $this->recalculateTotal($orderId);
+        }
+        return $result;
+    }
+
+    /**
+     * Remove um custo extra do pedido
+     */
+    public function deleteExtraCost($costId) {
+        // Buscar order_id antes de deletar
+        $q = "SELECT order_id FROM order_extra_costs WHERE id = :id";
+        $s = $this->conn->prepare($q);
+        $s->bindParam(':id', $costId, PDO::PARAM_INT);
+        $s->execute();
+        $row = $s->fetch(PDO::FETCH_ASSOC);
+
+        $query = "DELETE FROM order_extra_costs WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $costId, PDO::PARAM_INT);
+        $result = $stmt->execute();
+
+        if ($result && $row) {
+            $this->recalculateTotal($row['order_id']);
+        }
+        return $result;
     }
 }

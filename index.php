@@ -161,11 +161,63 @@ switch ($page) {
             $controller->saveSettings();
         } elseif ($action == 'alerts') {
             $controller->alerts();
+        } elseif ($action == 'getPricesByTable') {
+            $controller->getPricesByTable();
+        } elseif ($action == 'addExtraCost') {
+            $controller->addExtraCost();
+        } elseif ($action == 'deleteExtraCost') {
+            $controller->deleteExtraCost();
         } else {
             $controller->index();
         }
         break;
-        
+    
+    // ── Tabelas de Preço (atalho de menu — redireciona para settings tab=prices) ──
+    case 'price_tables':
+        require_once 'app/controllers/SettingsController.php';
+        $controller = new SettingsController();
+        if ($action == 'createPriceTable') {
+            $controller->createPriceTable();
+        } elseif ($action == 'updatePriceTable') {
+            $controller->updatePriceTable();
+        } elseif ($action == 'deletePriceTable') {
+            $controller->deletePriceTable();
+        } elseif ($action == 'editPriceTable') {
+            $controller->editPriceTable();
+        } elseif ($action == 'savePriceItem') {
+            $controller->savePriceItem();
+        } elseif ($action == 'deletePriceItem') {
+            $controller->deletePriceItem();
+        } else {
+            $controller->priceTablesIndex();
+        }
+        break;
+
+    // ── Configurações do Sistema ──
+    case 'settings':
+        require_once 'app/controllers/SettingsController.php';
+        $controller = new SettingsController();
+        if ($action == 'saveCompany') {
+            $controller->saveCompany();
+        } elseif ($action == 'createPriceTable') {
+            $controller->createPriceTable();
+        } elseif ($action == 'updatePriceTable') {
+            $controller->updatePriceTable();
+        } elseif ($action == 'deletePriceTable') {
+            $controller->deletePriceTable();
+        } elseif ($action == 'editPriceTable') {
+            $controller->editPriceTable();
+        } elseif ($action == 'savePriceItem') {
+            $controller->savePriceItem();
+        } elseif ($action == 'deletePriceItem') {
+            $controller->deletePriceItem();
+        } elseif ($action == 'getPricesForCustomer') {
+            $controller->getPricesForCustomer();
+        } else {
+            $controller->index();
+        }
+        break;
+
     // ── Gestão de Usuários (Admin) ──
     case 'users':
         require_once 'app/controllers/UserController.php';

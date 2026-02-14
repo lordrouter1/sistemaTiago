@@ -1,5 +1,10 @@
 <div class="container py-4">
     <?php
+        require_once 'app/models/CompanySettings.php';
+        $customerFormattedAddress = '';
+        if (!empty($order['customer_address'])) {
+            $customerFormattedAddress = CompanySettings::formatCustomerAddress($order['customer_address']);
+        }
         $currentStage = $order['pipeline_stage'] ?? 'contato';
         $stageInfo = $stages[$currentStage] ?? ['label' => $currentStage, 'color' => '#999', 'icon' => 'fas fa-circle'];
         $hoursInStage = (int)$order['hours_in_stage'];
@@ -145,6 +150,18 @@
                             <label class="form-label small fw-bold text-muted">CPF/CNPJ</label>
                             <input type="text" class="form-control" value="<?= $order['customer_document'] ?? '—' ?>" disabled>
                         </div>
+                        <?php if (!empty($order['customer_email'])): ?>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">E-mail</label>
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($order['customer_email']) ?>" disabled>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($customerFormattedAddress)): ?>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Endereço</label>
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($customerFormattedAddress) ?>" disabled>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </fieldset>
 
@@ -162,6 +179,28 @@
                             <i class="fas fa-print me-1"></i> Imprimir Orçamento
                         </a>
                     </legend>
+
+                    <!-- Seletor de Tabela de Preços -->
+                    <div class="alert alert-light border mb-3 py-2">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-tags me-1"></i>Tabela de Preços</label>
+                                <select class="form-select form-select-sm" name="price_table_id" id="priceTableSelect">
+                                    <option value="">Padrão do cliente</option>
+                                    <?php foreach ($priceTables as $pt): ?>
+                                    <option value="<?= $pt['id'] ?>" <?= ($currentPriceTableId == $pt['id']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($pt['name']) ?> <?= $pt['is_default'] ? '(Padrão)' : '' ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block mt-md-4">
+                                    <i class="fas fa-info-circle me-1"></i>Ao mudar a tabela, os preços dos produtos serão atualizados automaticamente.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Tabela de Itens Existentes -->
                     <?php if (!empty($orderItems)): ?>
@@ -196,7 +235,7 @@
                             </tbody>
                             <tfoot>
                                 <tr class="table-success">
-                                    <td colspan="3" class="text-end fw-bold">Total:</td>
+                                    <td colspan="3" class="text-end fw-bold">Subtotal Produtos:</td>
                                     <td class="text-end fw-bold fs-5">R$ <?= number_format($totalItems, 2, ',', '.') ?></td>
                                     <td></td>
                                 </tr>
@@ -221,9 +260,14 @@
                                     <label class="form-label small fw-bold text-muted">Produto</label>
                                     <select class="form-select form-select-sm" id="pipProductSelect">
                                         <option value="">Selecione um produto...</option>
-                                        <?php foreach ($products as $prod): ?>
-                                        <option value="<?= $prod['id'] ?>" data-price="<?= $prod['price'] ?>">
-                                            <?= htmlspecialchars($prod['name']) ?> — R$ <?= number_format($prod['price'], 2, ',', '.') ?>
+                                        <?php foreach ($products as $prod): 
+                                            $displayPrice = isset($customerPrices[$prod['id']]) ? $customerPrices[$prod['id']] : $prod['price'];
+                                        ?>
+                                        <option value="<?= $prod['id'] ?>" data-price="<?= $displayPrice ?>" data-original-price="<?= $prod['price'] ?>">
+                                            <?= htmlspecialchars($prod['name']) ?> — R$ <?= number_format($displayPrice, 2, ',', '.') ?>
+                                            <?php if (isset($customerPrices[$prod['id']]) && $customerPrices[$prod['id']] != $prod['price']): ?>
+                                            (base: R$ <?= number_format($prod['price'], 2, ',', '.') ?>)
+                                            <?php endif; ?>
                                         </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -247,7 +291,81 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Custos Extras do Orçamento -->
+                    <div class="card border-warning border-opacity-25 mt-3">
+                        <div class="card-header bg-warning bg-opacity-10 py-2">
+                            <h6 class="mb-0 text-warning"><i class="fas fa-receipt me-2"></i>Custos Extras</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <?php if (!empty($extraCosts)): ?>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Descrição</th>
+                                            <th class="text-end" style="width:130px;">Valor</th>
+                                            <th class="text-center" style="width:80px;">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $totalExtras = 0; ?>
+                                        <?php foreach ($extraCosts as $ec): ?>
+                                        <?php $totalExtras += $ec['amount']; ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($ec['description']) ?></td>
+                                            <td class="text-end fw-bold">R$ <?= number_format($ec['amount'], 2, ',', '.') ?></td>
+                                            <td class="text-center">
+                                                <a href="/sistemaTiago/?page=pipeline&action=deleteExtraCost&cost_id=<?= $ec['id'] ?>&order_id=<?= $order['id'] ?>" 
+                                                   class="btn btn-sm btn-outline-danger btn-delete-extra" title="Remover custo">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-warning">
+                                            <td class="text-end fw-bold">Total Custos Extras:</td>
+                                            <td class="text-end fw-bold">R$ <?= number_format($totalExtras, 2, ',', '.') ?></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <?php endif; ?>
+                            <!-- Form para adicionar custo extra -->
+                            <div class="row g-2 align-items-end" id="addExtraCostRow">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-muted">Descrição do custo</label>
+                                    <input type="text" class="form-control form-control-sm" id="extraDescription" placeholder="Ex: Frete, Arte, Acabamento...">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Valor (R$)</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" step="0.01" min="0.01" class="form-control" id="extraAmount">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-warning btn-sm w-100" id="btnAddExtraCost">
+                                        <i class="fas fa-plus me-1"></i> Adicionar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observações do Orçamento (aparece no orçamento impresso) -->
+                    <div class="mt-3">
+                        <label class="form-label small fw-bold text-muted"><i class="fas fa-file-alt me-1"></i>Observações do Orçamento <small class="text-success">(aparece no orçamento impresso)</small></label>
+                        <textarea class="form-control" name="quote_notes" rows="3" placeholder="Notas visíveis ao cliente no orçamento impresso..."><?= $order['quote_notes'] ?? '' ?></textarea>
+                    </div>
                 </fieldset>
+                <?php else: ?>
+                <!-- Manter valores atuais nos campos ocultos quando a seção de produtos não aparece -->
+                <input type="hidden" name="quote_notes" value="<?= htmlspecialchars($order['quote_notes'] ?? '') ?>">
+                <input type="hidden" name="price_table_id" value="<?= $order['price_table_id'] ?? '' ?>">
                 <?php endif; ?>
 
                 <!-- Gerenciamento do Pedido -->
@@ -279,12 +397,23 @@
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-bold text-muted">Observações Internas</label>
-                            <textarea class="form-control" name="notes" rows="3" placeholder="Notas internas sobre este pedido..."><?= $order['notes'] ?? '' ?></textarea>
+                            <label class="form-label small fw-bold text-muted">
+                                <i class="fas fa-lock me-1"></i>Observações Internas 
+                                <small class="text-danger">(NÃO aparece no orçamento impresso)</small>
+                            </label>
+                            <textarea class="form-control" name="internal_notes" rows="3" placeholder="Notas internas sobre este pedido..."><?= $order['internal_notes'] ?? '' ?></textarea>
                         </div>
                     </div>
                 </fieldset>
 
+                <?php
+                // Campos de Envio/Entrega: só aparecem nas etapas de preparação, envio ou concluído
+                $showShipping = in_array($currentStage, ['preparacao', 'envio', 'concluido']);
+                // Campos Financeiro: só aparecem nas etapas financeiro ou concluído
+                $showFinancial = in_array($currentStage, ['financeiro', 'concluido']);
+                ?>
+
+                <?php if ($showFinancial): ?>
                 <!-- Financeiro -->
                 <fieldset class="p-4 mb-4">
                     <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-coins me-2"></i>Financeiro</legend>
@@ -325,7 +454,14 @@
                         </div>
                     </div>
                 </fieldset>
+                <?php else: ?>
+                <!-- Manter valores atuais nos campos ocultos para não perder ao salvar -->
+                <input type="hidden" name="discount" value="<?= $order['discount'] ?? 0 ?>">
+                <input type="hidden" name="payment_status" value="<?= $order['payment_status'] ?? 'pendente' ?>">
+                <input type="hidden" name="payment_method" value="<?= $order['payment_method'] ?? '' ?>">
+                <?php endif; ?>
 
+                <?php if ($showShipping): ?>
                 <!-- Envio / Entrega -->
                 <fieldset class="p-4 mb-4">
                     <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-truck me-2"></i>Envio / Entrega</legend>
@@ -344,10 +480,16 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-muted">Endereço de Entrega</label>
-                            <textarea class="form-control" name="shipping_address" rows="1" placeholder="Endereço completo..."><?= $order['shipping_address'] ?? ($order['customer_address'] ?? '') ?></textarea>
+                            <textarea class="form-control" name="shipping_address" rows="1" placeholder="Endereço completo..."><?= !empty($order['shipping_address']) ? htmlspecialchars($order['shipping_address']) : htmlspecialchars($customerFormattedAddress) ?></textarea>
                         </div>
                     </div>
                 </fieldset>
+                <?php else: ?>
+                <!-- Manter valores atuais nos campos ocultos para não perder ao salvar -->
+                <input type="hidden" name="shipping_type" value="<?= $order['shipping_type'] ?? 'retirada' ?>">
+                <input type="hidden" name="shipping_address" value="<?= htmlspecialchars($order['shipping_address'] ?? '') ?>">
+                <input type="hidden" name="tracking_code" value="<?= $order['tracking_code'] ?? '' ?>">
+                <?php endif; ?>
 
                 <div class="text-end mb-4">
                     <button type="submit" class="btn btn-primary px-4 fw-bold"><i class="fas fa-save me-2"></i>Salvar Alterações</button>
@@ -500,5 +642,107 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then(r => { if (r.isConfirmed) window.location.href = href; });
         });
     });
+
+    // Adicionar custo extra via form dinâmico
+    const btnAddExtra = document.getElementById('btnAddExtraCost');
+    if (btnAddExtra) {
+        btnAddExtra.addEventListener('click', function() {
+            const description = document.getElementById('extraDescription').value.trim();
+            const amount = document.getElementById('extraAmount').value;
+
+            if (!description || !amount || parseFloat(amount) <= 0) {
+                Swal.fire({ icon: 'warning', title: 'Preencha a descrição e o valor', timer: 2000, showConfirmButton: false });
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/sistemaTiago/?page=pipeline&action=addExtraCost';
+            form.innerHTML = `
+                <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                <input type="hidden" name="extra_description" value="${description}">
+                <input type="hidden" name="extra_amount" value="${amount}">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+
+    // Confirmar remoção de custo extra
+    document.querySelectorAll('.btn-delete-extra').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.href;
+            Swal.fire({
+                title: 'Remover custo extra?',
+                text: 'Este custo será removido do orçamento.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-trash me-1"></i> Remover',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#e74c3c'
+            }).then(r => { if (r.isConfirmed) window.location.href = href; });
+        });
+    });
+
+    // ── Seletor de Tabela de Preços: atualizar preços ao mudar ──
+    const priceTableSelect = document.getElementById('priceTableSelect');
+    if (priceTableSelect) {
+        priceTableSelect.addEventListener('change', function() {
+            const tableId = this.value;
+            const customerId = '<?= $order['customer_id'] ?? '' ?>';
+            let url = '/sistemaTiago/?page=pipeline&action=getPricesByTable';
+            
+            if (tableId) {
+                url += '&table_id=' + tableId;
+            } else if (customerId) {
+                url += '&customer_id=' + customerId;
+            }
+
+            fetch(url)
+                .then(r => r.json())
+                .then(prices => {
+                    // Atualizar opções do select de produtos
+                    const productSelect = document.getElementById('pipProductSelect');
+                    if (productSelect) {
+                        Array.from(productSelect.options).forEach(opt => {
+                            if (opt.value) {
+                                const pid = opt.value;
+                                const origPrice = parseFloat(opt.dataset.originalPrice) || 0;
+                                const newPrice = prices[pid] !== undefined ? parseFloat(prices[pid]) : origPrice;
+                                opt.dataset.price = newPrice.toFixed(2);
+                                
+                                // Atualizar texto da opção
+                                const prodName = opt.textContent.split(' — ')[0].trim();
+                                let label = prodName + ' — R$ ' + newPrice.toFixed(2).replace('.', ',');
+                                if (newPrice !== origPrice) {
+                                    label += ' (base: R$ ' + origPrice.toFixed(2).replace('.', ',') + ')';
+                                }
+                                opt.textContent = label;
+                            }
+                        });
+                        // Atualizar preço se já havia um produto selecionado
+                        if (productSelect.value) {
+                            const selOpt = productSelect.options[productSelect.selectedIndex];
+                            if (selOpt && selOpt.dataset.price) {
+                                document.getElementById('pipPriceInput').value = parseFloat(selOpt.dataset.price).toFixed(2);
+                            }
+                        }
+                    }
+
+                    Swal.fire({ 
+                        icon: 'info', 
+                        title: 'Tabela atualizada!', 
+                        text: 'Os preços dos produtos foram atualizados.',
+                        timer: 1500, 
+                        showConfirmButton: false 
+                    });
+                })
+                .catch(err => {
+                    console.error('Erro ao buscar preços:', err);
+                    Swal.fire({ icon: 'error', title: 'Erro ao atualizar preços', timer: 2000, showConfirmButton: false });
+                });
+        });
+    }
 });
 </script>

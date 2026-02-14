@@ -35,6 +35,14 @@ class ProductController {
         $stmt = $this->categoryModel->readAll();
         $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Fetch price tables
+        require_once 'app/models/PriceTable.php';
+        $database = new Database();
+        $db = $database->getConnection();
+        $priceTableModel = new PriceTable($db);
+        $priceTables = $priceTableModel->readAll();
+        $productPrices = []; // Nenhum preço salvo ainda (produto novo)
+
         require 'app/views/layout/header.php';
         require 'app/views/products/create.php';
         require 'app/views/layout/footer.php';
@@ -76,6 +84,15 @@ class ProductController {
 
             if($productId) {
                 $this->logger->log('CREATE_PRODUCT', 'Created product ID: ' . $productId . ' Name: ' . $data['name']);
+
+                // Salvar preços das tabelas de preço
+                if (!empty($_POST['table_prices']) && is_array($_POST['table_prices'])) {
+                    require_once 'app/models/PriceTable.php';
+                    $dbPT = (new Database())->getConnection();
+                    $ptModel = new PriceTable($dbPT);
+                    $ptModel->saveProductPrices($productId, $_POST['table_prices']);
+                }
+
                 // Upload das fotos
                 if(isset($_FILES['product_photos'])) {
                     $files = $_FILES['product_photos'];
@@ -172,6 +189,14 @@ class ProductController {
             $subcategories = $this->categoryModel->getSubcategories($product['category_id']);
         }
 
+        // Fetch price tables and existing prices for this product
+        require_once 'app/models/PriceTable.php';
+        $database = new Database();
+        $db = $database->getConnection();
+        $priceTableModel = new PriceTable($db);
+        $priceTables = $priceTableModel->readAll();
+        $productPrices = $priceTableModel->getPricesForProduct($id);
+
         require 'app/views/layout/header.php';
         require 'app/views/products/edit.php';
         require 'app/views/layout/footer.php';
@@ -211,6 +236,15 @@ class ProductController {
 
             if ($this->productModel->update($data)) {
                 $this->logger->log('UPDATE_PRODUCT', 'Updated product ID: ' . $data['id']);
+
+                // Salvar preços das tabelas de preço
+                if (isset($_POST['table_prices']) && is_array($_POST['table_prices'])) {
+                    require_once 'app/models/PriceTable.php';
+                    $dbPT = (new Database())->getConnection();
+                    $ptModel = new PriceTable($dbPT);
+                    $ptModel->saveProductPrices($data['id'], $_POST['table_prices']);
+                }
+
                 header('Location: /sistemaTiago/?page=products&status=success');
                 exit;
             }

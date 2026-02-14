@@ -99,6 +99,25 @@
                         <textarea class="form-control" id="observations" name="observations" rows="3" style="resize: none; height: 80px; background: #f8f9fa;"></textarea>
                     </div>
                 </fieldset>
+
+                <!-- Tabela de Preço -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 text-primary fw-bold"><i class="fas fa-tags me-2"></i>Tabela de Preço</legend>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="price_table_id" class="form-label fw-bold">Tabela de Preço do Cliente</label>
+                            <select class="form-select" id="price_table_id" name="price_table_id">
+                                <option value="">Usar tabela padrão</option>
+                                <?php if (!empty($priceTables)): ?>
+                                <?php foreach ($priceTables as $pt): ?>
+                                <option value="<?= $pt['id'] ?>"><?= htmlspecialchars($pt['name']) ?> <?= $pt['is_default'] ? '(Padrão)' : '' ?></option>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                            <small class="text-muted">Define qual tabela de preços será usada para este cliente nos orçamentos.</small>
+                        </div>
+                    </div>
+                </fieldset>
                 <div class="col-12 mt-4 text-end">
                     <div class="d-flex justify-content-end gap-2">
                         <a href="/sistemaTiago/?page=customers" class="btn btn-secondary px-4">Cancelar</a>

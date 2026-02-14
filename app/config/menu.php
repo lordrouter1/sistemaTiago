@@ -46,6 +46,12 @@ return [
         'menu'       => true,
         'permission' => true,
     ],
+    'price_tables' => [
+        'label'      => 'Tabelas de Preço',
+        'icon'       => 'fas fa-tags',
+        'menu'       => true,
+        'permission' => true,
+    ],
     'orders' => [
         'label'      => 'Pedidos',
         'icon'       => 'fas fa-shopping-cart',
@@ -56,6 +62,12 @@ return [
         'label'      => 'Produção',
         'icon'       => 'fas fa-stream',
         'menu'       => true,
+        'permission' => true,
+    ],
+    'settings' => [
+        'label'      => 'Configurações',
+        'icon'       => 'fas fa-building',
+        'menu'       => false,   // Fica no menu direito (engrenagem)
         'permission' => true,
     ],
     'users' => [

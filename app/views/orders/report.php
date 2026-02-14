@@ -1,4 +1,5 @@
 <?php
+require_once 'app/models/CompanySettings.php';
 $date = $date ?? date('Y-m-d');
 $contacts = $contacts ?? [];
 $dateFormatted = date('d/m/Y', strtotime($date));
@@ -249,7 +250,10 @@ $prioLabels = ['urgente'=>'URGENTE','alta'=>'Alta','normal'=>'Normal','baixa'=>'
                             <div class="contact-detail">Doc: <?= htmlspecialchars($c['customer_document']) ?></div>
                         <?php endif; ?>
                         <?php if (!empty($c['customer_address'])): ?>
-                            <div class="contact-detail">📍 <?= htmlspecialchars(mb_substr($c['customer_address'], 0, 50)) ?></div>
+                            <?php $fmtAddr = CompanySettings::formatCustomerAddress($c['customer_address']); ?>
+                            <?php if ($fmtAddr): ?>
+                            <div class="contact-detail">📍 <?= htmlspecialchars(mb_substr($fmtAddr, 0, 50)) ?></div>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </td>
                     <td><?= htmlspecialchars($c['customer_phone'] ?? '—') ?></td>

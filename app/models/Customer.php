@@ -28,7 +28,7 @@ class Customer {
     }
 
     public function create($data) {
-        $query = "INSERT INTO customers (name, email, phone, document, address, photo, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())";
+        $query = "INSERT INTO customers (name, email, phone, document, address, photo, price_table_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([
             $data['name'],
@@ -36,15 +36,16 @@ class Customer {
             $data['phone'],
             $data['document'],
             $data['address'],
-            $data['photo']
+            $data['photo'],
+            !empty($data['price_table_id']) ? $data['price_table_id'] : null
         ]);
         return $this->conn->lastInsertId();
     }
 
     public function update($data) {
         $query = "UPDATE " . $this->table_name . " 
-                  SET name = ?, email = ?, phone = ?, document = ?, address = ?";
-        $params = [$data['name'], $data['email'], $data['phone'], $data['document'], $data['address']];
+                  SET name = ?, email = ?, phone = ?, document = ?, address = ?, price_table_id = ?";
+        $params = [$data['name'], $data['email'], $data['phone'], $data['document'], $data['address'], !empty($data['price_table_id']) ? $data['price_table_id'] : null];
         
         if (isset($data['photo']) && $data['photo']) {
             $query .= ", photo = ?";

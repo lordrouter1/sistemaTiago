@@ -1,14 +1,16 @@
 <?php
 require_once 'app/models/Customer.php';
+require_once 'app/models/PriceTable.php';
 
 class CustomerController {
     
     private $customerModel;
+    private $db;
 
     public function __construct() {
         $database = new Database();
-        $db = $database->getConnection();
-        $this->customerModel = new Customer($db);
+        $this->db = $database->getConnection();
+        $this->customerModel = new Customer($this->db);
     }
 
     public function index() {
@@ -21,6 +23,9 @@ class CustomerController {
     }
 
     public function create() {
+        $priceTableModel = new PriceTable($this->db);
+        $priceTables = $priceTableModel->readAll();
+        
         require 'app/views/layout/header.php';
         require 'app/views/customers/create.php';
         require 'app/views/layout/footer.php';
@@ -45,7 +50,8 @@ class CustomerController {
                 'phone' => $_POST['phone'],
                 'document' => $_POST['document'],
                 'address' => $address,
-                'photo' => $photoPath
+                'photo' => $photoPath,
+                'price_table_id' => $_POST['price_table_id'] ?? null
             ]);
             
             header('Location: /sistemaTiago/?page=customers&status=success');
@@ -68,6 +74,9 @@ class CustomerController {
         // Decode address JSON for the form
         $customer['address_data'] = json_decode($customer['address'] ?? '{}', true) ?: [];
         
+        $priceTableModel = new PriceTable($this->db);
+        $priceTables = $priceTableModel->readAll();
+
         require 'app/views/layout/header.php';
         require 'app/views/customers/edit.php';
         require 'app/views/layout/footer.php';
@@ -93,7 +102,8 @@ class CustomerController {
                 'phone' => $_POST['phone'],
                 'document' => $_POST['document'],
                 'address' => $address,
-                'photo' => $photoPath
+                'photo' => $photoPath,
+                'price_table_id' => $_POST['price_table_id'] ?? null
             ]);
             
             header('Location: /sistemaTiago/?page=customers&status=success');

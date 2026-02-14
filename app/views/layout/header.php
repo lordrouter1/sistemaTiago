@@ -92,6 +92,15 @@
             </span>
           </a>
         </li>
+        <?php if($isAdmin || in_array('settings', $userPermissions)): ?>
+        <li class="nav-item">
+          <a href="/sistemaTiago/?page=settings"
+             class="nav-link btn btn-sm px-3 me-1 border-0 <?= ($currentPage == 'settings') ? 'active' : 'text-white' ?>"
+             title="Configurações">
+            <i class="fas fa-building"></i>
+          </a>
+        </li>
+        <?php endif; ?>
         <?php if($isAdmin || in_array('users', $userPermissions)): ?>
         <li class="nav-item">
           <a href="/sistemaTiago/?page=users"

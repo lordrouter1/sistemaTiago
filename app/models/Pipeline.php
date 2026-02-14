@@ -192,19 +192,22 @@ class Pipeline {
         $query = "UPDATE orders SET 
                     priority = :priority,
                     assigned_to = :assigned_to,
-                    notes = :notes,
+                    internal_notes = :internal_notes,
+                    quote_notes = :quote_notes,
                     deadline = :deadline,
                     payment_status = :payment_status,
                     payment_method = :payment_method,
                     discount = :discount,
                     shipping_type = :shipping_type,
                     shipping_address = :shipping_address,
-                    tracking_code = :tracking_code
+                    tracking_code = :tracking_code,
+                    price_table_id = :price_table_id
                   WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':priority', $data['priority']);
         $stmt->bindParam(':assigned_to', $data['assigned_to']);
-        $stmt->bindParam(':notes', $data['notes']);
+        $stmt->bindParam(':internal_notes', $data['internal_notes']);
+        $stmt->bindParam(':quote_notes', $data['quote_notes']);
         $stmt->bindParam(':deadline', $data['deadline']);
         $stmt->bindParam(':payment_status', $data['payment_status']);
         $stmt->bindParam(':payment_method', $data['payment_method']);
@@ -212,6 +215,7 @@ class Pipeline {
         $stmt->bindParam(':shipping_type', $data['shipping_type']);
         $stmt->bindParam(':shipping_address', $data['shipping_address']);
         $stmt->bindParam(':tracking_code', $data['tracking_code']);
+        $stmt->bindParam(':price_table_id', $data['price_table_id']);
         $stmt->bindParam(':id', $data['id']);
         return $stmt->execute();
     }

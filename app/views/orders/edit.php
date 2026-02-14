@@ -180,9 +180,14 @@
                                     <label class="form-label small fw-bold text-muted">Produto</label>
                                     <select class="form-select form-select-sm" name="product_id" id="productSelectEdit" required>
                                         <option value="">Selecione um produto...</option>
-                                        <?php foreach ($products as $prod): ?>
-                                        <option value="<?= $prod['id'] ?>" data-price="<?= $prod['price'] ?>">
-                                            <?= htmlspecialchars($prod['name']) ?> — R$ <?= number_format($prod['price'], 2, ',', '.') ?>
+                                        <?php foreach ($products as $prod): 
+                                            $displayPrice = isset($customerPrices[$prod['id']]) ? $customerPrices[$prod['id']] : $prod['price'];
+                                        ?>
+                                        <option value="<?= $prod['id'] ?>" data-price="<?= $displayPrice ?>" data-original-price="<?= $prod['price'] ?>">
+                                            <?= htmlspecialchars($prod['name']) ?> — R$ <?= number_format($displayPrice, 2, ',', '.') ?>
+                                            <?php if (isset($customerPrices[$prod['id']]) && $customerPrices[$prod['id']] != $prod['price']): ?>
+                                            (base: R$ <?= number_format($prod['price'], 2, ',', '.') ?>)
+                                            <?php endif; ?>
                                         </option>
                                         <?php endforeach; ?>
                                     </select>

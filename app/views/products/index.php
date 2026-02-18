@@ -77,6 +77,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    <?php if(isset($_GET['status'])): ?>
+    if (window.history.replaceState) { const url = new URL(window.location); url.searchParams.delete('status'); window.history.replaceState({}, '', url); }
+    <?php endif; ?>
     <?php if(isset($_GET['status']) && $_GET['status'] == 'success'): ?>
     Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Produto salvo com sucesso!', timer: 2000, showConfirmButton: false });
     <?php endif; ?>

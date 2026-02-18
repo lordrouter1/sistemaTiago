@@ -13,6 +13,51 @@
     <link rel="stylesheet" href="/sistemaTiago/assets/css/style.css">
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        /* ── Estilos para os dropdowns do menu ── */
+        .navbar .dropdown-menu {
+            background: var(--primary-color, #2c3e50);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.5rem;
+            padding: 0.35rem 0;
+            margin-top: 0.25rem;
+            min-width: 200px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+        .navbar .dropdown-item {
+            color: rgba(255,255,255,0.85);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            transition: background 0.15s, padding-left 0.15s;
+        }
+        .navbar .dropdown-item:hover,
+        .navbar .dropdown-item:focus {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            padding-left: 1.25rem;
+        }
+        .navbar .dropdown-item.active,
+        .navbar .dropdown-item:active {
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+        }
+        .navbar .dropdown-item i {
+            width: 20px;
+            text-align: center;
+            opacity: 0.7;
+        }
+        .navbar .dropdown-item:hover i {
+            opacity: 1;
+        }
+        .navbar .dropdown-divider {
+            border-color: rgba(255,255,255,0.1);
+        }
+        .navbar .dropdown-toggle::after {
+            font-size: 0.65rem;
+            vertical-align: 0.15em;
+            margin-left: 0.35rem;
+        }
+    </style>
 </head>
 <body>
 
@@ -20,12 +65,23 @@
     $currentPage = isset($_GET['page']) ? $_GET['page'] : 'home';
     $menuPages = require 'app/config/menu.php';
 
+    // Achata o menu para ter uma lista simples (para permissões)
+    $flatMenuPages = [];
+    foreach ($menuPages as $key => $info) {
+        if (isset($info['children'])) {
+            foreach ($info['children'] as $childKey => $childInfo) {
+                $flatMenuPages[$childKey] = $childInfo;
+            }
+        } else {
+            $flatMenuPages[$key] = $info;
+        }
+    }
+
     // Carrega as permissões do usuário logado para filtrar o menu
     $userPermissions = [];
     $isAdmin = (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin');
     
     if (!$isAdmin && isset($_SESSION['user_id'])) {
-        // Busca as permissões do grupo do usuário
         $dbMenu = (new Database())->getConnection();
         if (!empty($_SESSION['group_id'])) {
             $stmtMenu = $dbMenu->prepare("SELECT page_name FROM group_permissions WHERE group_id = :gid");
@@ -37,21 +93,30 @@
     
     /**
      * Verifica se o usuário pode ver determinada página no menu.
-     * - Admin vê tudo.
-     * - Páginas sem controle de permissão (permission=false) são visíveis para todos.
-     * - Páginas com controle de permissão só aparecem se o usuário tiver acesso.
      */
     function canShowInMenu($pageKey, $pageInfo, $isAdmin, $userPermissions) {
-        // Páginas sem controle de permissão são visíveis para todos
-        if (empty($pageInfo['permission'])) {
-            return true;
-        }
-        // Admin vê tudo
-        if ($isAdmin) {
-            return true;
-        }
-        // Verifica se o usuário tem permissão
+        if (empty($pageInfo['permission'])) return true;
+        if ($isAdmin) return true;
         return in_array($pageKey, $userPermissions);
+    }
+
+    /**
+     * Verifica se pelo menos um filho de um submenu é visível para o usuário.
+     */
+    function hasVisibleChild($children, $isAdmin, $userPermissions) {
+        foreach ($children as $childKey => $childInfo) {
+            if (!empty($childInfo['menu']) && canShowInMenu($childKey, $childInfo, $isAdmin, $userPermissions)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Verifica se a página atual está dentro de um submenu (para destacar o dropdown).
+     */
+    function isChildActive($children, $currentPage) {
+        return isset($children[$currentPage]);
     }
 ?>
 
@@ -65,17 +130,43 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
 
-      <!-- ── Menu Principal (gerado automaticamente de config/menu.php) ── -->
+      <!-- ── Menu Principal (com suporte a submenus) ── -->
       <ul class="navbar-nav">
         <?php foreach ($menuPages as $pageKey => $pageInfo): ?>
-          <?php if (!$pageInfo['menu']) continue; ?>
-          <?php if (!canShowInMenu($pageKey, $pageInfo, $isAdmin, $userPermissions)) continue; ?>
-          <li class="nav-item">
-            <a class="nav-link <?= ($currentPage == $pageKey) ? 'active' : '' ?>"
-               href="/sistemaTiago/<?= $pageKey === 'home' ? '' : '?page=' . $pageKey ?>">
-              <i class="<?= $pageInfo['icon'] ?> me-1"></i><?= $pageInfo['label'] ?>
-            </a>
-          </li>
+          <?php if (empty($pageInfo['menu'])) continue; ?>
+
+          <?php if (isset($pageInfo['children'])): ?>
+            <?php // ── DROPDOWN (submenu) ── ?>
+            <?php if (!hasVisibleChild($pageInfo['children'], $isAdmin, $userPermissions)) continue; ?>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle <?= isChildActive($pageInfo['children'], $currentPage) ? 'active' : '' ?>"
+                 href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="<?= $pageInfo['icon'] ?> me-1"></i><?= $pageInfo['label'] ?>
+              </a>
+              <ul class="dropdown-menu">
+                <?php foreach ($pageInfo['children'] as $childKey => $childInfo): ?>
+                  <?php if (empty($childInfo['menu'])) continue; ?>
+                  <?php if (!canShowInMenu($childKey, $childInfo, $isAdmin, $userPermissions)) continue; ?>
+                  <li>
+                    <a class="dropdown-item <?= ($currentPage == $childKey) ? 'active' : '' ?>"
+                       href="/sistemaTiago/?page=<?= $childKey ?>">
+                      <i class="<?= $childInfo['icon'] ?> me-2"></i><?= $childInfo['label'] ?>
+                    </a>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            </li>
+          <?php else: ?>
+            <?php // ── LINK DIRETO (sem submenu) ── ?>
+            <?php if (!canShowInMenu($pageKey, $pageInfo, $isAdmin, $userPermissions)) continue; ?>
+            <li class="nav-item">
+              <a class="nav-link <?= ($currentPage == $pageKey) ? 'active' : '' ?>"
+                 href="/sistemaTiago/<?= $pageKey === 'home' ? '' : '?page=' . $pageKey ?>">
+                <i class="<?= $pageInfo['icon'] ?> me-1"></i><?= $pageInfo['label'] ?>
+              </a>
+            </li>
+          <?php endif; ?>
+
         <?php endforeach; ?>
       </ul>
 
@@ -106,7 +197,7 @@
           <a href="/sistemaTiago/?page=users"
              class="nav-link btn btn-sm px-3 me-1 border-0 <?= ($currentPage == 'users') ? 'active' : 'text-white' ?>"
              title="Gestão de Usuários">
-            <i class="fas fa-cog"></i>
+            <i class="fas fa-users-cog"></i>
           </a>
         </li>
         <?php endif; ?>

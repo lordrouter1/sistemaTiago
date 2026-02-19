@@ -261,6 +261,8 @@ switch ($page) {
             $controller->deleteItemLog();
         } elseif ($action == 'productionBoard') {
             $controller->productionBoard();
+        } elseif ($action == 'printProductionOrder') {
+            $controller->printProductionOrder();
         } else {
             $controller->index();
         }

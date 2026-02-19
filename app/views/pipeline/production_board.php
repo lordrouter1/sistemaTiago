@@ -31,6 +31,33 @@ $activeSectorId = $_GET['sector'] ?? ($sectorList[0]['id'] ?? '');
         </div>
     </div>
 
+    <!-- Barra de busca -->
+    <div class="card border-0 shadow-sm mb-4" id="searchBarCard">
+        <div class="card-body p-3">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-8 col-lg-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" class="form-control" id="boardSearchInput" 
+                               placeholder="Buscar por produto, pedido (#0001), cliente ou código de barras..." 
+                               autocomplete="off">
+                        <button class="btn btn-outline-secondary d-none" type="button" id="boardSearchClear" title="Limpar busca">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-3 text-end">
+                    <span class="text-muted small" id="boardSearchCount"></span>
+                </div>
+            </div>
+            <!-- Resultados da busca (todos os setores) -->
+            <div id="boardSearchResults" class="mt-3 d-none">
+                <h6 class="fw-bold text-primary mb-2"><i class="fas fa-filter me-1"></i>Resultados da busca</h6>
+                <div id="boardSearchResultsContent"></div>
+            </div>
+        </div>
+    </div>
+
     <?php if (empty($boardData)): ?>
     <!-- Sem setores / sem permissão -->
     <div class="text-center py-5">
@@ -430,6 +457,36 @@ $activeSectorId = $_GET['sector'] ?? ($sectorList[0]['id'] ?? '');
 
 <script>
 // ═══════════════════════════════════════════════════════
+// ═══ DADOS DE BUSCA — Todos os itens por setor     ═══
+// ═══════════════════════════════════════════════════════
+var boardSearchData = <?php
+    $searchItems = [];
+    foreach ($boardData as $sid => $sector) {
+        foreach ($sector['items'] as $it) {
+            $barcodeVal = 'P' . str_pad($it['order_id'], 4, '0', STR_PAD_LEFT) . '-I' . str_pad($it['order_item_id'], 4, '0', STR_PAD_LEFT);
+            $orderCode = '#' . str_pad($it['order_id'], 4, '0', STR_PAD_LEFT);
+            $searchItems[] = [
+                'order_id'       => $it['order_id'],
+                'order_code'     => $orderCode,
+                'order_item_id'  => $it['order_item_id'],
+                'product_name'   => $it['product_name'],
+                'customer_name'  => $it['customer_name'] ?? '',
+                'quantity'       => $it['quantity'],
+                'priority'       => $it['priority'] ?? 'normal',
+                'status'         => $it['status'],
+                'barcode'        => $barcodeVal,
+                'sector_id'      => $sid,
+                'sector_name'    => $sector['name'],
+                'sector_color'   => $sector['color'] ?: '#666',
+                'sector_icon'    => $sector['icon'] ?: 'fas fa-cog',
+                'deadline'       => $it['deadline'] ?? null,
+            ];
+        }
+    }
+    echo json_encode($searchItems, JSON_UNESCAPED_UNICODE);
+?>;
+
+// ═══════════════════════════════════════════════════════
 // ═══ PAINEL DE PRODUÇÃO — Ações AJAX por Setor     ═══
 // ═══════════════════════════════════════════════════════
 
@@ -450,6 +507,152 @@ document.addEventListener('DOMContentLoaded', function() {
             window.history.replaceState({}, '', url.toString());
         });
     });
+
+    // ═══════════════════════════════════════════
+    // ═══ BUSCA NO PAINEL DE PRODUÇÃO        ═══
+    // ═══════════════════════════════════════════
+    var searchInput = document.getElementById('boardSearchInput');
+    var searchClear = document.getElementById('boardSearchClear');
+    var searchCount = document.getElementById('boardSearchCount');
+    var searchResults = document.getElementById('boardSearchResults');
+    var searchContent = document.getElementById('boardSearchResultsContent');
+    var normalContent = document.querySelectorAll('#sectorTabs, #sectorTabContent, .row.g-3.mb-4');
+    var sectorTabs = document.getElementById('sectorTabs');
+    var sectorTabContent = document.getElementById('sectorTabContent');
+    var statsRow = document.querySelector('.row.g-3.mb-4');
+
+    var searchDebounce = null;
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(function() { performBoardSearch(); }, 250);
+        });
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                performBoardSearch();
+            }
+        });
+    }
+    if (searchClear) {
+        searchClear.addEventListener('click', function() {
+            searchInput.value = '';
+            performBoardSearch();
+            searchInput.focus();
+        });
+    }
+
+    function performBoardSearch() {
+        var query = (searchInput.value || '').trim().toLowerCase();
+        
+        if (!query) {
+            // Mostrar conteúdo normal, esconder resultados de busca
+            searchClear.classList.add('d-none');
+            searchCount.textContent = '';
+            searchResults.classList.add('d-none');
+            searchContent.innerHTML = '';
+            if (sectorTabs) sectorTabs.style.display = '';
+            if (sectorTabContent) sectorTabContent.style.display = '';
+            if (statsRow) statsRow.style.display = '';
+            return;
+        }
+
+        searchClear.classList.remove('d-none');
+
+        // Filtrar itens
+        var matches = boardSearchData.filter(function(item) {
+            var searchable = [
+                item.product_name,
+                item.customer_name,
+                item.order_code,
+                String(item.order_id),
+                item.barcode,
+                item.sector_name,
+                item.status === 'pendente' ? 'pendente' : 'concluido'
+            ].join(' ').toLowerCase();
+            return searchable.indexOf(query) !== -1;
+        });
+
+        // Esconder conteúdo normal, mostrar resultados
+        if (sectorTabs) sectorTabs.style.display = 'none';
+        if (sectorTabContent) sectorTabContent.style.display = 'none';
+        if (statsRow) statsRow.style.display = 'none';
+        searchResults.classList.remove('d-none');
+
+        searchCount.innerHTML = '<i class="fas fa-search me-1"></i>' + matches.length + ' resultado(s) para "<strong>' + escapeHtml(searchInput.value.trim()) + '</strong>"';
+
+        if (matches.length === 0) {
+            searchContent.innerHTML = '<div class="text-center text-muted py-4">' +
+                '<i class="fas fa-search d-block mb-2" style="font-size:2rem;opacity:0.4;"></i>' +
+                '<p class="mb-0">Nenhum produto ou pedido encontrado para "<strong>' + escapeHtml(searchInput.value.trim()) + '</strong>"</p></div>';
+            return;
+        }
+
+        // Agrupar resultados por setor para exibição organizada
+        var bySector = {};
+        matches.forEach(function(item) {
+            if (!bySector[item.sector_id]) {
+                bySector[item.sector_id] = {
+                    name: item.sector_name,
+                    color: item.sector_color,
+                    icon: item.sector_icon,
+                    items: []
+                };
+            }
+            bySector[item.sector_id].items.push(item);
+        });
+
+        var html = '';
+        for (var sid in bySector) {
+            var sec = bySector[sid];
+            html += '<div class="mb-3">';
+            html += '<div class="d-flex align-items-center gap-2 mb-2">';
+            html += '<span class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;background:' + escapeHtml(sec.color) + ';color:#fff;font-size:0.75rem;">';
+            html += '<i class="' + escapeHtml(sec.icon) + '"></i></span>';
+            html += '<span class="fw-bold small">' + escapeHtml(sec.name) + '</span>';
+            html += '<span class="badge bg-secondary rounded-pill" style="font-size:0.65rem;">' + sec.items.length + '</span>';
+            html += '</div>';
+            html += '<div class="row g-2">';
+            sec.items.forEach(function(item) {
+                var prioColors = { baixa: 'secondary', normal: 'primary', alta: 'warning', urgente: 'danger' };
+                var prioColor = prioColors[item.priority] || 'primary';
+                var statusBadge = item.status === 'concluido'
+                    ? '<span class="badge bg-success" style="font-size:0.6rem;"><i class="fas fa-check me-1"></i>Concluído</span>'
+                    : '<span class="badge bg-secondary" style="font-size:0.6rem;"><i class="fas fa-hourglass-half me-1"></i>Pendente</span>';
+                
+                html += '<div class="col-12 col-md-6 col-xl-4">';
+                html += '<div class="card border-start border-3 h-100" style="border-color:' + escapeHtml(sec.color) + ' !important;">';
+                html += '<div class="card-body p-2">';
+                // Header
+                html += '<div class="d-flex justify-content-between align-items-start mb-1">';
+                html += '<a href="/sistemaTiago/?page=pipeline&action=detail&id=' + item.order_id + '" class="text-decoration-none fw-bold small">';
+                html += '<i class="fas fa-file-alt me-1 text-primary"></i>' + escapeHtml(item.order_code) + '</a>';
+                html += statusBadge;
+                html += '</div>';
+                // Product name
+                html += '<h6 class="mb-1 fw-bold text-truncate small" title="' + escapeHtml(item.product_name) + '">' + escapeHtml(item.product_name) + '</h6>';
+                // Details
+                html += '<div class="small text-muted">';
+                if (item.customer_name) html += '<span class="me-2"><i class="fas fa-user me-1"></i>' + escapeHtml(item.customer_name) + '</span>';
+                html += '<span class="me-2"><i class="fas fa-cubes me-1"></i>Qtd: ' + item.quantity + '</span>';
+                html += '</div>';
+                // Sector badge
+                html += '<div class="mt-1">';
+                html += '<span class="badge rounded-pill" style="background:' + escapeHtml(sec.color) + ';font-size:0.6rem;">';
+                html += '<i class="' + escapeHtml(sec.icon) + ' me-1"></i>' + escapeHtml(sec.name) + '</span>';
+                if (item.priority && item.priority !== 'normal') {
+                    html += ' <span class="badge bg-' + prioColor + ' rounded-pill" style="font-size:0.6rem;">' + item.priority.charAt(0).toUpperCase() + item.priority.slice(1) + '</span>';
+                }
+                html += '</div>';
+                // Barcode info
+                html += '<div class="text-muted mt-1" style="font-size:0.6rem;"><i class="fas fa-barcode me-1"></i>' + escapeHtml(item.barcode) + '</div>';
+                html += '</div></div></div>';
+            });
+            html += '</div></div>';
+        }
+
+        searchContent.innerHTML = html;
+    }
 
     // Botões de ação (Concluir / Retroceder)
     document.querySelectorAll('.btn-board-action').forEach(function(btn) {

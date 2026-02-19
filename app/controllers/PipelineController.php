@@ -454,4 +454,39 @@ class PipelineController {
         echo json_encode(['success' => $result]);
         exit;
     }
+
+    /**
+     * Imprimir Ordem de Produção
+     */
+    public function printProductionOrder() {
+        if (!isset($_GET['id'])) {
+            header('Location: /sistemaTiago/?page=pipeline');
+            exit;
+        }
+
+        $order = $this->pipelineModel->getOrderDetail($_GET['id']);
+        if (!$order) {
+            header('Location: /sistemaTiago/?page=pipeline');
+            exit;
+        }
+
+        // Inicializar setores se ainda não existem
+        $this->pipelineModel->initOrderProductionSectors($_GET['id']);
+
+        // Carregar setores de produção do pedido
+        $orderProductionSectors = $this->pipelineModel->getOrderProductionSectors($_GET['id']);
+
+        // Carregar itens do pedido
+        $orderModel = new Order($this->db);
+        $orderItems = $orderModel->getItems($_GET['id']);
+
+        // Carregar dados da empresa
+        require_once 'app/models/CompanySettings.php';
+        $companySettings = new CompanySettings($this->db);
+        $company = $companySettings->getAll();
+        $companyAddress = $companySettings->getFormattedAddress();
+
+        // Renderizar a view de impressão (sem header/footer do sistema)
+        require 'app/views/pipeline/print_production_order.php';
+    }
 }

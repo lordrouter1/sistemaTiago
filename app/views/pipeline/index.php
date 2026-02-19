@@ -237,11 +237,6 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <?php if ($stageKey === 'producao'): ?>
-                                    <a href="/sistemaTiago/?page=pipeline&action=printProductionOrder&id=<?= $order['id'] ?>" 
-                                       target="_blank"
-                                       class="btn btn-sm btn-outline-warning flex-fill py-0" style="font-size:0.7rem;" title="Imprimir Ordem de Produção">
-                                        <i class="fas fa-print"></i>
-                                    </a>
                                     <a href="/sistemaTiago/?page=production_board" 
                                        class="btn btn-sm btn-outline-success flex-fill py-0" style="font-size:0.7rem;" title="Painel de Produção">
                                         <i class="fas fa-tasks"></i> Produção

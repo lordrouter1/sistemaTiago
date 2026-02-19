@@ -109,6 +109,26 @@ class PipelineController {
             $currentPriceTableId = $customerData['price_table_id'] ?? null;
         }
 
+        // Carregar setores de produção do pedido e permissões do usuário
+        // Carrega sempre (inclusive para concluido/cancelado, para visualização)
+        $orderProductionSectors = [];
+        $userAllowedSectorIds = [];
+        $isProduction = ($order['pipeline_stage'] === 'producao');
+        if ($isProduction) {
+            // Garantir que setores existam (para pedidos que já estavam em produção antes do recurso)
+            $this->pipelineModel->initOrderProductionSectors($_GET['id']);
+        }
+        // Carregar setores mesmo em concluido/cancelado para exibição read-only
+        $orderProductionSectors = $this->pipelineModel->getOrderProductionSectors($_GET['id']);
+        $userAllowedSectorIds = $userModel->getAllowedSectorIds($_SESSION['user_id'] ?? 0);
+
+        // Carregar logs dos itens do pedido
+        require_once 'app/models/OrderItemLog.php';
+        $logModel = new OrderItemLog($this->db);
+        $logModel->createTableIfNotExists();
+        $orderItemLogs = $logModel->getLogsByOrder($_GET['id']);
+        $orderItemLogCounts = $logModel->countLogsByOrderGrouped($_GET['id']);
+
         require 'app/views/layout/header.php';
         require 'app/views/pipeline/detail.php';
         require 'app/views/layout/footer.php';
@@ -128,6 +148,8 @@ class PipelineController {
                 'deadline' => !empty($_POST['deadline']) ? $_POST['deadline'] : null,
                 'payment_status' => $_POST['payment_status'] ?? 'pendente',
                 'payment_method' => $_POST['payment_method'] ?? null,
+                'installments' => !empty($_POST['installments']) ? (int)$_POST['installments'] : null,
+                'installment_value' => !empty($_POST['installment_value']) ? (float)$_POST['installment_value'] : null,
                 'discount' => $_POST['discount'] ?? 0,
                 'shipping_type' => $_POST['shipping_type'] ?? 'retirada',
                 'shipping_address' => $_POST['shipping_address'] ?? '',
@@ -225,7 +247,7 @@ class PipelineController {
             $description = $_POST['extra_description'] ?? '';
             $amount = (float)($_POST['extra_amount'] ?? 0);
 
-            if ($orderId && $description && $amount > 0) {
+            if ($orderId && $description && $amount != 0) {
                 $orderModel = new Order($this->db);
                 $orderModel->addExtraCost($orderId, $description, $amount);
             }
@@ -250,7 +272,6 @@ class PipelineController {
         header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=extra_deleted');
         exit;
     }
-<<<<<<< HEAD
 
     /**
      * Mover setor de produção de um item do pedido (AJAX)
@@ -464,6 +485,4 @@ class PipelineController {
 
         require 'app/views/pipeline/print_production_order.php';
     }
-=======
->>>>>>> parent of efe3602 (beta 0.6)
 }

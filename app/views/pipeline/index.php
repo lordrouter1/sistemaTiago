@@ -77,11 +77,35 @@
     </div>
 
     <!-- Pipeline Kanban Board -->
+    <?php
+    // Filtra etapas por permissão do grupo do usuário
+    $isAdminPipeline = (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin');
+    $allowedStages = [];
+    if (!$isAdminPipeline && isset($_SESSION['user_id'])) {
+        $dbPerm = (new Database())->getConnection();
+        if (!empty($_SESSION['group_id'])) {
+            $stmtPerm = $dbPerm->prepare("SELECT page_name FROM group_permissions WHERE group_id = :gid AND page_name LIKE 'stage_%'");
+            $stmtPerm->bindParam(':gid', $_SESSION['group_id']);
+            $stmtPerm->execute();
+            $stagePerms = $stmtPerm->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($stagePerms as $sp) {
+                $allowedStages[] = str_replace('stage_', '', $sp);
+            }
+        }
+        // Se nenhuma etapa configurada, mostra todas (retrocompatibilidade)
+        if (empty($allowedStages)) {
+            $allowedStages = array_keys($stages);
+        }
+    } else {
+        $allowedStages = array_keys($stages);
+    }
+    ?>
     <div class="pipeline-board-wrapper">
         <div class="pipeline-board d-flex gap-3 pb-3" style="overflow-x: auto; min-height: 500px;">
             <?php foreach ($stages as $stageKey => $stageInfo): ?>
             <?php 
-                if ($stageKey === 'concluido') continue; // Concluído não aparece no kanban
+                if ($stageKey === 'concluido' || $stageKey === 'cancelado') continue; // Concluído e Cancelado não aparecem no kanban
+                if (!in_array($stageKey, $allowedStages)) continue; // Filtra por permissão
                 $stageOrders = $ordersByStage[$stageKey] ?? [];
                 $stageGoal = isset($goals[$stageKey]) ? (int)$goals[$stageKey]['max_hours'] : 24;
             ?>
@@ -212,7 +236,6 @@
                                        class="btn btn-sm btn-outline-primary flex-fill py-0" style="font-size:0.7rem;" title="Detalhes">
                                         <i class="fas fa-eye"></i>
                                     </a>
-<<<<<<< HEAD
                                     <?php if ($stageKey === 'producao'): ?>
                                     <a href="/sistemaTiago/?page=pipeline&action=printProductionOrder&id=<?= $order['id'] ?>" 
                                        target="_blank"
@@ -224,8 +247,6 @@
                                         <i class="fas fa-tasks"></i> Produção
                                     </a>
                                     <?php endif; ?>
-=======
->>>>>>> parent of efe3602 (beta 0.6)
                                     <?php
                                         // Determinar próxima etapa
                                         $stageKeys = array_keys($stages);
@@ -240,6 +261,12 @@
                                         <i class="fas fa-arrow-right"></i> Avançar
                                     </a>
                                     <?php endif; ?>
+                                    <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=cancelado" 
+                                       class="btn btn-sm btn-outline-danger py-0 btn-cancel-order" style="font-size:0.7rem;" 
+                                       title="Cancelar pedido"
+                                       data-order="<?= $order['id'] ?>">
+                                        <i class="fas fa-ban"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -311,6 +338,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    <?php if(isset($_GET['status'])): ?>
+    if (window.history.replaceState) { const url = new URL(window.location); url.searchParams.delete('status'); window.history.replaceState({}, '', url); }
+    <?php endif; ?>
     <?php if(isset($_GET['status']) && $_GET['status'] == 'moved'): ?>
     Swal.fire({ icon: 'success', title: 'Pedido movido!', text: 'O pedido foi movido para a próxima etapa.', timer: 2000, showConfirmButton: false });
     <?php endif; ?>
@@ -352,6 +382,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButtonText: '<i class="fas fa-arrow-right me-1"></i> Avançar',
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#27ae60'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = href;
+                }
+            });
+        });
+    });
+
+    // Confirmação antes de cancelar pedido
+    document.querySelectorAll('.btn-cancel-order').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.href;
+            const orderId = this.dataset.order;
+            Swal.fire({
+                title: 'Cancelar pedido?',
+                html: `Tem certeza que deseja cancelar o pedido <strong>#${orderId}</strong>?<br><small class="text-muted">O pedido será movido para a etapa "Cancelado".</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-ban me-1"></i> Sim, Cancelar',
+                cancelButtonText: 'Não',
+                confirmButtonColor: '#e74c3c'
             }).then((result) => {
                 if (result.isConfirmed) {
                     window.location.href = href;

@@ -1,0 +1,147 @@
+<?php
+class ProductionSector {
+    private $conn;
+    private $table = 'production_sectors';
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    public function readAll($onlyActive = false) {
+        $where = $onlyActive ? " WHERE is_active = 1" : "";
+        $stmt = $this->conn->query("SELECT * FROM {$this->table}{$where} ORDER BY sort_order ASC, name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function readOne($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM {$this->table} WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function create($data) {
+        $stmt = $this->conn->prepare("INSERT INTO {$this->table} (name, description, icon, color, sort_order) VALUES (:name, :desc, :icon, :color, :sort)");
+        $stmt->execute([
+            ':name'  => $data['name'],
+            ':desc'  => $data['description'] ?? '',
+            ':icon'  => $data['icon'] ?? 'fas fa-cogs',
+            ':color' => $data['color'] ?? '#6c757d',
+            ':sort'  => $data['sort_order'] ?? 0,
+        ]);
+        return $this->conn->lastInsertId();
+    }
+
+    public function update($data) {
+        $stmt = $this->conn->prepare("UPDATE {$this->table} SET name = :name, description = :desc, icon = :icon, color = :color, sort_order = :sort, is_active = :active WHERE id = :id");
+        return $stmt->execute([
+            ':name'   => $data['name'],
+            ':desc'   => $data['description'] ?? '',
+            ':icon'   => $data['icon'] ?? 'fas fa-cogs',
+            ':color'  => $data['color'] ?? '#6c757d',
+            ':sort'   => $data['sort_order'] ?? 0,
+            ':active' => $data['is_active'] ?? 1,
+            ':id'     => $data['id'],
+        ]);
+    }
+
+    public function delete($id) {
+        $stmt = $this->conn->prepare("DELETE FROM {$this->table} WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
+    }
+
+    /** Retorna os setores vinculados a um produto */
+    public function getProductSectors($productId) {
+        $stmt = $this->conn->prepare("SELECT ps.*, s.name as sector_name, s.icon, s.color 
+            FROM product_sectors ps 
+            JOIN production_sectors s ON ps.sector_id = s.id 
+            WHERE ps.product_id = :pid 
+            ORDER BY ps.sort_order ASC");
+        $stmt->execute([':pid' => $productId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Salva os setores de um produto (replace) */
+    public function saveProductSectors($productId, $sectorIds) {
+        $this->conn->prepare("DELETE FROM product_sectors WHERE product_id = :pid")->execute([':pid' => $productId]);
+        if (!empty($sectorIds)) {
+            $stmt = $this->conn->prepare("INSERT INTO product_sectors (product_id, sector_id, sort_order) VALUES (:pid, :sid, :sort)");
+            foreach ($sectorIds as $i => $sid) {
+                $stmt->execute([':pid' => $productId, ':sid' => $sid, ':sort' => $i]);
+            }
+        }
+    }
+
+    /** Retorna os setores vinculados a uma categoria */
+    public function getCategorySectors($categoryId) {
+        $stmt = $this->conn->prepare("SELECT cs.*, s.name as sector_name, s.icon, s.color 
+            FROM category_sectors cs 
+            JOIN production_sectors s ON cs.sector_id = s.id 
+            WHERE cs.category_id = :cid 
+            ORDER BY cs.sort_order ASC");
+        $stmt->execute([':cid' => $categoryId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Salva os setores de uma categoria (replace) */
+    public function saveCategorySectors($categoryId, $sectorIds) {
+        $this->conn->prepare("DELETE FROM category_sectors WHERE category_id = :cid")->execute([':cid' => $categoryId]);
+        if (!empty($sectorIds)) {
+            $stmt = $this->conn->prepare("INSERT INTO category_sectors (category_id, sector_id, sort_order) VALUES (:cid, :sid, :sort)");
+            foreach ($sectorIds as $i => $sid) {
+                $stmt->execute([':cid' => $categoryId, ':sid' => $sid, ':sort' => $i]);
+            }
+        }
+    }
+
+    /** Retorna os setores vinculados a uma subcategoria */
+    public function getSubcategorySectors($subcategoryId) {
+        $stmt = $this->conn->prepare("SELECT ss.*, s.name as sector_name, s.icon, s.color 
+            FROM subcategory_sectors ss 
+            JOIN production_sectors s ON ss.sector_id = s.id 
+            WHERE ss.subcategory_id = :sid 
+            ORDER BY ss.sort_order ASC");
+        $stmt->execute([':sid' => $subcategoryId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Salva os setores de uma subcategoria (replace) */
+    public function saveSubcategorySectors($subcategoryId, $sectorIds) {
+        $this->conn->prepare("DELETE FROM subcategory_sectors WHERE subcategory_id = :sid")->execute([':sid' => $subcategoryId]);
+        if (!empty($sectorIds)) {
+            $stmt = $this->conn->prepare("INSERT INTO subcategory_sectors (subcategory_id, sector_id, sort_order) VALUES (:sid, :secid, :sort)");
+            foreach ($sectorIds as $i => $secid) {
+                $stmt->execute([':sid' => $subcategoryId, ':secid' => $secid, ':sort' => $i]);
+            }
+        }
+    }
+
+    /**
+     * Retorna os setores efetivos de um produto, com fallback:
+     * produto > subcategoria > categoria
+     */
+    public function getEffectiveSectors($productId, $subcategoryId = null, $categoryId = null) {
+        // 1. Tenta setores do produto
+        $sectors = $this->getProductSectors($productId);
+        if (!empty($sectors)) {
+            return ['source' => 'product', 'sectors' => $sectors];
+        }
+
+        // 2. Tenta setores da subcategoria
+        if ($subcategoryId) {
+            $sectors = $this->getSubcategorySectors($subcategoryId);
+            if (!empty($sectors)) {
+                return ['source' => 'subcategory', 'sectors' => $sectors];
+            }
+        }
+
+        // 3. Tenta setores da categoria
+        if ($categoryId) {
+            $sectors = $this->getCategorySectors($categoryId);
+            if (!empty($sectors)) {
+                return ['source' => 'category', 'sectors' => $sectors];
+            }
+        }
+
+        return ['source' => null, 'sectors' => []];
+    }
+}

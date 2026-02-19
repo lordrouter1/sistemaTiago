@@ -33,8 +33,8 @@ $prioIcons  = ['urgente'=>'🔴','alta'=>'🟡','normal'=>'🔵','baixa'=>'🟢'
             <a href="/sistemaTiago/?page=orders&action=create" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i>Novo Pedido
             </a>
-            <a href="/sistemaTiago/?page=orders" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Voltar
+            <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-stream me-1"></i>Pipeline
             </a>
         </div>
     </div>
@@ -44,11 +44,11 @@ $prioIcons  = ['urgente'=>'🔴','alta'=>'🟡','normal'=>'🔵','baixa'=>'🟢'
         <div class="col-lg-8">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <a href="/sistemaTiago/?page=orders&action=agenda&month=<?= $prevMonth ?>&year=<?= $prevYear ?>" class="btn btn-outline-secondary btn-sm">
+                    <a href="/sistemaTiago/?page=agenda&month=<?= $prevMonth ?>&year=<?= $prevYear ?>" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-chevron-left me-1"></i>Anterior
                     </a>
                     <h4 class="mb-0 fw-bold text-primary"><?= $monthNames[$agendaMonth] ?> <?= $agendaYear ?></h4>
-                    <a href="/sistemaTiago/?page=orders&action=agenda&month=<?= $nextMonth ?>&year=<?= $nextYear ?>" class="btn btn-outline-secondary btn-sm">
+                    <a href="/sistemaTiago/?page=agenda&month=<?= $nextMonth ?>&year=<?= $nextYear ?>" class="btn btn-outline-secondary btn-sm">
                         Próximo<i class="fas fa-chevron-right ms-1"></i>
                     </a>
                 </div>

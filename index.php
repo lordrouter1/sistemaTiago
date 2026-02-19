@@ -9,6 +9,24 @@ require_once 'app/models/User.php';
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 $action = isset($_GET['action']) ? $_GET['action'] : 'index';
 
+// ── Catálogo público: NÃO exige autenticação ──
+if ($page === 'catalog') {
+    require_once 'app/controllers/CatalogController.php';
+    $controller = new CatalogController();
+    if ($action === 'addToCart') {
+        $controller->addToCart();
+    } elseif ($action === 'removeFromCart') {
+        $controller->removeFromCart();
+    } elseif ($action === 'updateCartItem') {
+        $controller->updateCartItem();
+    } elseif ($action === 'getCart') {
+        $controller->getCart();
+    } else {
+        $controller->index();
+    }
+    exit;
+}
+
 // Authentication Check
 if (!isset($_SESSION['user_id'])) {
     if ($page !== 'login') {
@@ -24,8 +42,19 @@ if (!isset($_SESSION['user_id'])) {
 
 // Permission Check — usa o registro centralizado de menu.php
 // Páginas com 'permission' => false são acessíveis por todos os logados
+// Achata submenus para encontrar a config de qualquer página (inclusive filhas)
 $menuConfig = require 'app/config/menu.php';
-$needsPermission = isset($menuConfig[$page]) && !empty($menuConfig[$page]['permission']);
+$flatMenuConfig = [];
+foreach ($menuConfig as $key => $info) {
+    if (isset($info['children'])) {
+        foreach ($info['children'] as $childKey => $childInfo) {
+            $flatMenuConfig[$childKey] = $childInfo;
+        }
+    } else {
+        $flatMenuConfig[$key] = $info;
+    }
+}
+$needsPermission = isset($flatMenuConfig[$page]) && !empty($flatMenuConfig[$page]['permission']);
 
 if (isset($_SESSION['user_id']) && $page !== 'login' && $action !== 'logout' && $action !== 'getSubcategories' && $needsPermission) {
     $db = (new Database())->getConnection();
@@ -95,6 +124,42 @@ switch ($page) {
         }
         break;
 
+    // ── Categorias e Subcategorias ──
+    case 'categories':
+        require_once 'app/controllers/CategoryController.php';
+        $controller = new CategoryController();
+        if ($action == 'store') {
+            $controller->store();
+        } elseif ($action == 'update') {
+            $controller->update();
+        } elseif ($action == 'delete') {
+            $controller->delete();
+        } elseif ($action == 'storeSub') {
+            $controller->storeSub();
+        } elseif ($action == 'updateSub') {
+            $controller->updateSub();
+        } elseif ($action == 'deleteSub') {
+            $controller->deleteSub();
+        } else {
+            $controller->index();
+        }
+        break;
+
+    // ── Setores de Produção ──
+    case 'sectors':
+        require_once 'app/controllers/SectorController.php';
+        $controller = new SectorController();
+        if ($action == 'store') {
+            $controller->store();
+        } elseif ($action == 'update') {
+            $controller->update();
+        } elseif ($action == 'delete') {
+            $controller->delete();
+        } else {
+            $controller->index();
+        }
+        break;
+
     // ── Clientes ──
     case 'customers':
         require_once 'app/controllers/CustomerController.php';
@@ -145,6 +210,13 @@ switch ($page) {
         }
         break;
 
+    // ── Agenda de Contatos (atalho de menu — usa OrderController) ──
+    case 'agenda':
+        require_once 'app/controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->agenda();
+        break;
+
     // ── Linha de Produção (Pipeline) ──
     case 'pipeline':
         require_once 'app/controllers/PipelineController.php';
@@ -167,7 +239,6 @@ switch ($page) {
             $controller->addExtraCost();
         } elseif ($action == 'deleteExtraCost') {
             $controller->deleteExtraCost();
-<<<<<<< HEAD
         } elseif ($action == 'generateCatalogLink') {
             require_once 'app/controllers/CatalogController.php';
             $catCtrl = new CatalogController();
@@ -192,13 +263,28 @@ switch ($page) {
             $controller->printProductionOrder();
         } elseif ($action == 'productionBoard') {
             $controller->productionBoard();
-=======
->>>>>>> parent of efe3602 (beta 0.6)
         } else {
             $controller->index();
         }
         break;
     
+    // ── Painel de Produção (atalho de menu — usa PipelineController) ──
+    case 'production_board':
+        require_once 'app/controllers/PipelineController.php';
+        $controller = new PipelineController();
+        if ($action == 'moveSector') {
+            $controller->moveSector();
+        } elseif ($action == 'getItemLogs') {
+            $controller->getItemLogs();
+        } elseif ($action == 'addItemLog') {
+            $controller->addItemLog();
+        } elseif ($action == 'deleteItemLog') {
+            $controller->deleteItemLog();
+        } else {
+            $controller->productionBoard();
+        }
+        break;
+
     // ── Tabelas de Preço (atalho de menu — redireciona para settings tab=prices) ──
     case 'price_tables':
         require_once 'app/controllers/SettingsController.php';

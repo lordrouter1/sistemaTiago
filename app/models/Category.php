@@ -46,4 +46,28 @@ class Category {
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function update($id, $name) {
+        $stmt = $this->conn->prepare("UPDATE categories SET name = :name WHERE id = :id");
+        return $stmt->execute([':name' => htmlspecialchars(strip_tags($name)), ':id' => $id]);
+    }
+
+    public function delete($id) {
+        $stmt = $this->conn->prepare("DELETE FROM categories WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
+    }
+
+    public function countProducts($categoryId) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM products WHERE category_id = :id");
+        $stmt->execute([':id' => $categoryId]);
+        return $stmt->fetchColumn();
+    }
+
+    public function readAllWithCount() {
+        $stmt = $this->conn->query("SELECT c.*, 
+            (SELECT COUNT(*) FROM products WHERE category_id = c.id) as product_count,
+            (SELECT COUNT(*) FROM subcategories WHERE category_id = c.id) as sub_count
+            FROM categories c ORDER BY c.name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

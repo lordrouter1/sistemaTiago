@@ -96,5 +96,50 @@ class UserGroup {
         $stmt->bindParam(':group_id', $groupId);
         return $stmt->execute();
     }
+
+    /**
+     * Retorna os IDs de setores permitidos para um grupo.
+     * Busca permissões com prefixo 'sector_' e extrai o ID numérico.
+     */
+    public function getAllowedSectors($groupId) {
+        $perms = $this->getPermissions($groupId);
+        $sectorIds = [];
+        foreach ($perms as $p) {
+            if (str_starts_with($p, 'sector_')) {
+                $sectorIds[] = (int) str_replace('sector_', '', $p);
+            }
+        }
+        return $sectorIds;
+    }
+
+    /**
+     * Retorna as chaves de etapas do pipeline permitidas para um grupo.
+     * Busca permissões com prefixo 'stage_' e extrai a chave.
+     */
+    public function getAllowedStages($groupId) {
+        $perms = $this->getPermissions($groupId);
+        $stages = [];
+        foreach ($perms as $p) {
+            if (str_starts_with($p, 'stage_')) {
+                $stages[] = str_replace('stage_', '', $p);
+            }
+        }
+        return $stages;
+    }
+
+    /**
+     * Verifica se um grupo tem permissão para um setor específico.
+     */
+    public function hasSectorPermission($groupId, $sectorId) {
+        $allowed = $this->getAllowedSectors($groupId);
+        return empty($allowed) || in_array((int)$sectorId, $allowed);
+    }
+
+    /**
+     * Verifica se um grupo tem permissão para uma etapa específica do pipeline.
+     */
+    public function hasStagePermission($groupId, $stageKey) {
+        $allowed = $this->getAllowedStages($groupId);
+        return empty($allowed) || in_array($stageKey, $allowed);
+    }
 }
-?>

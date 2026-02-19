@@ -7,6 +7,14 @@
     </div>
 </div>
 
+<!-- Busca rápida -->
+<div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+        <input type="text" class="form-control" id="searchTable" placeholder="Buscar por nome, e-mail, telefone ou documento..." autocomplete="off">
+    </div>
+</div>
+
 <div class="table-responsive bg-white rounded shadow-sm">
     <table class="table table-hover align-middle mb-0">
         <thead class="bg-light">
@@ -87,5 +95,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Busca rápida na tabela
+    const searchInput = document.getElementById('searchTable');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            document.querySelectorAll('table tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = (!q || text.includes(q)) ? '' : 'none';
+            });
+        });
+    }
 });
 </script>

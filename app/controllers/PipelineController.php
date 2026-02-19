@@ -113,7 +113,7 @@ class PipelineController {
         // Carrega sempre (inclusive para concluido/cancelado, para visualização)
         $orderProductionSectors = [];
         $userAllowedSectorIds = [];
-        $isProduction = ($order['pipeline_stage'] === 'producao');
+        $isProduction = in_array($order['pipeline_stage'], ['producao', 'preparacao']);
         if ($isProduction) {
             // Garantir que setores existam (para pedidos que já estavam em produção antes do recurso)
             $this->pipelineModel->initOrderProductionSectors($_GET['id']);
@@ -128,6 +128,16 @@ class PipelineController {
         $logModel->createTableIfNotExists();
         $orderItemLogs = $logModel->getLogsByOrder($_GET['id']);
         $orderItemLogCounts = $logModel->countLogsByOrderGrouped($_GET['id']);
+
+        // Carregar checklist de preparação do pedido
+        require_once 'app/models/OrderPreparation.php';
+        $prepModel = new OrderPreparation($this->db);
+        $orderPreparationChecklist = $prepModel->getChecklist($_GET['id']);
+
+        // Carregar etapas de preparo configuráveis (globais)
+        require_once 'app/models/PreparationStep.php';
+        $prepStepModel = new PreparationStep($this->db);
+        $preparoItems = $prepStepModel->getActiveAsMap();
 
         require 'app/views/layout/header.php';
         require 'app/views/pipeline/detail.php';
@@ -384,6 +394,7 @@ class PipelineController {
 
     /**
      * Adicionar log a um item do pedido (AJAX POST, com suporte a upload)
+     * Suporta "todos os produtos" via order_item_ids[] + all_items=1
      */
     public function addItemLog() {
         header('Content-Type: application/json');
@@ -393,11 +404,23 @@ class PipelineController {
 
         $orderId = $_POST['order_id'] ?? null;
         $orderItemId = $_POST['order_item_id'] ?? null;
+        $allItems = $_POST['all_items'] ?? null;
+        $orderItemIds = $_POST['order_item_ids'] ?? [];
         $message = trim($_POST['message'] ?? '');
         $userId = $_SESSION['user_id'] ?? null;
 
-        if (!$orderId || !$orderItemId) {
+        if (!$orderId) {
             echo json_encode(['success' => false, 'message' => 'Parâmetros inválidos']);
+            exit;
+        }
+
+        // Se "todos os produtos" ou nem item individual
+        if ($allItems && !empty($orderItemIds)) {
+            // Registrar para todos os itens
+        } elseif ($orderItemId) {
+            $orderItemIds = [$orderItemId];
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Selecione um produto']);
             exit;
         }
 
@@ -407,7 +430,8 @@ class PipelineController {
         $fileType = null;
 
         if (!empty($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
-            $uploadResult = $logModel->handleFileUpload($_FILES['file'], $orderId, $orderItemId);
+            $firstItemId = $orderItemIds[0] ?? 0;
+            $uploadResult = $logModel->handleFileUpload($_FILES['file'], $orderId, $firstItemId);
             if (isset($uploadResult['error'])) {
                 echo json_encode(['success' => false, 'message' => $uploadResult['error']]);
                 exit;
@@ -423,14 +447,19 @@ class PipelineController {
             exit;
         }
 
-        $logId = $logModel->addLog($orderId, $orderItemId, $userId, $message ?: null, $filePath, $fileName, $fileType);
+        $logIds = [];
+        foreach ($orderItemIds as $iid) {
+            $logId = $logModel->addLog($orderId, $iid, $userId, $message ?: null, $filePath, $fileName, $fileType);
+            $logIds[] = $logId;
+        }
 
         // Log do sistema
         require_once 'app/models/Logger.php';
         $logger = new Logger($this->db);
-        $logger->log('ITEM_LOG_ADDED', "Log #$logId added to order #$orderId item #$orderItemId");
+        $itemCount = count($logIds);
+        $logger->log('ITEM_LOG_ADDED', "Log added to order #$orderId for $itemCount item(s)");
 
-        echo json_encode(['success' => true, 'log_id' => $logId]);
+        echo json_encode(['success' => true, 'log_ids' => $logIds]);
         exit;
     }
 
@@ -486,7 +515,59 @@ class PipelineController {
         $company = $companySettings->getAll();
         $companyAddress = $companySettings->getFormattedAddress();
 
+        // Carregar checklist de preparação do pedido
+        require_once 'app/models/OrderPreparation.php';
+        $prepModel = new OrderPreparation($this->db);
+        $orderPreparationChecklist = $prepModel->getChecklist($_GET['id']);
+
+        // Carregar etapas de preparo configuráveis (globais)
+        require_once 'app/models/PreparationStep.php';
+        $prepStepModel = new PreparationStep($this->db);
+        $preparoItems = $prepStepModel->getActiveAsMap();
+
+        // Carregar logs dos itens do pedido
+        require_once 'app/models/OrderItemLog.php';
+        $logModel = new OrderItemLog($this->db);
+        $logModel->createTableIfNotExists();
+        $orderItemLogs = $logModel->getLogsByOrder($_GET['id']);
+
         // Renderizar a view de impressão (sem header/footer do sistema)
         require 'app/views/pipeline/print_production_order.php';
+    }
+
+    /**
+     * Alternar item do checklist de preparação (AJAX POST)
+     */
+    public function togglePreparation() {
+        header('Content-Type: application/json');
+        require_once 'app/models/OrderPreparation.php';
+        $prepModel = new OrderPreparation($this->db);
+
+        $orderId = $_POST['order_id'] ?? null;
+        $key = $_POST['key'] ?? null;
+        $userId = $_SESSION['user_id'] ?? null;
+
+        if (!$orderId || !$key) {
+            echo json_encode(['success' => false, 'message' => 'Parâmetros inválidos']);
+            exit;
+        }
+
+        // Verificar se o pedido está na etapa de preparação
+        $order = $this->pipelineModel->getOrderDetail($orderId);
+        if (!$order || $order['pipeline_stage'] !== 'preparacao') {
+            echo json_encode(['success' => false, 'message' => 'Pedido não está em preparação']);
+            exit;
+        }
+
+        $checked = $prepModel->toggle($orderId, $key, $userId);
+
+        // Log do sistema
+        require_once 'app/models/Logger.php';
+        $logger = new Logger($this->db);
+        $action = $checked ? 'checked' : 'unchecked';
+        $logger->log('PREPARATION_TOGGLE', "Preparation '$key' $action for order #$orderId");
+
+        echo json_encode(['success' => true, 'checked' => $checked]);
+        exit;
     }
 }

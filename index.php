@@ -259,6 +259,8 @@ switch ($page) {
             $controller->addItemLog();
         } elseif ($action == 'deleteItemLog') {
             $controller->deleteItemLog();
+        } elseif ($action == 'togglePreparation') {
+            $controller->togglePreparation();
         } elseif ($action == 'productionBoard') {
             $controller->productionBoard();
         } elseif ($action == 'printProductionOrder') {
@@ -326,6 +328,14 @@ switch ($page) {
             $controller->deletePriceItem();
         } elseif ($action == 'getPricesForCustomer') {
             $controller->getPricesForCustomer();
+        } elseif ($action == 'addPreparationStep') {
+            $controller->addPreparationStep();
+        } elseif ($action == 'updatePreparationStep') {
+            $controller->updatePreparationStep();
+        } elseif ($action == 'deletePreparationStep') {
+            $controller->deletePreparationStep();
+        } elseif ($action == 'togglePreparationStep') {
+            $controller->togglePreparationStep();
         } else {
             $controller->index();
         }

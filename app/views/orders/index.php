@@ -13,6 +13,14 @@
     </div>
 </div>
 
+<!-- Busca rápida -->
+<div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+        <input type="text" class="form-control" id="searchTable" placeholder="Buscar por nº pedido, cliente, etapa, status ou valor..." autocomplete="off">
+    </div>
+</div>
+
 <div class="table-responsive bg-white rounded shadow-sm">
     <table class="table table-hover align-middle mb-0">
         <thead class="bg-light">
@@ -56,14 +64,20 @@
                 $prioData = $priorityMap[$prio] ?? $priorityMap['normal'];
             ?>
             <tr>
-                <td class="ps-4 fw-bold">#<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?></td>
+                <td class="ps-4 fw-bold">
+                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none text-dark">
+                        #<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?>
+                    </a>
+                </td>
                 <td>
-                    <div class="d-flex align-items-center">
-                        <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 0.75rem;">
-                            <?= $order['customer_name'] ? strtoupper(substr($order['customer_name'], 0, 1)) : '?' ?>
+                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none text-dark">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 0.75rem;">
+                                <?= $order['customer_name'] ? strtoupper(substr($order['customer_name'], 0, 1)) : '?' ?>
+                            </div>
+                            <?= $order['customer_name'] ?: '<span class="text-muted">Cliente Removido</span>' ?>
                         </div>
-                        <?= $order['customer_name'] ?: '<span class="text-muted">Cliente Removido</span>' ?>
-                    </div>
+                    </a>
                 </td>
                 <td class="small"><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></td>
                 <td class="fw-bold">R$ <?= number_format($order['total_amount'], 2, ',', '.') ?></td>
@@ -100,8 +114,8 @@
                 </td>
                 <td class="text-end pe-4">
                     <div class="btn-group">
-                        <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-info" title="Ver no Pipeline">
-                            <i class="fas fa-stream"></i>
+                        <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-info" title="Ver Pedido">
+                            <i class="fas fa-eye"></i>
                         </a>
                         <a href="/sistemaTiago/?page=orders&action=edit&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                             <i class="fas fa-edit"></i>
@@ -156,5 +170,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Busca rápida na tabela
+    const searchInput = document.getElementById('searchTable');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            document.querySelectorAll('table tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = (!q || text.includes(q)) ? '' : 'none';
+            });
+        });
+    }
 });
 </script>

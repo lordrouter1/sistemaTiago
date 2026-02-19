@@ -26,6 +26,8 @@
             <a href="/sistemaTiago/?page=pipeline" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
             <?php if ($currentStage === 'producao'): ?>
             <a href="/sistemaTiago/?page=production_board" class="btn btn-outline-success btn-sm"><i class="fas fa-tasks me-1"></i> Painel de Produção</a>
+            <?php endif; ?>
+            <?php if (in_array($currentStage, ['producao', 'preparacao'])): ?>
             <a href="/sistemaTiago/?page=pipeline&action=printProductionOrder&id=<?= $order['id'] ?>" target="_blank" class="btn btn-outline-warning btn-sm text-dark"><i class="fas fa-print me-1"></i> Ordem de Produção</a>
             <?php endif; ?>
             <?php if (!$isReadOnly): ?>
@@ -187,8 +189,9 @@
                 <?php
                 // Mostrar seção de produtos quando o pedido está na etapa de orçamento ou posterior (exceto contato)
                 // Mas NÃO mostrar na etapa "producao" (onde exibimos o controle de setores)
+                // Nem na etapa "preparacao" (onde exibimos o controle de preparo)
                 // Em modo read-only (concluido/cancelado), mostrar sempre
-                $showProducts = $isReadOnly || ($currentStage !== 'contato' && $currentStage !== 'producao');
+                $showProducts = $isReadOnly || ($currentStage !== 'contato' && $currentStage !== 'producao' && $currentStage !== 'preparacao');
                 ?>
 
                 <?php if ($showProducts): ?>
@@ -481,7 +484,7 @@
                 <input type="hidden" name="price_table_id" value="<?= $order['price_table_id'] ?? '' ?>">
                 <?php endif; ?>
 
-                <?php if ($currentStage === 'producao' || ($isReadOnly && !empty($orderProductionSectors))): ?>
+                <?php if ($currentStage === 'producao' || $currentStage === 'preparacao' || ($isReadOnly && !empty($orderProductionSectors))): ?>
                 <?php if (!empty($orderProductionSectors)): ?>
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <!-- ═══ CONTROLE DE SETORES DE PRODUÇÃO (POR PRODUTO) ═══ -->
@@ -754,7 +757,126 @@
                     <?php endif; ?>
                 </fieldset>
                 <?php endif; ?>
-                <?php endif; ?>                <!-- Gerenciamento do Pedido -->
+                <?php endif; ?>
+
+                <?php
+                // ═══════════════════════════════════════════════════════════
+                // ═══ CARD DE PREPARO — Exibido na etapa "preparacao" ═══
+                // ═══════════════════════════════════════════════════════════
+                $showPreparo = ($currentStage === 'preparacao' && !$isReadOnly);
+                $showPreparoReadOnly = ($isReadOnly && ($order['pipeline_stage'] ?? '') === 'preparacao');
+                if ($showPreparo || $showPreparoReadOnly):
+                    // Preparar checklist de preparo — carregado dinamicamente do banco (via controller)
+                    $preparoChecklist = $orderPreparationChecklist ?? [];
+                    // $preparoItems já é definido pelo controller com as etapas ativas do banco
+
+                    $checkedCount = 0;
+                    foreach ($preparoItems as $key => $item) {
+                        $checkVal = $preparoChecklist[$key] ?? null;
+                        if ($checkVal) $checkedCount++;
+                    }
+                    $totalPrepItems = count($preparoItems);
+                    $prepPct = $totalPrepItems > 0 ? round(($checkedCount / $totalPrepItems) * 100) : 0;
+                    $allPrepDone = ($checkedCount === $totalPrepItems);
+                ?>
+                <fieldset class="p-4 mb-4" style="border: 2px solid #1abc9c; border-radius: 8px;">
+                    <legend class="float-none w-auto px-3 fs-5" style="color: #1abc9c;">
+                        <i class="fas fa-boxes-packing me-2"></i>Preparo do Pedido
+                        <span class="badge bg-opacity-75 ms-2" style="font-size:0.7rem;background:#1abc9c;"><?= $checkedCount ?>/<?= $totalPrepItems ?> etapas</span>
+                    </legend>
+
+                    <!-- Barra de progresso do preparo -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted fw-bold">Progresso do Preparo</small>
+                            <small class="fw-bold <?= $allPrepDone ? 'text-success' : '' ?>" style="color:<?= !$allPrepDone ? '#1abc9c' : '' ?>;"><?= $prepPct ?>%</small>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 5px;">
+                            <div class="progress-bar <?= $allPrepDone ? 'bg-success' : '' ?> progress-bar-striped <?= (!$allPrepDone && $prepPct > 0) ? 'progress-bar-animated' : '' ?>" 
+                                 role="progressbar" style="width:<?= $prepPct ?>%;background:<?= !$allPrepDone ? '#1abc9c' : '' ?>;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de itens do pedido (resumo) -->
+                    <?php if (!empty($orderItems)): ?>
+                    <div class="alert alert-light border py-2 px-3 mb-3">
+                        <small class="fw-bold text-muted"><i class="fas fa-boxes-stacked me-1"></i>Produtos do Pedido:</small>
+                        <div class="mt-1">
+                            <?php foreach ($orderItems as $oi): ?>
+                            <span class="badge bg-light text-dark border me-1 mb-1" style="font-size:0.75rem;">
+                                <i class="fas fa-box me-1 text-muted"></i><?= htmlspecialchars($oi['product_name']) ?> 
+                                <strong class="ms-1">×<?= $oi['quantity'] ?></strong>
+                            </span>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Checklist de preparo -->
+                    <div class="row g-2">
+                        <?php foreach ($preparoItems as $key => $pItem): 
+                            $isChecked = !empty($preparoChecklist[$key]);
+                            $checkedBy = $preparoChecklist[$key . '_by'] ?? null;
+                            $checkedAt = $preparoChecklist[$key . '_at'] ?? null;
+                        ?>
+                        <div class="col-md-6">
+                            <div class="card border <?= $isChecked ? 'border-success bg-success bg-opacity-10' : 'border-light' ?> h-100 prep-check-card" 
+                                 data-key="<?= $key ?>" style="cursor:<?= $showPreparo ? 'pointer' : 'default' ?>;transition:all 0.2s;">
+                                <div class="card-body p-2 d-flex align-items-start gap-2">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <?php if ($isChecked): ?>
+                                            <span class="d-flex align-items-center justify-content-center rounded-circle bg-success" 
+                                                  style="width:28px;height:28px;">
+                                                <i class="fas fa-check text-white" style="font-size:0.7rem;"></i>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="d-flex align-items-center justify-content-center rounded-circle border border-2" 
+                                                  style="width:28px;height:28px;border-color:#ccc !important;">
+                                                <i class="<?= $pItem['icon'] ?> text-muted" style="font-size:0.7rem;"></i>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold small <?= $isChecked ? 'text-success' : '' ?>"><?= $pItem['label'] ?></div>
+                                        <div class="text-muted" style="font-size:0.7rem;"><?= $pItem['desc'] ?></div>
+                                        <?php if ($isChecked && $checkedBy): ?>
+                                        <div class="text-muted mt-1" style="font-size:0.6rem;">
+                                            <i class="fas fa-user me-1"></i><?= htmlspecialchars($checkedBy) ?>
+                                            <?php if ($checkedAt): ?>
+                                                · <?= date('d/m H:i', strtotime($checkedAt)) ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ($allPrepDone): ?>
+                    <div class="alert alert-success py-2 px-3 mt-3 mb-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-check-double me-2"></i>
+                                <strong>Preparo concluído!</strong> O pedido está pronto para avançar para Envio/Entrega.
+                            </div>
+                            <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=envio" 
+                               class="btn btn-sm btn-success btn-move-stage" data-dir="Avançar" data-stage="Envio/Entrega">
+                                <i class="fas fa-truck me-1"></i> Avançar para Envio
+                            </a>
+                        </div>
+                    </div>
+                    <?php elseif ($showPreparo): ?>
+                    <div class="alert alert-warning py-2 px-3 mt-3 mb-0">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <small>Conclua todas as etapas do preparo antes de avançar o pedido. Clique em cada item para confirmar.</small>
+                    </div>
+                    <?php endif; ?>
+                </fieldset>
+                <?php endif; ?>
+
+                <!-- Gerenciamento do Pedido -->
                 <fieldset class="p-4 mb-4">
                     <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-sliders-h me-2"></i>Gerenciamento</legend>
                     <div class="row g-3">
@@ -793,9 +915,9 @@
                 </fieldset>
 
                 <?php
-                // Campos de Envio/Entrega: só aparecem nas etapas de preparação, envio ou concluído
+                // Campos de Envio/Entrega: só aparecem nas etapas de envio ou concluído (NÃO em preparação)
                 // Em modo read-only (concluido/cancelado), mostrar sempre
-                $showShipping = $isReadOnly || in_array($currentStage, ['preparacao', 'envio', 'concluido']);
+                $showShipping = $isReadOnly || in_array($currentStage, ['envio', 'concluido']);
                 // Campos Financeiro: só aparecem nas etapas venda, financeiro ou concluído
                 $showFinancial = $isReadOnly || in_array($currentStage, ['venda', 'financeiro', 'concluido']);
                 ?>
@@ -961,11 +1083,11 @@
                 </div>
             </div>
 
-            <!-- ═══ Histórico de Registros dos Produtos ═══ -->
+            <!-- ═══ Registro (Logs dos Produtos) ═══ -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-bottom p-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 text-success fw-bold"><i class="fas fa-clipboard-list me-2"></i>Registros dos Produtos</h6>
+                        <h6 class="mb-0 text-success fw-bold"><i class="fas fa-clipboard-list me-2"></i>Registro</h6>
                         <?php if (!empty($orderItems) && !$isReadOnly): ?>
                         <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="collapse" data-bs-target="#collapseAddLog">
                             <i class="fas fa-plus me-1"></i> Novo
@@ -983,6 +1105,7 @@
                                 <label class="form-label small fw-bold text-muted mb-1">Produto</label>
                                 <select class="form-select form-select-sm" name="order_item_id" id="detailLogItemSelect" required>
                                     <option value="">Selecione o produto...</option>
+                                    <option value="all">📋 Todos os Produtos (Registro Geral)</option>
                                     <?php foreach ($orderItems as $oi): ?>
                                     <option value="<?= $oi['id'] ?>"><?= htmlspecialchars($oi['product_name'] ?? 'Produto #'.$oi['product_id']) ?> (Qtd: <?= $oi['quantity'] ?>)</option>
                                     <?php endforeach; ?>
@@ -1475,7 +1598,7 @@ function formatDateBR(dateStr) {
 }
 
 // ════════════════════════════════════════════════════════════
-// ═══ REGISTROS DOS PRODUTOS (Logs) — AJAX Form + Delete ═══
+// ═══ REGISTRO (Logs dos Produtos) — AJAX Form + Delete ═══
 // ════════════════════════════════════════════════════════════
 (function() {
     // Mostrar nome do arquivo selecionado
@@ -1492,25 +1615,39 @@ function formatDateBR(dateStr) {
         });
     }
 
-    // Enviar novo log (AJAX com upload)
+    // Enviar novo log (AJAX com upload) — suporta "todos os produtos"
     var formDetail = document.getElementById('formAddItemLogDetail');
     if (formDetail) {
         formDetail.addEventListener('submit', function(e) {
             e.preventDefault();
-            var formData = new FormData(this);
-            var submitBtn = this.querySelector('button[type="submit"]');
             var itemSelect = document.getElementById('detailLogItemSelect');
+            var submitBtn = this.querySelector('button[type="submit"]');
 
             if (!itemSelect.value) {
                 Swal.fire({ icon: 'warning', title: 'Selecione um produto', timer: 2000, showConfirmButton: false });
                 return;
             }
 
+            var formData = new FormData(this);
             var msg = formData.get('message') || '';
             var file = formData.get('file');
             if (!msg.trim() && (!file || !file.size)) {
                 Swal.fire({ icon: 'warning', title: 'Informe uma mensagem ou arquivo', timer: 2000, showConfirmButton: false });
                 return;
+            }
+
+            // Se "all" foi selecionado, enviar para todos os itens
+            if (itemSelect.value === 'all') {
+                var itemOptions = itemSelect.querySelectorAll('option[value]:not([value=""]):not([value="all"])');
+                var itemIds = [];
+                itemOptions.forEach(function(opt) { itemIds.push(opt.value); });
+                if (itemIds.length === 0) {
+                    Swal.fire({ icon: 'warning', title: 'Nenhum produto no pedido', timer: 2000, showConfirmButton: false });
+                    return;
+                }
+                formData.delete('order_item_id');
+                itemIds.forEach(function(id) { formData.append('order_item_ids[]', id); });
+                formData.append('all_items', '1');
             }
 
             submitBtn.disabled = true;
@@ -1576,9 +1713,46 @@ function formatDateBR(dateStr) {
             });
         });
     });
-})();
+})();    // ═══ PREPARO — Checklist AJAX toggle ═══
+    document.querySelectorAll('.prep-check-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            var key = this.dataset.key;
+            if (!key) return;
+            var cardEl = this;
+            Swal.fire({
+                title: 'Confirmar etapa?',
+                html: 'Deseja alternar o status desta etapa do preparo?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-check me-1"></i> Confirmar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#1abc9c'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    fetch('/sistemaTiago/?page=pipeline&action=togglePreparation', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'order_id=<?= $order['id'] ?>&key=' + encodeURIComponent(key)
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1200, timerProgressBar: true })
+                                .fire({ icon: 'success', title: data.checked ? 'Etapa confirmada!' : 'Etapa desmarcada!' });
+                            setTimeout(function() { location.reload(); }, 600);
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Erro', text: data.message || 'Não foi possível atualizar.', timer: 2000 });
+                        }
+                    })
+                    .catch(function() {
+                        Swal.fire({ icon: 'error', title: 'Erro de conexão', timer: 2000, showConfirmButton: false });
+                    });
+                }
+            });
+        });
+    });
 
-<?php if ($currentStage === 'producao' && !empty($orderProductionSectors)): ?>
+    <?php if (in_array($currentStage, ['producao', 'preparacao']) && !empty($orderProductionSectors)): ?>
 // ════════════════════════════════════════════════════════════
 // ═══ CONTROLE DE PRODUÇÃO POR PRODUTO — Stepper + AJAX ═══
 // ════════════════════════════════════════════════════════════

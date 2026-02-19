@@ -2,18 +2,21 @@
 require_once 'app/models/CompanySettings.php';
 require_once 'app/models/PriceTable.php';
 require_once 'app/models/Product.php';
+require_once 'app/models/PreparationStep.php';
 
 class SettingsController {
 
     private $db;
     private $companySettings;
     private $priceTable;
+    private $preparationStep;
 
     public function __construct() {
         $database = new Database();
         $this->db = $database->getConnection();
         $this->companySettings = new CompanySettings($this->db);
         $this->priceTable = new PriceTable($this->db);
+        $this->preparationStep = new PreparationStep($this->db);
     }
 
     // ──────── CONFIGURAÇÕES DA EMPRESA ────────
@@ -24,6 +27,7 @@ class SettingsController {
     public function index() {
         $settings = $this->companySettings->getAll();
         $priceTables = $this->priceTable->readAll();
+        $preparationSteps = $this->preparationStep->getAll();
 
         require 'app/views/layout/header.php';
         require 'app/views/settings/index.php';
@@ -233,5 +237,98 @@ class SettingsController {
         header('Content-Type: application/json');
         echo json_encode($prices);
         exit;
+    }
+
+    // ──────── ETAPAS DE PREPARO GLOBAIS ────────
+
+    /**
+     * Adicionar nova etapa de preparo (POST)
+     */
+    public function addPreparationStep() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $label = trim($_POST['label'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $icon = trim($_POST['icon'] ?? 'fas fa-check');
+            $sortOrder = (int)($_POST['sort_order'] ?? 0);
+
+            if ($label) {
+                // Gerar key a partir do label
+                $key = $this->generateStepKey($label);
+                $this->preparationStep->add($key, $label, $description, $icon, $sortOrder);
+            }
+
+            header('Location: /sistemaTiago/?page=settings&tab=preparation&status=step_added');
+            exit;
+        }
+    }
+
+    /**
+     * Atualizar etapa de preparo (POST)
+     */
+    public function updatePreparationStep() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = $_POST['id'] ?? null;
+            $label = trim($_POST['label'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $icon = trim($_POST['icon'] ?? 'fas fa-check');
+            $sortOrder = (int)($_POST['sort_order'] ?? 0);
+            $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+            if ($id && $label) {
+                $this->preparationStep->update($id, $label, $description, $icon, $sortOrder, $isActive);
+            }
+
+            header('Location: /sistemaTiago/?page=settings&tab=preparation&status=step_updated');
+            exit;
+        }
+    }
+
+    /**
+     * Excluir etapa de preparo
+     */
+    public function deletePreparationStep() {
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $this->preparationStep->delete($id);
+        }
+        header('Location: /sistemaTiago/?page=settings&tab=preparation&status=step_deleted');
+        exit;
+    }
+
+    /**
+     * Ativar/desativar etapa de preparo (AJAX)
+     */
+    public function togglePreparationStep() {
+        header('Content-Type: application/json');
+        $id = $_POST['id'] ?? null;
+        if ($id) {
+            $this->preparationStep->toggleActive($id);
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'ID não informado']);
+        }
+        exit;
+    }
+
+    /**
+     * Gerar uma chave a partir do label (slug-like)
+     */
+    private function generateStepKey($label) {
+        $key = mb_strtolower($label, 'UTF-8');
+        // Remover acentos
+        $key = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key);
+        $key = preg_replace('/[^a-z0-9]+/', '_', $key);
+        $key = trim($key, '_');
+        // Garantir que não exista
+        $base = $key;
+        $i = 1;
+        while (true) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM preparation_steps WHERE step_key = :key");
+            $stmt->execute([':key' => $key]);
+            if ($stmt->fetchColumn() == 0) break;
+            $key = $base . '_' . $i;
+            $i++;
+        }
+        return $key;
     }
 }

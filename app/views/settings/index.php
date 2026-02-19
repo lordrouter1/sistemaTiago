@@ -16,6 +16,11 @@
                 <i class="fas fa-tags me-1"></i> Tabelas de Preço
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $activeTab === 'preparation' ? 'active' : '' ?>" href="/sistemaTiago/?page=settings&tab=preparation">
+                <i class="fas fa-boxes-packing me-1"></i> Etapas de Preparo
+            </a>
+        </li>
     </ul>
 
     <?php if ($activeTab === 'company'): ?>
@@ -287,6 +292,242 @@
         </div>
     </div>
     <?php endif; ?>
+
+    <?php if ($activeTab === 'preparation'): ?>
+    <!-- ══════════ ABA: ETAPAS DE PREPARO ══════════ -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0" style="color: #1abc9c;"><i class="fas fa-boxes-packing me-2"></i>Etapas de Preparo dos Pedidos</h5>
+                    <button class="btn btn-sm text-white" style="background:#1abc9c;" data-bs-toggle="modal" data-bs-target="#modalNewStep">
+                        <i class="fas fa-plus me-1"></i> Nova Etapa
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:50px;" class="text-center">Ordem</th>
+                                    <th style="width:50px;" class="text-center">Ícone</th>
+                                    <th>Nome da Etapa</th>
+                                    <th>Descrição</th>
+                                    <th class="text-center" style="width:90px;">Status</th>
+                                    <th class="text-center" style="width:130px;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prepStepsTableBody">
+                                <?php if (empty($preparationSteps)): ?>
+                                <tr><td colspan="6" class="text-center text-muted py-4">Nenhuma etapa de preparo cadastrada.</td></tr>
+                                <?php else: ?>
+                                <?php foreach ($preparationSteps as $step): ?>
+                                <tr class="<?= !$step['is_active'] ? 'table-secondary opacity-75' : '' ?>">
+                                    <td class="text-center fw-bold text-muted"><?= $step['sort_order'] ?></td>
+                                    <td class="text-center">
+                                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" 
+                                              style="width:32px;height:32px;background:<?= $step['is_active'] ? '#e0f7f1' : '#f0f0f0' ?>;">
+                                            <i class="<?= htmlspecialchars($step['icon']) ?>" style="color:<?= $step['is_active'] ? '#1abc9c' : '#999' ?>;font-size:0.85rem;"></i>
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold <?= !$step['is_active'] ? 'text-muted text-decoration-line-through' : '' ?>">
+                                        <?= htmlspecialchars($step['label']) ?>
+                                        <div class="small text-muted" style="font-size:0.7rem;">Chave: <code><?= htmlspecialchars($step['step_key']) ?></code></div>
+                                    </td>
+                                    <td class="small text-muted"><?= htmlspecialchars($step['description']) ?></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-toggle-step <?= $step['is_active'] ? 'btn-success' : 'btn-outline-secondary' ?>" 
+                                                data-step-id="<?= $step['id'] ?>" title="<?= $step['is_active'] ? 'Ativa' : 'Inativa' ?>">
+                                            <i class="fas fa-<?= $step['is_active'] ? 'check-circle' : 'times-circle' ?> me-1"></i>
+                                            <?= $step['is_active'] ? 'Ativa' : 'Inativa' ?>
+                                        </button>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary btn-edit-step" 
+                                                    data-id="<?= $step['id'] ?>"
+                                                    data-label="<?= htmlspecialchars($step['label']) ?>"
+                                                    data-description="<?= htmlspecialchars($step['description']) ?>"
+                                                    data-icon="<?= htmlspecialchars($step['icon']) ?>"
+                                                    data-sort="<?= $step['sort_order'] ?>"
+                                                    data-active="<?= $step['is_active'] ?>"
+                                                    title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <a href="/sistemaTiago/?page=settings&action=deletePreparationStep&id=<?= $step['id'] ?>" 
+                                               class="btn btn-outline-danger btn-delete-step" title="Excluir">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info lateral -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light py-2">
+                    <h6 class="mb-0 fw-bold" style="color:#1abc9c;"><i class="fas fa-info-circle me-2"></i>Como Funciona</h6>
+                </div>
+                <div class="card-body small">
+                    <p><strong>Etapas de preparo</strong> são o checklist que aparece quando um pedido entra na fase de <span class="badge" style="background:#1abc9c;">Preparação</span>.</p>
+                    <ul class="mb-2">
+                        <li>As etapas <strong>ativas</strong> serão exibidas para todos os pedidos em preparação.</li>
+                        <li>Desative etapas que não são necessárias no momento sem excluí-las.</li>
+                        <li>A <strong>ordem</strong> define a sequência de exibição no checklist.</li>
+                        <li>Cada etapa terá registro de quem confirmou e quando.</li>
+                    </ul>
+                    <p class="text-muted mb-0"><strong>Dica:</strong> Use ícones do <a href="https://fontawesome.com/search?o=r&m=free&s=solid" target="_blank">Font Awesome</a> (ex: <code>fas fa-box</code>).</p>
+                </div>
+            </div>
+
+            <!-- Preview das etapas ativas -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header py-2" style="background: #e0f7f1;">
+                    <h6 class="mb-0 fw-bold" style="color:#1abc9c;"><i class="fas fa-eye me-2"></i>Prévia do Checklist</h6>
+                </div>
+                <div class="card-body p-2">
+                    <?php 
+                    $activeSteps = array_filter($preparationSteps ?? [], function($s) { return $s['is_active']; });
+                    if (empty($activeSteps)): ?>
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-clipboard d-block mb-2" style="font-size:1.5rem;opacity:0.3;"></i>
+                        <small>Nenhuma etapa ativa</small>
+                    </div>
+                    <?php else: ?>
+                    <?php foreach ($activeSteps as $step): ?>
+                    <div class="d-flex align-items-center gap-2 p-2 border-bottom">
+                        <span class="d-flex align-items-center justify-content-center rounded-circle border border-2" 
+                              style="width:24px;height:24px;min-width:24px;border-color:#ccc !important;">
+                            <i class="<?= htmlspecialchars($step['icon']) ?> text-muted" style="font-size:0.6rem;"></i>
+                        </span>
+                        <div>
+                            <div class="fw-bold" style="font-size:0.8rem;"><?= htmlspecialchars($step['label']) ?></div>
+                            <?php if (!empty($step['description'])): ?>
+                            <div class="text-muted" style="font-size:0.65rem;"><?= htmlspecialchars($step['description']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                    <div class="text-center text-muted mt-2" style="font-size:0.7rem;">
+                        <i class="fas fa-info-circle me-1"></i><?= count($activeSteps) ?> etapa(s) ativa(s)
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nova Etapa -->
+    <div class="modal fade" id="modalNewStep" tabindex="-1">
+        <div class="modal-dialog">
+            <form method="POST" action="/sistemaTiago/?page=settings&action=addPreparationStep">
+                <div class="modal-content">
+                    <div class="modal-header" style="background:#e0f7f1;">
+                        <h5 class="modal-title" style="color:#1abc9c;"><i class="fas fa-plus-circle me-2"></i>Nova Etapa de Preparo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nome da Etapa <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="label" required placeholder="Ex: Conferência de Cores">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descrição</label>
+                            <textarea class="form-control" name="description" rows="2" placeholder="Descrição breve da etapa..."></textarea>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Ícone <small class="text-muted">(classe Font Awesome)</small></label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="newStepIconPreview"><i class="fas fa-check"></i></span>
+                                    <input type="text" class="form-control" name="icon" value="fas fa-check" placeholder="fas fa-check" id="newStepIconInput">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Ordem</label>
+                                <input type="number" class="form-control" name="sort_order" value="0" min="0">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted"><i class="fas fa-lightbulb me-1"></i>Ícones populares: 
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-check">fa-check</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-box">fa-box</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-cut">fa-cut</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-search">fa-search</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-file-check">fa-file-check</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-truck-loading">fa-truck-loading</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-list-check">fa-list-check</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-paint-roller">fa-paint-roller</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-print">fa-print</code>,
+                                <code class="cursor-pointer icon-pick" data-icon="fas fa-scissors">fa-scissors</code>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn text-white" style="background:#1abc9c;"><i class="fas fa-save me-1"></i> Criar Etapa</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Etapa -->
+    <div class="modal fade" id="modalEditStep" tabindex="-1">
+        <div class="modal-dialog">
+            <form method="POST" action="/sistemaTiago/?page=settings&action=updatePreparationStep">
+                <div class="modal-content">
+                    <div class="modal-header" style="background:#e0f7f1;">
+                        <h5 class="modal-title" style="color:#1abc9c;"><i class="fas fa-edit me-2"></i>Editar Etapa de Preparo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="editStepId">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nome da Etapa <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="label" id="editStepLabel" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descrição</label>
+                            <textarea class="form-control" name="description" id="editStepDesc" rows="2"></textarea>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Ícone</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="editStepIconPreview"><i class="fas fa-check"></i></span>
+                                    <input type="text" class="form-control" name="icon" id="editStepIcon" value="fas fa-check">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Ordem</label>
+                                <input type="number" class="form-control" name="sort_order" id="editStepSort" value="0" min="0">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="editStepActive" name="is_active" value="1" checked>
+                                <label class="form-check-label fw-bold" for="editStepActive">Etapa Ativa</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn text-white" style="background:#1abc9c;"><i class="fas fa-save me-1"></i> Salvar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <script>
@@ -299,6 +540,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php endif; ?>
     <?php if(isset($_GET['status']) && $_GET['status'] === 'table_default_error'): ?>
     Swal.fire({ icon: 'error', title: 'Erro', text: 'Não é possível excluir a tabela padrão.', confirmButtonColor: '#3498db' });
+    <?php endif; ?>
+    <?php if(isset($_GET['status']) && in_array($_GET['status'], ['step_added','step_updated','step_deleted'])): ?>
+    Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Etapa de preparo atualizada.', timer: 1500, showConfirmButton: false });
     <?php endif; ?>
 
     // Confirmar exclusão de tabela
@@ -315,6 +559,87 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#e74c3c'
             }).then(r => { if (r.isConfirmed) window.location.href = href; });
+        });
+    });
+
+    // ═══ Etapas de Preparo — Ações ═══
+
+    // Toggle ativo/inativo via AJAX
+    document.querySelectorAll('.btn-toggle-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const stepId = this.dataset.stepId;
+            fetch('/sistemaTiago/?page=settings&action=togglePreparationStep', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'id=' + stepId
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        });
+    });
+
+    // Abrir modal de edição com dados da etapa
+    document.querySelectorAll('.btn-edit-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('editStepId').value = this.dataset.id;
+            document.getElementById('editStepLabel').value = this.dataset.label;
+            document.getElementById('editStepDesc').value = this.dataset.description;
+            document.getElementById('editStepIcon').value = this.dataset.icon;
+            document.getElementById('editStepSort').value = this.dataset.sort;
+            document.getElementById('editStepActive').checked = this.dataset.active === '1';
+            // Atualizar preview do ícone
+            document.getElementById('editStepIconPreview').innerHTML = '<i class="' + this.dataset.icon + '"></i>';
+            new bootstrap.Modal(document.getElementById('modalEditStep')).show();
+        });
+    });
+
+    // Confirmar exclusão de etapa
+    document.querySelectorAll('.btn-delete-step').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.href;
+            Swal.fire({
+                title: 'Excluir etapa de preparo?',
+                text: 'Esta ação não pode ser desfeita. Os registros já feitos com esta etapa serão mantidos no histórico.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-trash me-1"></i> Excluir',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#e74c3c'
+            }).then(r => { if (r.isConfirmed) window.location.href = href; });
+        });
+    });
+
+    // Preview de ícone ao digitar
+    const newIconInput = document.getElementById('newStepIconInput');
+    if (newIconInput) {
+        newIconInput.addEventListener('input', function() {
+            document.getElementById('newStepIconPreview').innerHTML = '<i class="' + this.value + '"></i>';
+        });
+    }
+    const editIconInput = document.getElementById('editStepIcon');
+    if (editIconInput) {
+        editIconInput.addEventListener('input', function() {
+            document.getElementById('editStepIconPreview').innerHTML = '<i class="' + this.value + '"></i>';
+        });
+    }
+
+    // Quick pick de ícones
+    document.querySelectorAll('.icon-pick').forEach(el => {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', function() {
+            const icon = this.dataset.icon;
+            const modal = this.closest('.modal');
+            if (modal) {
+                const input = modal.querySelector('input[name="icon"]');
+                const preview = modal.querySelector('[id$="IconPreview"]');
+                if (input) input.value = icon;
+                if (preview) preview.innerHTML = '<i class="' + icon + '"></i>';
+            }
         });
     });
 });

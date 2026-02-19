@@ -12,7 +12,6 @@ class Pipeline {
         'envio'      => ['label' => 'Envio/Entrega', 'icon' => 'fas fa-truck',                 'color' => '#e74c3c', 'order' => 6],
         'financeiro' => ['label' => 'Financeiro',    'icon' => 'fas fa-coins',                 'color' => '#f39c12', 'order' => 7],
         'concluido'  => ['label' => 'Concluído',     'icon' => 'fas fa-check-double',          'color' => '#27ae60', 'order' => 8],
-        'cancelado'  => ['label' => 'Cancelado',     'icon' => 'fas fa-ban',                   'color' => '#95a5a6', 'order' => 9],
     ];
 
     public function __construct($db) {
@@ -37,7 +36,7 @@ class Pipeline {
                   FROM orders o
                   LEFT JOIN customers c ON o.customer_id = c.id
                   LEFT JOIN users u ON o.assigned_to = u.id
-                  WHERE o.pipeline_stage NOT IN ('concluido','cancelado') AND o.status != 'cancelado'
+                  WHERE o.pipeline_stage != 'concluido' AND o.status != 'cancelado'
                   ORDER BY o.priority DESC, o.pipeline_entered_at ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
@@ -113,7 +112,6 @@ class Pipeline {
             'envio'      => 'em_producao',
             'financeiro' => 'em_producao',
             'concluido'  => 'concluido',
-            'cancelado'  => 'cancelado',
         ];
         if (isset($statusMap[$newStage])) {
             $newStatus = $statusMap[$newStage];
@@ -127,11 +125,6 @@ class Pipeline {
         // Registrar histórico
         if ($result) {
             $this->addHistory($orderId, $fromStage, $newStage, $userId, $notes);
-
-            // Inicializar setores de produção quando entra na etapa "producao"
-            if ($newStage === 'producao') {
-                $this->initOrderProductionSectors($orderId);
-            }
         }
 
         return $result;
@@ -204,8 +197,6 @@ class Pipeline {
                     deadline = :deadline,
                     payment_status = :payment_status,
                     payment_method = :payment_method,
-                    installments = :installments,
-                    installment_value = :installment_value,
                     discount = :discount,
                     shipping_type = :shipping_type,
                     shipping_address = :shipping_address,
@@ -220,8 +211,6 @@ class Pipeline {
         $stmt->bindParam(':deadline', $data['deadline']);
         $stmt->bindParam(':payment_status', $data['payment_status']);
         $stmt->bindParam(':payment_method', $data['payment_method']);
-        $stmt->bindParam(':installments', $data['installments']);
-        $stmt->bindParam(':installment_value', $data['installment_value']);
         $stmt->bindParam(':discount', $data['discount']);
         $stmt->bindParam(':shipping_type', $data['shipping_type']);
         $stmt->bindParam(':shipping_address', $data['shipping_address']);
@@ -247,7 +236,7 @@ class Pipeline {
                          END as hours_in_stage
                   FROM orders o
                   LEFT JOIN customers c ON o.customer_id = c.id
-                  WHERE o.pipeline_stage NOT IN ('concluido','cancelado') AND o.status != 'cancelado'
+                  WHERE o.pipeline_stage != 'concluido' AND o.status != 'cancelado'
                   ORDER BY hours_in_stage DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
@@ -283,292 +272,6 @@ class Pipeline {
     }
 
     /**
-     * Inicializa os setores de produção POR ITEM do pedido quando entra na etapa "producao".
-     * Cada item tem seus próprios setores (fallback: produto > subcategoria > categoria).
-     * Re-executa para itens novos que ainda não têm setores atribuídos.
-     */
-    public function initOrderProductionSectors($orderId) {
-        // Buscar itens do pedido com dados do produto
-        $stmt = $this->conn->prepare("SELECT oi.id as item_id, oi.product_id, p.category_id, p.subcategory_id 
-            FROM order_items oi 
-            JOIN products p ON oi.product_id = p.id 
-            WHERE oi.order_id = :oid");
-        $stmt->execute([':oid' => $orderId]);
-        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($items)) return;
-
-        // Buscar quais itens já têm setores inicializados
-        $existingStmt = $this->conn->prepare("SELECT DISTINCT order_item_id FROM order_production_sectors WHERE order_id = :oid");
-        $existingStmt->execute([':oid' => $orderId]);
-        $existingItemIds = $existingStmt->fetchAll(PDO::FETCH_COLUMN);
-
-        require_once 'app/models/ProductionSector.php';
-        $sectorModel = new ProductionSector($this->conn);
-
-        $ins = $this->conn->prepare("INSERT INTO order_production_sectors (order_id, order_item_id, sector_id, status, sort_order) VALUES (:oid, :iid, :sid, 'pendente', :sort)");
-
-        foreach ($items as $item) {
-            // Pular itens que já possuem setores
-            if (in_array($item['item_id'], $existingItemIds)) continue;
-
-            $result = $sectorModel->getEffectiveSectors($item['product_id'], $item['subcategory_id'], $item['category_id']);
-            if (!empty($result['sectors'])) {
-                foreach ($result['sectors'] as $idx => $s) {
-                    $ins->execute([
-                        ':oid'  => $orderId,
-                        ':iid'  => $item['item_id'],
-                        ':sid'  => $s['sector_id'],
-                        ':sort' => $s['sort_order']
-                    ]);
-                }
-            }
-        }
-    }
-
-    /**
-     * Retorna os setores de produção de um pedido agrupados por item, com dados do setor e produto
-     */
-    public function getOrderProductionSectors($orderId) {
-        $stmt = $this->conn->prepare("SELECT ops.*, 
-                s.name as sector_name, s.icon, s.color,
-                oi.product_id, oi.quantity, 
-                p.name as product_name,
-                u.name as completed_by_name
-            FROM order_production_sectors ops
-            JOIN production_sectors s ON ops.sector_id = s.id
-            JOIN order_items oi ON ops.order_item_id = oi.id
-            JOIN products p ON oi.product_id = p.id
-            LEFT JOIN users u ON ops.completed_by = u.id
-            WHERE ops.order_id = :oid
-            ORDER BY ops.order_item_id ASC, ops.sort_order ASC");
-        $stmt->execute([':oid' => $orderId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Concluir o setor atual de um item e avançar para o próximo.
-     * O setor atual (pendente) é marcado como concluído.
-     * O próximo setor permanece pendente até o usuário concluí-lo.
-     */
-    public function advanceItemSector($orderId, $orderItemId, $sectorId, $userId = null) {
-        // Marcar setor atual como concluído (aceita pendente ou em_andamento para compatibilidade)
-        $sql = "UPDATE order_production_sectors 
-                SET status = 'concluido', started_at = IFNULL(started_at, NOW()), completed_at = NOW(), completed_by = :uid
-                WHERE order_id = :oid AND order_item_id = :iid AND sector_id = :sid AND status IN ('pendente', 'em_andamento')";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute([':uid' => $userId, ':oid' => $orderId, ':iid' => $orderItemId, ':sid' => $sectorId]);
-
-        return $stmt->rowCount() > 0;
-    }
-
-    /**
-     * Retroceder: reverte o último setor concluído de um item para pendente.
-     * Se o sectorId informado já estiver concluído, reverte ele.
-     * Caso contrário, encontra e reverte o último setor concluído (por sort_order)
-     * para que o item volte ao setor anterior.
-     */
-    public function revertItemSector($orderId, $orderItemId, $sectorId, $userId = null) {
-        // Buscar estado atual do setor informado
-        $stmt = $this->conn->prepare("SELECT status, sort_order FROM order_production_sectors 
-            WHERE order_id = :oid AND order_item_id = :iid AND sector_id = :sid");
-        $stmt->execute([':oid' => $orderId, ':iid' => $orderItemId, ':sid' => $sectorId]);
-        $current = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$current) return false;
-
-        $targetSectorId = $sectorId;
-
-        // Se o setor informado NÃO está concluído, buscar o último concluído deste item
-        if ($current['status'] !== 'concluido') {
-            $stmtLast = $this->conn->prepare("SELECT sector_id FROM order_production_sectors 
-                WHERE order_id = :oid AND order_item_id = :iid AND status = 'concluido'
-                ORDER BY sort_order DESC LIMIT 1");
-            $stmtLast->execute([':oid' => $orderId, ':iid' => $orderItemId]);
-            $lastConcluded = $stmtLast->fetch(PDO::FETCH_ASSOC);
-            if (!$lastConcluded) return false; // Nenhum setor concluído para reverter
-            $targetSectorId = $lastConcluded['sector_id'];
-        }
-
-        // Voltar o setor alvo para pendente
-        $upd = $this->conn->prepare("UPDATE order_production_sectors 
-            SET status = 'pendente', started_at = NULL, completed_at = NULL, completed_by = NULL
-            WHERE order_id = :oid AND order_item_id = :iid AND sector_id = :sid");
-        $upd->execute([':oid' => $orderId, ':iid' => $orderItemId, ':sid' => $targetSectorId]);
-
-        return true;
-    }
-
-    /**
-     * Retorna todos os itens de produção agrupados por setor, para o painel de produção.
-     * Cada item aparece APENAS no setor em que se encontra atualmente:
-     *   - O primeiro setor pendente (na ordem sort_order) é o setor atual
-     *   - Se todos estão concluídos, aparece no último setor concluído
-     * Filtra por setores permitidos se $allowedSectorIds não for vazio.
-     * Status possíveis: pendente, concluido (sem em_andamento).
-     */
-    public function getProductionBoardData($allowedSectorIds = []) {
-        // Buscar TODOS os registros de produção para pedidos em produção
-        $sql = "SELECT ops.*, 
-                s.name as sector_name, s.icon as sector_icon, s.color as sector_color, s.id as sector_id,
-                oi.product_id, oi.quantity, 
-                p.name as product_name,
-                o.id as order_id, o.created_at as order_created_at, o.priority, o.deadline,
-                c.name as customer_name,
-                u.name as completed_by_name,
-                ua.name as assigned_name
-            FROM order_production_sectors ops
-            JOIN production_sectors s ON ops.sector_id = s.id
-            JOIN order_items oi ON ops.order_item_id = oi.id
-            JOIN products p ON oi.product_id = p.id
-            JOIN orders o ON ops.order_id = o.id
-            LEFT JOIN customers c ON o.customer_id = c.id
-            LEFT JOIN users u ON ops.completed_by = u.id
-            LEFT JOIN users ua ON o.assigned_to = ua.id
-            WHERE o.pipeline_stage = 'producao' AND o.status != 'cancelado'
-            ORDER BY ops.order_id ASC, ops.order_item_id ASC, ops.sort_order ASC";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Agrupar todos os registros por (order_id, order_item_id)
-        $itemGroups = [];
-        foreach ($rows as $row) {
-            $key = $row['order_id'] . '_' . $row['order_item_id'];
-            $itemGroups[$key][] = $row;
-        }
-
-        // Para cada item, determinar em qual setor ele está ATUALMENTE
-        $currentItems = []; // sector_id => [rows que estão nesse setor]
-        foreach ($itemGroups as $key => $itemSectors) {
-            $currentSectorRow = null;
-            $hasPreviousConcluded = false;
-
-            // 1. Pegar o primeiro setor pendente (próximo na fila)
-            foreach ($itemSectors as $sec) {
-                if ($sec['status'] === 'concluido') {
-                    $hasPreviousConcluded = true;
-                }
-                if ($sec['status'] === 'pendente' && !$currentSectorRow) {
-                    $currentSectorRow = $sec;
-                    $currentSectorRow['has_previous_concluded'] = $hasPreviousConcluded;
-                }
-            }
-
-            // 2. Se todos concluídos, mostrar no último setor concluído
-            if (!$currentSectorRow) {
-                $lastConcluido = null;
-                foreach ($itemSectors as $sec) {
-                    if ($sec['status'] === 'concluido') {
-                        $lastConcluido = $sec;
-                    }
-                }
-                if ($lastConcluido) {
-                    $currentSectorRow = $lastConcluido;
-                    $currentSectorRow['has_previous_concluded'] = false; // Já está concluído, retroceder é direto
-                }
-            }
-
-            if ($currentSectorRow) {
-                $sid = $currentSectorRow['sector_id'];
-                if (!isset($currentItems[$sid])) {
-                    $currentItems[$sid] = [];
-                }
-                $currentItems[$sid][] = $currentSectorRow;
-            }
-        }
-
-        // Montar array de setores agrupados
-        $sectors = [];
-        foreach ($currentItems as $sid => $items) {
-            // Filtro de permissão
-            if (!empty($allowedSectorIds) && !in_array((int)$sid, $allowedSectorIds)) continue;
-
-            $first = $items[0];
-            if (!isset($sectors[$sid])) {
-                $sectors[$sid] = [
-                    'id'    => $sid,
-                    'name'  => $first['sector_name'],
-                    'icon'  => $first['sector_icon'],
-                    'color' => $first['sector_color'],
-                    'items' => [],
-                    'counts' => ['pendente' => 0, 'concluido' => 0],
-                ];
-            }
-            foreach ($items as $item) {
-                $sectors[$sid]['items'][] = $item;
-                $st = $item['status'];
-                if (isset($sectors[$sid]['counts'][$st])) {
-                    $sectors[$sid]['counts'][$st]++;
-                }
-            }
-        }
-
-        // Se o usuário tem permissão a setores sem itens, adicionar vazios
-        if (!empty($allowedSectorIds)) {
-            $placeholders = implode(',', array_fill(0, count($allowedSectorIds), '?'));
-            $stmtSec = $this->conn->prepare("SELECT id, name, icon, color FROM production_sectors WHERE id IN ($placeholders) AND is_active = 1 ORDER BY id ASC");
-            $stmtSec->execute($allowedSectorIds);
-            $allSectors = $stmtSec->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($allSectors as $s) {
-                if (!isset($sectors[$s['id']])) {
-                    $sectors[$s['id']] = [
-                        'id'    => $s['id'],
-                        'name'  => $s['name'],
-                        'icon'  => $s['icon'],
-                        'color' => $s['color'],
-                        'items' => [],
-                        'counts' => ['pendente' => 0, 'concluido' => 0],
-                    ];
-                }
-            }
-        } else {
-            // Admin: incluir todos os setores ativos
-            $stmtAll = $this->conn->prepare("SELECT id, name, icon, color FROM production_sectors WHERE is_active = 1 ORDER BY id ASC");
-            $stmtAll->execute();
-            $allSectors = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($allSectors as $s) {
-                if (!isset($sectors[$s['id']])) {
-                    $sectors[$s['id']] = [
-                        'id'    => $s['id'],
-                        'name'  => $s['name'],
-                        'icon'  => $s['icon'],
-                        'color' => $s['color'],
-                        'items' => [],
-                        'counts' => ['pendente' => 0, 'concluido' => 0],
-                    ];
-                }
-            }
-        }
-
-        return $sectors;
-    }
-
-    /**
-     * Mover um setor de produção de um item para um status específico (fallback genérico)
-     */
-    public function moveOrderSector($orderId, $orderItemId, $sectorId, $newStatus, $userId = null) {
-        $sql = "UPDATE order_production_sectors SET status = :status";
-
-        if ($newStatus === 'concluido') {
-            $sql .= ", started_at = IFNULL(started_at, NOW()), completed_at = NOW(), completed_by = :uid";
-        } elseif ($newStatus === 'pendente') {
-            $sql .= ", started_at = NULL, completed_at = NULL, completed_by = NULL";
-        }
-
-        $sql .= " WHERE order_id = :oid AND order_item_id = :iid AND sector_id = :sid";
-
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':status', $newStatus);
-        $stmt->bindParam(':oid', $orderId);
-        $stmt->bindParam(':iid', $orderItemId);
-        $stmt->bindParam(':sid', $sectorId);
-        if ($newStatus === 'concluido') {
-            $stmt->bindParam(':uid', $userId);
-        }
-        return $stmt->execute();
-    }
-
-    /**
      * Estatísticas do pipeline para o dashboard
      */
     public function getStats() {
@@ -582,7 +285,7 @@ class Pipeline {
         $byStage = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // Total geral ativo
-        $query2 = "SELECT COUNT(*) FROM orders WHERE pipeline_stage NOT IN ('concluido','cancelado') AND status != 'cancelado'";
+        $query2 = "SELECT COUNT(*) FROM orders WHERE pipeline_stage != 'concluido' AND status != 'cancelado'";
         $stmt2 = $this->conn->prepare($query2);
         $stmt2->execute();
         $totalActive = $stmt2->fetchColumn();
@@ -599,7 +302,7 @@ class Pipeline {
         $completedMonth = $stmt3->fetchColumn();
 
         // Valor total ativo
-        $query4 = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE pipeline_stage NOT IN ('concluido','cancelado') AND status != 'cancelado'";
+        $query4 = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE pipeline_stage != 'concluido' AND status != 'cancelado'";
         $stmt4 = $this->conn->prepare($query4);
         $stmt4->execute();
         $totalValue = $stmt4->fetchColumn();

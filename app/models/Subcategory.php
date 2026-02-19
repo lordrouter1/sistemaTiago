@@ -35,38 +35,4 @@ class Subcategory {
         }
         return false;
     }
-
-    public function readAll() {
-        $stmt = $this->conn->query("SELECT s.*, c.name as category_name 
-            FROM subcategories s 
-            JOIN categories c ON s.category_id = c.id 
-            ORDER BY c.name ASC, s.name ASC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function readOne($id) {
-        $stmt = $this->conn->prepare("SELECT s.*, c.name as category_name FROM subcategories s JOIN categories c ON s.category_id = c.id WHERE s.id = :id");
-        $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    public function update($id, $name, $categoryId) {
-        $stmt = $this->conn->prepare("UPDATE subcategories SET name = :name, category_id = :cat WHERE id = :id");
-        return $stmt->execute([
-            ':name' => htmlspecialchars(strip_tags($name)),
-            ':cat'  => $categoryId,
-            ':id'   => $id,
-        ]);
-    }
-
-    public function delete($id) {
-        $stmt = $this->conn->prepare("DELETE FROM subcategories WHERE id = :id");
-        return $stmt->execute([':id' => $id]);
-    }
-
-    public function countProducts($subId) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM products WHERE subcategory_id = :id");
-        $stmt->execute([':id' => $subId]);
-        return $stmt->fetchColumn();
-    }
 }

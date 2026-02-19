@@ -68,20 +68,6 @@ class OrderController {
             }
             
             if ($this->orderModel->create()) {
-                // Se criou como orçamento, salvar os itens do pedido
-                if ($initialStage === 'orcamento' && !empty($_POST['items'])) {
-                    foreach ($_POST['items'] as $item) {
-                        if (!empty($item['product_id']) && !empty($item['quantity']) && isset($item['price'])) {
-                            $this->orderModel->addItem(
-                                $this->orderModel->id,
-                                (int)$item['product_id'],
-                                (int)$item['quantity'],
-                                (float)$item['price']
-                            );
-                        }
-                    }
-                }
-
                 // Registrar entrada no pipeline
                 $database = new Database();
                 $db = $database->getConnection();

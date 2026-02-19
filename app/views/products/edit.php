@@ -128,55 +128,6 @@
                          </div>
                     </div>
                 </fieldset>
-
-                <!-- Setores de Produção -->
-                <?php if (!empty($allSectors)): 
-                    $linkedSectorIds = array_column($productSectors, 'sector_id');
-                ?>
-                <fieldset class="p-4 mb-4">
-                    <legend class="float-none w-auto px-2 fs-5 text-success"><i class="fas fa-industry me-2"></i>Setores de Produção</legend>
-                    <p class="text-muted small mb-3">Selecione os setores pelos quais este produto passa na produção. Arraste para reordenar a sequência.</p>
-                    
-                    <!-- Setores selecionados (ordenáveis) -->
-                    <div id="prod-sectors-selected" class="sectors-sortable-list mb-2" style="min-height: 40px; border: 2px dashed #dee2e6; border-radius: 0.375rem; padding: 6px;">
-                        <?php 
-                        // Exibir na ordem salva (sort_order)
-                        foreach ($productSectors as $ps): 
-                            $sector = null;
-                            foreach ($allSectors as $s) { if ($s['id'] == $ps['sector_id']) { $sector = $s; break; } }
-                            if (!$sector) continue;
-                        ?>
-                        <div class="sector-item badge d-inline-flex align-items-center me-1 mb-1 px-2 py-2" data-id="<?= $sector['id'] ?>" style="background-color: <?= $sector['color'] ?>; cursor: grab; font-size: 0.85rem;">
-                            <i class="fas fa-grip-vertical me-1" style="opacity:0.6; font-size:0.7rem;"></i>
-                            <i class="<?= $sector['icon'] ?> me-1"></i>
-                            <?= htmlspecialchars($sector['name']) ?>
-                            <button type="button" class="btn-close btn-close-white ms-2 sector-remove" style="font-size: 0.5rem;" data-id="<?= $sector['id'] ?>"></button>
-                            <input type="hidden" name="sector_ids[]" value="<?= $sector['id'] ?>">
-                        </div>
-                        <?php endforeach; ?>
-                        <?php if (empty($productSectors)): ?>
-                        <span class="text-muted small sectors-placeholder" style="line-height: 28px; padding: 2px 6px;"><i class="fas fa-info-circle me-1"></i>Clique nos setores abaixo para adicionar e arraste para ordenar</span>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Setores disponíveis para adicionar -->
-                    <div class="d-flex flex-wrap gap-1 mt-2" id="prod-sectors-available">
-                        <?php foreach ($allSectors as $sector): 
-                            $isLinked = in_array($sector['id'], $linkedSectorIds);
-                        ?>
-                        <button type="button" class="btn btn-sm sector-add-btn <?= $isLinked ? 'd-none' : '' ?>" 
-                                data-id="<?= $sector['id'] ?>" data-name="<?= htmlspecialchars($sector['name']) ?>"
-                                data-icon="<?= $sector['icon'] ?>" data-color="<?= $sector['color'] ?>"
-                                style="border: 1px solid <?= $sector['color'] ?>; color: <?= $sector['color'] ?>; font-size: 0.8rem; padding: 3px 10px;">
-                            <i class="fas fa-plus me-1" style="font-size: 0.65rem;"></i>
-                            <i class="<?= $sector['icon'] ?> me-1"></i><?= htmlspecialchars($sector['name']) ?>
-                        </button>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <div class="form-text mt-2"><i class="fas fa-info-circle me-1"></i>Os setores marcados definem o fluxo de produção deste produto. Sem setores, usa o da subcategoria ou categoria.</div>
-                </fieldset>
-                <?php endif; ?>
             </div>
             
             <div class="col-md-4">
@@ -236,74 +187,8 @@
     </form>
 </div>
 
-<!-- SortableJS CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ── Inicializar drag-and-drop para setores de produção ──
-    (function initProductSectors() {
-        const selectedContainer = document.getElementById('prod-sectors-selected');
-        const availableContainer = document.getElementById('prod-sectors-available');
-        if (!selectedContainer || !availableContainer) return;
-
-        new Sortable(selectedContainer, {
-            animation: 150,
-            ghostClass: 'bg-opacity-50',
-            draggable: '.sector-item',
-        });
-
-        availableContainer.querySelectorAll('.sector-add-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const id = this.dataset.id;
-                const name = this.dataset.name;
-                const icon = this.dataset.icon;
-                const color = this.dataset.color;
-
-                // Remover placeholder se existir
-                const placeholder = selectedContainer.querySelector('.sectors-placeholder');
-                if (placeholder) placeholder.remove();
-
-                const item = document.createElement('div');
-                item.className = 'sector-item badge d-inline-flex align-items-center me-1 mb-1 px-2 py-2';
-                item.dataset.id = id;
-                item.style.backgroundColor = color;
-                item.style.cursor = 'grab';
-                item.style.fontSize = '0.85rem';
-                item.innerHTML = `
-                    <i class="fas fa-grip-vertical me-1" style="opacity:0.6; font-size:0.7rem;"></i>
-                    <i class="${icon} me-1"></i>
-                    ${name}
-                    <button type="button" class="btn-close btn-close-white ms-2 sector-remove" style="font-size: 0.5rem;" data-id="${id}"></button>
-                    <input type="hidden" name="sector_ids[]" value="${id}">
-                `;
-                selectedContainer.appendChild(item);
-                this.classList.add('d-none');
-
-                item.querySelector('.sector-remove').addEventListener('click', function() {
-                    removeSector(this.dataset.id);
-                });
-            });
-        });
-
-        selectedContainer.querySelectorAll('.sector-remove').forEach(btn => {
-            btn.addEventListener('click', function() {
-                removeSector(this.dataset.id);
-            });
-        });
-
-        function removeSector(sectorId) {
-            const item = selectedContainer.querySelector(`.sector-item[data-id="${sectorId}"]`);
-            if (item) item.remove();
-            const addBtn = availableContainer.querySelector(`.sector-add-btn[data-id="${sectorId}"]`);
-            if (addBtn) addBtn.classList.remove('d-none');
-            // Se não sobrou nenhum, mostrar placeholder
-            if (!selectedContainer.querySelector('.sector-item')) {
-                selectedContainer.innerHTML = '<span class="text-muted small sectors-placeholder" style="line-height: 28px; padding: 2px 6px;"><i class="fas fa-info-circle me-1"></i>Clique nos setores abaixo para adicionar e arraste para ordenar</span>';
-            }
-        }
-    })();
-
     const categorySelect = document.getElementById('category_id');
     const newCategoryInput = document.getElementById('new_category_name');
     const subcategorySelect = document.getElementById('subcategory_id');

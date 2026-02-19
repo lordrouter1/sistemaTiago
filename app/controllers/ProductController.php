@@ -2,14 +2,12 @@
 require_once 'app/models/Product.php';
 require_once 'app/models/Category.php';
 require_once 'app/models/Subcategory.php';
-require_once 'app/models/ProductionSector.php';
 
 class ProductController {
     
     private $productModel;
     private $categoryModel;
     private $subcategoryModel;
-    private $sectorModel;
     private $logger;
 
     public function __construct() {
@@ -18,7 +16,6 @@ class ProductController {
         $this->productModel = new Product($db);
         $this->categoryModel = new Category($db);
         $this->subcategoryModel = new Subcategory($db);
-        $this->sectorModel = new ProductionSector($db);
         require_once 'app/models/Logger.php';
         $this->logger = new Logger($db);
     }
@@ -45,10 +42,6 @@ class ProductController {
         $priceTableModel = new PriceTable($db);
         $priceTables = $priceTableModel->readAll();
         $productPrices = []; // Nenhum preço salvo ainda (produto novo)
-
-        // Fetch production sectors
-        $allSectors = $this->sectorModel->readAll(true);
-        $productSectors = []; // Nenhum setor vinculado ainda (produto novo)
 
         require 'app/views/layout/header.php';
         require 'app/views/products/create.php';
@@ -91,11 +84,6 @@ class ProductController {
 
             if($productId) {
                 $this->logger->log('CREATE_PRODUCT', 'Created product ID: ' . $productId . ' Name: ' . $data['name']);
-
-                // Salvar setores de produção vinculados
-                if (isset($_POST['sector_ids']) && is_array($_POST['sector_ids'])) {
-                    $this->sectorModel->saveProductSectors($productId, $_POST['sector_ids']);
-                }
 
                 // Salvar preços das tabelas de preço
                 if (!empty($_POST['table_prices']) && is_array($_POST['table_prices'])) {
@@ -209,10 +197,6 @@ class ProductController {
         $priceTables = $priceTableModel->readAll();
         $productPrices = $priceTableModel->getPricesForProduct($id);
 
-        // Fetch production sectors
-        $allSectors = $this->sectorModel->readAll(true);
-        $productSectors = $this->sectorModel->getProductSectors($id);
-
         require 'app/views/layout/header.php';
         require 'app/views/products/edit.php';
         require 'app/views/layout/footer.php';
@@ -252,10 +236,6 @@ class ProductController {
 
             if ($this->productModel->update($data)) {
                 $this->logger->log('UPDATE_PRODUCT', 'Updated product ID: ' . $data['id']);
-
-                // Salvar setores de produção vinculados (limpa se vazio)
-                $sectorIds = isset($_POST['sector_ids']) && is_array($_POST['sector_ids']) ? $_POST['sector_ids'] : [];
-                $this->sectorModel->saveProductSectors($data['id'], $sectorIds);
 
                 // Salvar preços das tabelas de preço
                 if (isset($_POST['table_prices']) && is_array($_POST['table_prices'])) {

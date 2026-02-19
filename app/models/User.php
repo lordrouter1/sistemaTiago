@@ -164,34 +164,4 @@ class User {
         
         return false; 
     }
-
-    /**
-     * Retorna os IDs de setores permitidos para o usuário.
-     * Admin tem acesso a todos. Se o grupo não tem restrições, retorna vazio (= todos).
-     */
-    public function getAllowedSectorIds($userId) {
-        $query = "SELECT role, group_id FROM " . $this->table_name . " WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $userId);
-        $stmt->execute();
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$user || $user['role'] === 'admin') {
-            return []; // vazio = acesso total
-        }
-
-        if ($user['group_id']) {
-            $stmtPerms = $this->conn->prepare("SELECT page_name FROM group_permissions WHERE group_id = :gid AND page_name LIKE 'sector_%'");
-            $stmtPerms->bindParam(':gid', $user['group_id']);
-            $stmtPerms->execute();
-            $perms = $stmtPerms->fetchAll(PDO::FETCH_COLUMN);
-            $sectorIds = [];
-            foreach ($perms as $p) {
-                $sectorIds[] = (int) str_replace('sector_', '', $p);
-            }
-            return $sectorIds;
-        }
-
-        return []; // sem grupo = acesso total
-    }
 }

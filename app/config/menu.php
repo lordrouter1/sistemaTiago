@@ -6,9 +6,10 @@
  *   - Itens do menu principal (header.php)
  *   - Permissões de grupos (groups.php)
  * 
- * ESTRUTURA:
+ * Ao adicionar uma nova página ao sistema, basta incluí-la aqui
+ * e ela aparecerá automaticamente no menu e nas permissões de grupo.
  * 
- *   Item simples (link direto):
+ * Estrutura de cada entrada:
  *   'page_key' => [
  *       'label'      => 'Nome exibido',
  *       'icon'       => 'Classe Font Awesome',
@@ -16,23 +17,11 @@
  *       'permission' => true/false  — aparece na lista de permissões de grupo
  *   ]
  * 
- *   Grupo/Submenu (dropdown):
- *   'grupo' => [
- *       'label'    => 'Nome do grupo',
- *       'icon'     => 'Classe Font Awesome',
- *       'menu'     => true,
- *       'children' => [
- *           'page_key' => [ ... mesmo formato de item simples ... ],
- *       ],
- *   ]
- * 
- * Páginas com 'permission' => false são acessíveis por todos (home, dashboard, profile).
- * Páginas com 'menu' => false não aparecem na navbar (ex: profile, users).
+ * Páginas com 'permission' => false são acessíveis por todos (home, dashboard, profile, pipeline).
+ * Páginas com 'menu' => false não aparecem na navbar (ex: profile, users — ficam no menu direito).
  */
 
 return [
-
-    // ─── Links diretos (sem submenu) ───
     'home' => [
         'label'      => 'Início',
         'icon'       => 'fas fa-home',
@@ -45,105 +34,52 @@ return [
         'menu'       => true,
         'permission' => true,
     ],
-
-    // ─── Grupo: Comercial ───
-    'comercial' => [
-        'label'    => 'Comercial',
-        'icon'     => 'fas fa-briefcase',
-        'menu'     => true,
-        'children' => [
-            'customers' => [
-                'label'      => 'Clientes',
-                'icon'       => 'fas fa-users',
-                'menu'       => true,
-                'permission' => true,
-            ],
-            'orders' => [
-                'label'      => 'Pedidos',
-                'icon'       => 'fas fa-shopping-cart',
-                'menu'       => true,
-                'permission' => true,
-            ],
-            'agenda' => [
-                'label'      => 'Agenda de Contatos',
-                'icon'       => 'fas fa-calendar-alt',
-                'menu'       => true,
-                'permission' => true,
-            ],
-            'price_tables' => [
-                'label'      => 'Tabelas de Preço',
-                'icon'       => 'fas fa-tags',
-                'menu'       => true,
-                'permission' => true,
-            ],
-        ],
+    'customers' => [
+        'label'      => 'Clientes',
+        'icon'       => 'fas fa-users',
+        'menu'       => true,
+        'permission' => true,
     ],
-
-    // ─── Grupo: Catálogo ───
-    'catalogo' => [
-        'label'    => 'Catálogo',
-        'icon'     => 'fas fa-box-open',
-        'menu'     => true,
-        'children' => [
-            'products' => [
-                'label'      => 'Produtos',
-                'icon'       => 'fas fa-box-open',
-                'menu'       => true,
-                'permission' => true,
-            ],
-            'categories' => [
-                'label'      => 'Categorias',
-                'icon'       => 'fas fa-folder-open',
-                'menu'       => true,
-                'permission' => true,
-            ],
-        ],
+    'products' => [
+        'label'      => 'Produtos',
+        'icon'       => 'fas fa-box-open',
+        'menu'       => true,
+        'permission' => true,
     ],
-
-    // ─── Grupo: Produção ───
-    'producao' => [
-        'label'    => 'Produção',
-        'icon'     => 'fas fa-industry',
-        'menu'     => true,
-        'children' => [
-            'pipeline' => [
-                'label'      => 'Linha de Produção',
-                'icon'       => 'fas fa-stream',
-                'menu'       => true,
-                'permission' => true,
-            ],
-            'production_board' => [
-                'label'      => 'Painel de Produção',
-                'icon'       => 'fas fa-tasks',
-                'menu'       => true,
-                'permission' => true,
-            ],
-            'sectors' => [
-                'label'      => 'Setores',
-                'icon'       => 'fas fa-industry',
-                'menu'       => true,
-                'permission' => true,
-            ],
-        ],
+    'price_tables' => [
+        'label'      => 'Tabelas de Preço',
+        'icon'       => 'fas fa-tags',
+        'menu'       => true,
+        'permission' => true,
     ],
-
-    // ─── Itens ocultos do menu principal (ficam no menu direito) ───
+    'orders' => [
+        'label'      => 'Pedidos',
+        'icon'       => 'fas fa-shopping-cart',
+        'menu'       => true,
+        'permission' => true,
+    ],
+    'pipeline' => [
+        'label'      => 'Produção',
+        'icon'       => 'fas fa-stream',
+        'menu'       => true,
+        'permission' => true,
+    ],
     'settings' => [
         'label'      => 'Configurações',
         'icon'       => 'fas fa-building',
-        'menu'       => false,
+        'menu'       => false,   // Fica no menu direito (engrenagem)
         'permission' => true,
     ],
     'users' => [
         'label'      => 'Gestão de Usuários',
-        'icon'       => 'fas fa-users-cog',
-        'menu'       => false,
+        'icon'       => 'fas fa-cog',
+        'menu'       => false,   // Fica no menu direito (engrenagem), não no principal
         'permission' => true,
     ],
     'profile' => [
         'label'      => 'Meu Perfil',
         'icon'       => 'fas fa-user-circle',
-        'menu'       => false,
+        'menu'       => false,   // Fica no menu direito
         'permission' => false,
     ],
 ];

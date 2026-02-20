@@ -388,6 +388,35 @@ switch ($page) {
         }
         break;
 
+    // ── Controle de Estoque ──
+    case 'stock':
+        require_once 'app/controllers/StockController.php';
+        $controller = new StockController();
+        if ($action == 'warehouses') {
+            $controller->warehouses();
+        } elseif ($action == 'storeWarehouse') {
+            $controller->storeWarehouse();
+        } elseif ($action == 'updateWarehouse') {
+            $controller->updateWarehouse();
+        } elseif ($action == 'deleteWarehouse') {
+            $controller->deleteWarehouse();
+        } elseif ($action == 'entry') {
+            $controller->entry();
+        } elseif ($action == 'storeMovement') {
+            $controller->storeMovement();
+        } elseif ($action == 'movements') {
+            $controller->movements();
+        } elseif ($action == 'getProductCombinations') {
+            $controller->getProductCombinations();
+        } elseif ($action == 'updateItemMeta') {
+            $controller->updateItemMeta();
+        } elseif ($action == 'getProductStock') {
+            $controller->getProductStock();
+        } else {
+            $controller->index();
+        }
+        break;
+
     default:
         http_response_code(404);
         require 'app/views/layout/header.php';

@@ -97,6 +97,12 @@ return [
                 'menu'       => true,
                 'permission' => true,
             ],
+            'stock' => [
+                'label'      => 'Controle de Estoque',
+                'icon'       => 'fas fa-warehouse',
+                'menu'       => true,
+                'permission' => true,
+            ],
         ],
     ],
 

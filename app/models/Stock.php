@@ -1,0 +1,454 @@
+<?php
+/**
+ * Stock Model
+ * Gerencia armazéns, itens de estoque e movimentações.
+ */
+class Stock {
+    private $conn;
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    // ═══════════════════════════════════════════════
+    //  WAREHOUSES (Armazéns)
+    // ═══════════════════════════════════════════════
+
+    public function getAllWarehouses($onlyActive = true) {
+        $where = $onlyActive ? "WHERE is_active = 1" : "";
+        $stmt = $this->conn->prepare("
+            SELECT w.*, 
+                   (SELECT COUNT(*) FROM stock_items si WHERE si.warehouse_id = w.id) as total_items,
+                   (SELECT COALESCE(SUM(si.quantity), 0) FROM stock_items si WHERE si.warehouse_id = w.id) as total_quantity
+            FROM warehouses w 
+            $where 
+            ORDER BY w.name ASC
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getWarehouse($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM warehouses WHERE id = :id");
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function createWarehouse($data) {
+        $stmt = $this->conn->prepare("
+            INSERT INTO warehouses (name, address, city, state, zip_code, phone, notes)
+            VALUES (:name, :address, :city, :state, :zip_code, :phone, :notes)
+        ");
+        $stmt->bindParam(':name', $data['name']);
+        $stmt->bindParam(':address', $data['address']);
+        $stmt->bindParam(':city', $data['city']);
+        $stmt->bindParam(':state', $data['state']);
+        $stmt->bindParam(':zip_code', $data['zip_code']);
+        $stmt->bindParam(':phone', $data['phone']);
+        $stmt->bindParam(':notes', $data['notes']);
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId();
+        }
+        return false;
+    }
+
+    public function updateWarehouse($data) {
+        $stmt = $this->conn->prepare("
+            UPDATE warehouses SET 
+                name = :name, address = :address, city = :city, state = :state,
+                zip_code = :zip_code, phone = :phone, notes = :notes, is_active = :is_active
+            WHERE id = :id
+        ");
+        $stmt->bindParam(':name', $data['name']);
+        $stmt->bindParam(':address', $data['address']);
+        $stmt->bindParam(':city', $data['city']);
+        $stmt->bindParam(':state', $data['state']);
+        $stmt->bindParam(':zip_code', $data['zip_code']);
+        $stmt->bindParam(':phone', $data['phone']);
+        $stmt->bindParam(':notes', $data['notes']);
+        $stmt->bindParam(':is_active', $data['is_active']);
+        $stmt->bindParam(':id', $data['id']);
+        return $stmt->execute();
+    }
+
+    public function deleteWarehouse($id) {
+        $stmt = $this->conn->prepare("DELETE FROM warehouses WHERE id = :id");
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
+    // ═══════════════════════════════════════════════
+    //  STOCK ITEMS (Itens no estoque)
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Listar itens do estoque com filtros
+     */
+    public function getStockItems($warehouseId = null, $search = '', $lowStock = false) {
+        $where = ["1=1"];
+        $params = [];
+
+        if ($warehouseId) {
+            $where[] = "si.warehouse_id = :wid";
+            $params[':wid'] = $warehouseId;
+        }
+        if ($search) {
+            $where[] = "(p.name LIKE :search OR pgc.combination_label LIKE :search2 OR si.location_code LIKE :search3)";
+            $params[':search'] = "%$search%";
+            $params[':search2'] = "%$search%";
+            $params[':search3'] = "%$search%";
+        }
+        if ($lowStock) {
+            $where[] = "si.quantity <= si.min_quantity AND si.min_quantity > 0";
+        }
+
+        $whereStr = implode(' AND ', $where);
+
+        $stmt = $this->conn->prepare("
+            SELECT si.*, 
+                   p.name as product_name, p.price as product_price,
+                   pgc.combination_label, pgc.sku as combination_sku,
+                   w.name as warehouse_name,
+                   (SELECT image_path FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = 1 LIMIT 1) as product_image
+            FROM stock_items si
+            JOIN products p ON si.product_id = p.id
+            JOIN warehouses w ON si.warehouse_id = w.id
+            LEFT JOIN product_grade_combinations pgc ON si.combination_id = pgc.id
+            WHERE $whereStr
+            ORDER BY p.name ASC, pgc.combination_label ASC
+        ");
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obter ou criar item de estoque
+     */
+    public function getOrCreateStockItem($warehouseId, $productId, $combinationId = null) {
+        // Tenta buscar existente
+        if ($combinationId) {
+            $stmt = $this->conn->prepare("
+                SELECT * FROM stock_items 
+                WHERE warehouse_id = :wid AND product_id = :pid AND combination_id = :cid
+            ");
+            $stmt->bindParam(':cid', $combinationId);
+        } else {
+            $stmt = $this->conn->prepare("
+                SELECT * FROM stock_items 
+                WHERE warehouse_id = :wid AND product_id = :pid AND combination_id IS NULL
+            ");
+        }
+        $stmt->bindParam(':wid', $warehouseId);
+        $stmt->bindParam(':pid', $productId);
+        $stmt->execute();
+        $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($item) return $item;
+
+        // Criar novo
+        $stmt2 = $this->conn->prepare("
+            INSERT INTO stock_items (warehouse_id, product_id, combination_id, quantity)
+            VALUES (:wid, :pid, :cid, 0)
+        ");
+        $stmt2->bindParam(':wid', $warehouseId);
+        $stmt2->bindParam(':pid', $productId);
+        $stmt2->bindValue(':cid', $combinationId);
+        $stmt2->execute();
+
+        $newId = $this->conn->lastInsertId();
+        $stmtGet = $this->conn->prepare("SELECT * FROM stock_items WHERE id = :id");
+        $stmtGet->bindParam(':id', $newId);
+        $stmtGet->execute();
+        return $stmtGet->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getStockItem($id) {
+        $stmt = $this->conn->prepare("
+            SELECT si.*, 
+                   p.name as product_name, 
+                   pgc.combination_label,
+                   w.name as warehouse_name
+            FROM stock_items si
+            JOIN products p ON si.product_id = p.id
+            JOIN warehouses w ON si.warehouse_id = w.id
+            LEFT JOIN product_grade_combinations pgc ON si.combination_id = pgc.id
+            WHERE si.id = :id
+        ");
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function updateStockItemMeta($id, $minQuantity, $locationCode) {
+        $stmt = $this->conn->prepare("
+            UPDATE stock_items SET min_quantity = :min_qty, location_code = :loc WHERE id = :id
+        ");
+        $stmt->bindParam(':min_qty', $minQuantity);
+        $stmt->bindParam(':loc', $locationCode);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
+    // ═══════════════════════════════════════════════
+    //  STOCK MOVEMENTS (Movimentações)
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Registrar movimentação de estoque
+     */
+    public function addMovement($data) {
+        $stockItem = $this->getOrCreateStockItem(
+            $data['warehouse_id'],
+            $data['product_id'],
+            $data['combination_id'] ?? null
+        );
+
+        $qtyBefore = (float) $stockItem['quantity'];
+        $quantity = (float) $data['quantity'];
+        $type = $data['type'];
+
+        // Calcular novo saldo
+        if ($type === 'entrada') {
+            $qtyAfter = $qtyBefore + $quantity;
+        } elseif ($type === 'saida') {
+            $qtyAfter = $qtyBefore - $quantity;
+            if ($qtyAfter < 0) $qtyAfter = 0;
+        } elseif ($type === 'ajuste') {
+            $qtyAfter = $quantity; // Ajuste define o saldo diretamente
+            $quantity = abs($qtyAfter - $qtyBefore);
+        } else {
+            // transferencia: saída do armazém origem
+            $qtyAfter = $qtyBefore - $quantity;
+            if ($qtyAfter < 0) $qtyAfter = 0;
+        }
+
+        // Atualizar saldo do item
+        $stmtUpd = $this->conn->prepare("UPDATE stock_items SET quantity = :qty WHERE id = :id");
+        $stmtUpd->bindParam(':qty', $qtyAfter);
+        $stmtUpd->bindParam(':id', $stockItem['id']);
+        $stmtUpd->execute();
+
+        // Registrar movimentação
+        $userId = $_SESSION['user_id'] ?? null;
+        $stmt = $this->conn->prepare("
+            INSERT INTO stock_movements 
+                (stock_item_id, warehouse_id, product_id, combination_id, type, quantity, 
+                 quantity_before, quantity_after, reason, reference_type, reference_id, 
+                 destination_warehouse_id, user_id)
+            VALUES 
+                (:sid, :wid, :pid, :cid, :type, :qty, :qty_before, :qty_after, :reason, 
+                 :ref_type, :ref_id, :dest_wid, :uid)
+        ");
+        $stmt->bindParam(':sid', $stockItem['id']);
+        $stmt->bindParam(':wid', $data['warehouse_id']);
+        $stmt->bindParam(':pid', $data['product_id']);
+        $stmt->bindValue(':cid', $data['combination_id'] ?? null);
+        $stmt->bindParam(':type', $type);
+        $stmt->bindParam(':qty', $quantity);
+        $stmt->bindParam(':qty_before', $qtyBefore);
+        $stmt->bindParam(':qty_after', $qtyAfter);
+        $stmt->bindValue(':reason', $data['reason'] ?? null);
+        $stmt->bindValue(':ref_type', $data['reference_type'] ?? 'manual');
+        $stmt->bindValue(':ref_id', $data['reference_id'] ?? null);
+        $stmt->bindValue(':dest_wid', $data['destination_warehouse_id'] ?? null);
+        $stmt->bindParam(':uid', $userId);
+        $stmt->execute();
+
+        $movementId = $this->conn->lastInsertId();
+
+        // Se for transferência, criar entrada no armazém destino
+        if ($type === 'transferencia' && !empty($data['destination_warehouse_id'])) {
+            $destItem = $this->getOrCreateStockItem(
+                $data['destination_warehouse_id'],
+                $data['product_id'],
+                $data['combination_id'] ?? null
+            );
+            $destBefore = (float) $destItem['quantity'];
+            $destAfter = $destBefore + (float) $data['quantity'];
+
+            $stmtUpdDest = $this->conn->prepare("UPDATE stock_items SET quantity = :qty WHERE id = :id");
+            $stmtUpdDest->bindParam(':qty', $destAfter);
+            $stmtUpdDest->bindParam(':id', $destItem['id']);
+            $stmtUpdDest->execute();
+
+            $stmtDest = $this->conn->prepare("
+                INSERT INTO stock_movements 
+                    (stock_item_id, warehouse_id, product_id, combination_id, type, quantity,
+                     quantity_before, quantity_after, reason, reference_type, reference_id, user_id)
+                VALUES 
+                    (:sid, :wid, :pid, :cid, 'entrada', :qty, :qty_before, :qty_after, :reason, 
+                     'transfer', :ref_id, :uid)
+            ");
+            $stmtDest->bindParam(':sid', $destItem['id']);
+            $stmtDest->bindParam(':wid', $data['destination_warehouse_id']);
+            $stmtDest->bindParam(':pid', $data['product_id']);
+            $stmtDest->bindValue(':cid', $data['combination_id'] ?? null);
+            $stmtDest->bindValue(':qty', $data['quantity']);
+            $stmtDest->bindParam(':qty_before', $destBefore);
+            $stmtDest->bindParam(':qty_after', $destAfter);
+            $stmtDest->bindValue(':reason', 'Transferência do armazém: ' . ($data['warehouse_id']));
+            $stmtDest->bindParam(':ref_id', $movementId);
+            $stmtDest->bindParam(':uid', $userId);
+            $stmtDest->execute();
+        }
+
+        return $movementId;
+    }
+
+    /**
+     * Listar movimentações com filtros
+     */
+    public function getMovements($filters = []) {
+        $where = ["1=1"];
+        $params = [];
+
+        if (!empty($filters['warehouse_id'])) {
+            $where[] = "sm.warehouse_id = :wid";
+            $params[':wid'] = $filters['warehouse_id'];
+        }
+        if (!empty($filters['product_id'])) {
+            $where[] = "sm.product_id = :pid";
+            $params[':pid'] = $filters['product_id'];
+        }
+        if (!empty($filters['type'])) {
+            $where[] = "sm.type = :type";
+            $params[':type'] = $filters['type'];
+        }
+        if (!empty($filters['date_from'])) {
+            $where[] = "sm.created_at >= :date_from";
+            $params[':date_from'] = $filters['date_from'] . ' 00:00:00';
+        }
+        if (!empty($filters['date_to'])) {
+            $where[] = "sm.created_at <= :date_to";
+            $params[':date_to'] = $filters['date_to'] . ' 23:59:59';
+        }
+
+        $whereStr = implode(' AND ', $where);
+        $limit = !empty($filters['limit']) ? "LIMIT " . intval($filters['limit']) : "LIMIT 200";
+
+        $stmt = $this->conn->prepare("
+            SELECT sm.*, 
+                   p.name as product_name,
+                   pgc.combination_label,
+                   w.name as warehouse_name,
+                   dw.name as dest_warehouse_name,
+                   u.name as user_name
+            FROM stock_movements sm
+            JOIN products p ON sm.product_id = p.id
+            JOIN warehouses w ON sm.warehouse_id = w.id
+            LEFT JOIN product_grade_combinations pgc ON sm.combination_id = pgc.id
+            LEFT JOIN warehouses dw ON sm.destination_warehouse_id = dw.id
+            LEFT JOIN users u ON sm.user_id = u.id
+            WHERE $whereStr
+            ORDER BY sm.created_at DESC
+            $limit
+        ");
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // ═══════════════════════════════════════════════
+    //  DASHBOARD / RESUMOS
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Resumo geral do estoque
+     */
+    public function getDashboardSummary() {
+        $summary = [];
+
+        // Total de armazéns
+        $stmt = $this->conn->query("SELECT COUNT(*) FROM warehouses WHERE is_active = 1");
+        $summary['total_warehouses'] = $stmt->fetchColumn();
+
+        // Total de itens cadastrados
+        $stmt = $this->conn->query("SELECT COUNT(*) FROM stock_items");
+        $summary['total_items'] = $stmt->fetchColumn();
+
+        // Total de produtos distintos
+        $stmt = $this->conn->query("SELECT COUNT(DISTINCT product_id) FROM stock_items WHERE quantity > 0");
+        $summary['products_in_stock'] = $stmt->fetchColumn();
+
+        // Valor total do estoque
+        $stmt = $this->conn->query("
+            SELECT COALESCE(SUM(si.quantity * p.price), 0) 
+            FROM stock_items si 
+            JOIN products p ON si.product_id = p.id
+        ");
+        $summary['total_value'] = $stmt->fetchColumn();
+
+        // Itens abaixo do estoque mínimo
+        $stmt = $this->conn->query("
+            SELECT COUNT(*) FROM stock_items 
+            WHERE min_quantity > 0 AND quantity <= min_quantity
+        ");
+        $summary['low_stock_count'] = $stmt->fetchColumn();
+
+        // Movimentações hoje
+        $stmt = $this->conn->query("
+            SELECT COUNT(*) FROM stock_movements 
+            WHERE DATE(created_at) = CURDATE()
+        ");
+        $summary['movements_today'] = $stmt->fetchColumn();
+
+        return $summary;
+    }
+
+    /**
+     * Itens com estoque baixo
+     */
+    public function getLowStockItems($limit = 10) {
+        $stmt = $this->conn->prepare("
+            SELECT si.*, p.name as product_name, pgc.combination_label, w.name as warehouse_name,
+                   (SELECT image_path FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = 1 LIMIT 1) as product_image
+            FROM stock_items si
+            JOIN products p ON si.product_id = p.id
+            JOIN warehouses w ON si.warehouse_id = w.id
+            LEFT JOIN product_grade_combinations pgc ON si.combination_id = pgc.id
+            WHERE si.min_quantity > 0 AND si.quantity <= si.min_quantity
+            ORDER BY (si.quantity / si.min_quantity) ASC
+            LIMIT :lim
+        ");
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Buscar produtos com suas variações para seleção
+     */
+    public function getProductsForSelection() {
+        $stmt = $this->conn->prepare("
+            SELECT p.id, p.name, p.price, p.stock_quantity,
+                   c.name as category_name,
+                   (SELECT image_path FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = 1 LIMIT 1) as product_image
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.id
+            ORDER BY p.name ASC
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Buscar combinações (variações) de um produto
+     */
+    public function getProductCombinations($productId) {
+        $stmt = $this->conn->prepare("
+            SELECT id, combination_label, sku, price_override, is_active
+            FROM product_grade_combinations
+            WHERE product_id = :pid AND is_active = 1
+            ORDER BY combination_label ASC
+        ");
+        $stmt->bindParam(':pid', $productId);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}

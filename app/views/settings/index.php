@@ -21,6 +21,16 @@
                 <i class="fas fa-boxes-packing me-1"></i> Etapas de Preparo
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $activeTab === 'boleto' ? 'active' : '' ?>" href="/sistemaTiago/?page=settings&tab=boleto">
+                <i class="fas fa-barcode me-1"></i> Boleto / Bancário
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $activeTab === 'fiscal' ? 'active' : '' ?>" href="/sistemaTiago/?page=settings&tab=fiscal">
+                <i class="fas fa-file-invoice me-1"></i> Fiscal / NF-e
+            </a>
+        </li>
     </ul>
 
     <?php if ($activeTab === 'company'): ?>
@@ -527,6 +537,584 @@
             </form>
         </div>
     </div>
+    <?php endif; ?>
+
+    <?php if ($activeTab === 'boleto'): ?>
+    <!-- ══════════ ABA: BOLETO / BANCÁRIO ══════════ -->
+    <form method="POST" action="/sistemaTiago/?page=settings&action=saveBankSettings">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Dados Bancários do Cedente -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #f39c12;">
+                        <i class="fas fa-university me-2"></i>Dados Bancários do Cedente
+                    </legend>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Banco</label>
+                            <select class="form-select" name="boleto_banco" id="boletoBanco">
+                                <option value="">Selecione o banco...</option>
+                                <?php
+                                $bancos = [
+                                    '001' => '001 — Banco do Brasil',
+                                    '033' => '033 — Santander',
+                                    '104' => '104 — Caixa Econômica Federal',
+                                    '237' => '237 — Bradesco',
+                                    '341' => '341 — Itaú Unibanco',
+                                    '356' => '356 — Banco Real (ABN Amro)',
+                                    '389' => '389 — Banco Mercantil do Brasil',
+                                    '399' => '399 — HSBC',
+                                    '422' => '422 — Banco Safra',
+                                    '453' => '453 — Banco Rural',
+                                    '633' => '633 — Banco Rendimento',
+                                    '652' => '652 — Itaú Unibanco Holding',
+                                    '707' => '707 — Banco Daycoval',
+                                    '745' => '745 — Citibank',
+                                    '748' => '748 — Sicredi',
+                                    '756' => '756 — Sicoob',
+                                    '084' => '084 — Uniprime',
+                                    '136' => '136 — Unicred',
+                                    '077' => '077 — Banco Inter',
+                                    '260' => '260 — Nu Pagamentos (Nubank)',
+                                    '336' => '336 — Banco C6',
+                                    '290' => '290 — PagSeguro',
+                                    '380' => '380 — PicPay',
+                                    '403' => '403 — Cora SCD',
+                                    '323' => '323 — Mercado Pago',
+                                ];
+                                foreach ($bancos as $cod => $nome): ?>
+                                <option value="<?= $cod ?>" <?= ($settings['boleto_banco'] ?? '') === $cod ? 'selected' : '' ?>><?= $nome ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Agência</label>
+                            <input type="text" class="form-control" name="boleto_agencia" value="<?= htmlspecialchars($settings['boleto_agencia'] ?? '') ?>" placeholder="0000" maxlength="10">
+                            <small class="text-muted" style="font-size:0.65rem;">Sem dígito verificador</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Dígito Agência</label>
+                            <input type="text" class="form-control" name="boleto_agencia_dv" value="<?= htmlspecialchars($settings['boleto_agencia_dv'] ?? '') ?>" placeholder="0" maxlength="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Conta Corrente</label>
+                            <input type="text" class="form-control" name="boleto_conta" value="<?= htmlspecialchars($settings['boleto_conta'] ?? '') ?>" placeholder="00000000" maxlength="15">
+                            <small class="text-muted" style="font-size:0.65rem;">Sem dígito verificador</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small text-muted">Dígito Conta</label>
+                            <input type="text" class="form-control" name="boleto_conta_dv" value="<?= htmlspecialchars($settings['boleto_conta_dv'] ?? '') ?>" placeholder="0" maxlength="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Carteira</label>
+                            <input type="text" class="form-control" name="boleto_carteira" value="<?= htmlspecialchars($settings['boleto_carteira'] ?? '109') ?>" placeholder="Ex: 109, 17, RG" maxlength="5">
+                            <small class="text-muted" style="font-size:0.65rem;">Consulte o banco</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Espécie Moeda</label>
+                            <select class="form-select" name="boleto_especie">
+                                <option value="R$" <?= ($settings['boleto_especie'] ?? 'R$') === 'R$' ? 'selected' : '' ?>>R$ (Real)</option>
+                                <option value="US$" <?= ($settings['boleto_especie'] ?? '') === 'US$' ? 'selected' : '' ?>>US$ (Dólar)</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Cedente / Beneficiário -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #f39c12;">
+                        <i class="fas fa-user-tie me-2"></i>Cedente / Beneficiário
+                    </legend>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Nome/Razão Social do Cedente</label>
+                            <input type="text" class="form-control" name="boleto_cedente" value="<?= htmlspecialchars($settings['boleto_cedente'] ?? $settings['company_name'] ?? '') ?>" placeholder="Nome conforme registrado no banco">
+                            <small class="text-muted" style="font-size:0.65rem;">Conforme registrado junto ao banco</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">CNPJ/CPF do Cedente</label>
+                            <input type="text" class="form-control" name="boleto_cedente_documento" value="<?= htmlspecialchars($settings['boleto_cedente_documento'] ?? $settings['company_document'] ?? '') ?>" placeholder="00.000.000/0000-00">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Código do Cedente / Convênio</label>
+                            <input type="text" class="form-control" name="boleto_convenio" value="<?= htmlspecialchars($settings['boleto_convenio'] ?? '') ?>" placeholder="Ex: 1234567" maxlength="20">
+                            <small class="text-muted" style="font-size:0.65rem;">Fornecido pelo banco ao contratar o serviço de cobrança</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Nosso Número (Próximo)</label>
+                            <input type="number" class="form-control" name="boleto_nosso_numero" value="<?= htmlspecialchars($settings['boleto_nosso_numero'] ?? '1') ?>" placeholder="1" min="1">
+                            <small class="text-muted" style="font-size:0.65rem;">Será incrementado automaticamente a cada boleto gerado</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Nº de Dígitos do Nosso Número</label>
+                            <select class="form-select" name="boleto_nosso_numero_digitos">
+                                <?php for ($d = 6; $d <= 12; $d++): ?>
+                                <option value="<?= $d ?>" <?= ($settings['boleto_nosso_numero_digitos'] ?? '7') == $d ? 'selected' : '' ?>><?= $d ?> dígitos</option>
+                                <?php endfor; ?>
+                            </select>
+                            <small class="text-muted" style="font-size:0.65rem;">Depende do banco/convênio</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Instruções do Boleto -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #f39c12;">
+                        <i class="fas fa-file-alt me-2"></i>Instruções e Textos do Boleto
+                    </legend>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted">Instruções de Pagamento (aparece no boleto)</label>
+                            <textarea class="form-control" name="boleto_instrucoes" rows="3" placeholder="Linha 1: Não receber após o vencimento.&#10;Linha 2: Multa de 2% após vencimento.&#10;Linha 3: Juros de 1% ao mês."><?= htmlspecialchars($settings['boleto_instrucoes'] ?? "Não receber após o vencimento.\nMulta de 2% após o vencimento.\nJuros de 1% ao mês.") ?></textarea>
+                            <small class="text-muted" style="font-size:0.65rem;">Cada linha será exibida separadamente. Máximo 3 linhas recomendado.</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Multa (%)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="boleto_multa" step="0.01" min="0" max="100" value="<?= htmlspecialchars($settings['boleto_multa'] ?? '2.00') ?>">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Juros ao Mês (%)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="boleto_juros" step="0.01" min="0" max="100" value="<?= htmlspecialchars($settings['boleto_juros'] ?? '1.00') ?>">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Aceite</label>
+                            <select class="form-select" name="boleto_aceite">
+                                <option value="N" <?= ($settings['boleto_aceite'] ?? 'N') === 'N' ? 'selected' : '' ?>>N — Não</option>
+                                <option value="S" <?= ($settings['boleto_aceite'] ?? '') === 'S' ? 'selected' : '' ?>>S — Sim</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Espécie Doc.</label>
+                            <select class="form-select" name="boleto_especie_doc">
+                                <?php 
+                                $especies = ['DM' => 'DM — Duplicata Mercantil', 'DS' => 'DS — Duplicata de Serviço', 'NP' => 'NP — Nota Promissória', 'RC' => 'RC — Recibo', 'ME' => 'ME — Mensalidade Escolar', 'OU' => 'OU — Outros'];
+                                foreach ($especies as $cod => $nome): ?>
+                                <option value="<?= $cod ?>" <?= ($settings['boleto_especie_doc'] ?? 'DM') === $cod ? 'selected' : '' ?>><?= $nome ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted">Demonstrativo (opcional)</label>
+                            <textarea class="form-control" name="boleto_demonstrativo" rows="2" placeholder="Texto descritivo do serviço/produto (opcional)"><?= htmlspecialchars($settings['boleto_demonstrativo'] ?? '') ?></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Local de Pagamento</label>
+                            <input type="text" class="form-control" name="boleto_local_pagamento" value="<?= htmlspecialchars($settings['boleto_local_pagamento'] ?? 'Pagável em qualquer banco até o vencimento') ?>" placeholder="Pagável em qualquer banco até o vencimento">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Endereço do Cedente no Boleto</label>
+                            <input type="text" class="form-control" name="boleto_cedente_endereco" value="<?= htmlspecialchars($settings['boleto_cedente_endereco'] ?? '') ?>" placeholder="Deixe em branco para usar o endereço da empresa">
+                            <small class="text-muted" style="font-size:0.65rem;">Se vazio, será usado o endereço cadastrado em Dados da Empresa</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="text-end mb-4">
+                    <button type="submit" class="btn px-4 fw-bold text-white" style="background:#f39c12;"><i class="fas fa-save me-2"></i>Salvar Configurações Bancárias</button>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Info e Preview -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header py-2" style="background: #fef5e7;">
+                        <h6 class="mb-0 fw-bold" style="color:#f39c12;"><i class="fas fa-info-circle me-2"></i>Sobre o Boleto</h6>
+                    </div>
+                    <div class="card-body small">
+                        <p><strong>Padrão FEBRABAN:</strong> Os boletos gerados seguem o layout padrão da Federação Brasileira de Bancos.</p>
+                        <ul class="mb-2">
+                            <li>O <strong>Nosso Número</strong> é incrementado automaticamente.</li>
+                            <li>A <strong>linha digitável</strong> e o <strong>código de barras</strong> são gerados conforme regras do banco selecionado.</li>
+                            <li>Configure a <strong>carteira</strong> conforme o contrato com o banco.</li>
+                            <li>As <strong>instruções</strong> aparecem no canhoto/recibo do sacado.</li>
+                        </ul>
+                        <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:0.75rem;">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong>Importante:</strong> Estes boletos são gerados localmente para impressão. Para registro bancário (compensação), é necessário integração com a API de cobrança do banco.
+                        </div>
+                        <p class="text-muted mb-0"><strong>CNAB:</strong> Compatível com os padrões CNAB 240 e CNAB 400 para futura geração de arquivos de remessa.</p>
+                    </div>
+                </div>
+
+                <!-- Preview do Boleto -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header py-2" style="background: #fef5e7;">
+                        <h6 class="mb-0 fw-bold" style="color:#f39c12;"><i class="fas fa-eye me-2"></i>Prévia dos Dados</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="border rounded p-3 bg-light" style="font-size:0.75rem;">
+                            <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                <strong><?= htmlspecialchars($settings['boleto_cedente'] ?? $settings['company_name'] ?? '(Cedente)') ?></strong>
+                                <span class="badge" style="background:#f39c12;color:#fff;"><?= htmlspecialchars($settings['boleto_banco'] ?? '---') ?></span>
+                            </div>
+                            <div class="mb-1"><strong>Ag:</strong> <?= htmlspecialchars(($settings['boleto_agencia'] ?? '----') . '-' . ($settings['boleto_agencia_dv'] ?? '0')) ?></div>
+                            <div class="mb-1"><strong>CC:</strong> <?= htmlspecialchars(($settings['boleto_conta'] ?? '------') . '-' . ($settings['boleto_conta_dv'] ?? '0')) ?></div>
+                            <div class="mb-1"><strong>Carteira:</strong> <?= htmlspecialchars($settings['boleto_carteira'] ?? '---') ?></div>
+                            <div class="mb-1"><strong>Convênio:</strong> <?= htmlspecialchars($settings['boleto_convenio'] ?? '---') ?></div>
+                            <div class="mb-1"><strong>Nosso Nº:</strong> <?= htmlspecialchars($settings['boleto_nosso_numero'] ?? '1') ?></div>
+                            <hr class="my-2">
+                            <div class="text-muted" style="font-size:0.65rem;">
+                                <i class="fas fa-barcode me-1"></i>
+                                Código de barras será gerado na impressão do boleto
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <?php endif; ?>
+
+    <?php if ($activeTab === 'fiscal'): ?>
+    <!-- ══════════ ABA: FISCAL / NF-e ══════════ -->
+    <form method="POST" action="/sistemaTiago/?page=settings&action=saveFiscalSettings">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Identificação Fiscal da Empresa -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #8e44ad;">
+                        <i class="fas fa-id-card-alt me-2"></i>Identificação Fiscal
+                    </legend>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Razão Social</label>
+                            <input type="text" class="form-control" name="fiscal_razao_social" value="<?= htmlspecialchars($settings['fiscal_razao_social'] ?? '') ?>" placeholder="Razão social conforme CNPJ">
+                            <small class="text-muted" style="font-size:0.65rem;">Conforme registrado na Receita Federal</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Nome Fantasia</label>
+                            <input type="text" class="form-control" name="fiscal_nome_fantasia" value="<?= htmlspecialchars($settings['fiscal_nome_fantasia'] ?? '') ?>" placeholder="Nome fantasia">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">CNPJ</label>
+                            <input type="text" class="form-control" name="fiscal_cnpj" value="<?= htmlspecialchars($settings['fiscal_cnpj'] ?? '') ?>" placeholder="00.000.000/0000-00" maxlength="18">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Inscrição Estadual (IE)</label>
+                            <input type="text" class="form-control" name="fiscal_ie" value="<?= htmlspecialchars($settings['fiscal_ie'] ?? '') ?>" placeholder="Inscrição Estadual" maxlength="20">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Inscrição Municipal (IM)</label>
+                            <input type="text" class="form-control" name="fiscal_im" value="<?= htmlspecialchars($settings['fiscal_im'] ?? '') ?>" placeholder="Inscrição Municipal" maxlength="20">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">CNAE Principal</label>
+                            <input type="text" class="form-control" name="fiscal_cnae" value="<?= htmlspecialchars($settings['fiscal_cnae'] ?? '') ?>" placeholder="0000-0/00" maxlength="12">
+                            <small class="text-muted" style="font-size:0.65rem;">Classificação Nacional de Atividades Econômicas</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Regime Tributário (CRT)</label>
+                            <select class="form-select" name="fiscal_crt">
+                                <option value="1" <?= ($settings['fiscal_crt'] ?? '1') == '1' ? 'selected' : '' ?>>1 — Simples Nacional</option>
+                                <option value="2" <?= ($settings['fiscal_crt'] ?? '') == '2' ? 'selected' : '' ?>>2 — Simples Nacional (excesso sublimite)</option>
+                                <option value="3" <?= ($settings['fiscal_crt'] ?? '') == '3' ? 'selected' : '' ?>>3 — Regime Normal (Lucro Presumido/Real)</option>
+                                <option value="4" <?= ($settings['fiscal_crt'] ?? '') == '4' ? 'selected' : '' ?>>4 — MEI — Simples Nacional</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Endereço Fiscal -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #8e44ad;">
+                        <i class="fas fa-map-pin me-2"></i>Endereço Fiscal
+                    </legend>
+                    <div class="alert alert-info py-2 px-3 small mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Preencha somente se o endereço fiscal for diferente do endereço comercial cadastrado em <strong>Dados da Empresa</strong>.
+                        Se deixado em branco, será usado o endereço comercial.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold small text-muted">Logradouro</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_logradouro" value="<?= htmlspecialchars($settings['fiscal_endereco_logradouro'] ?? '') ?>" placeholder="Rua, Av, Travessa...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small text-muted">Número</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_numero" value="<?= htmlspecialchars($settings['fiscal_endereco_numero'] ?? '') ?>" placeholder="Nº">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold small text-muted">Complemento</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_complemento" value="<?= htmlspecialchars($settings['fiscal_endereco_complemento'] ?? '') ?>" placeholder="Sala, Andar, Bloco...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Bairro</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_bairro" value="<?= htmlspecialchars($settings['fiscal_endereco_bairro'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Cidade</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_cidade" value="<?= htmlspecialchars($settings['fiscal_endereco_cidade'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small text-muted">UF</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_uf" value="<?= htmlspecialchars($settings['fiscal_endereco_uf'] ?? '') ?>" maxlength="2" placeholder="SP">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small text-muted">CEP</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_cep" value="<?= htmlspecialchars($settings['fiscal_endereco_cep'] ?? '') ?>" placeholder="00000-000" maxlength="9">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Código do Município (IBGE)</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_cod_municipio" value="<?= htmlspecialchars($settings['fiscal_endereco_cod_municipio'] ?? '') ?>" placeholder="0000000" maxlength="7">
+                            <small class="text-muted" style="font-size:0.65rem;">7 dígitos IBGE. Ex: 3550308 (São Paulo)</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small text-muted">Cód. País</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_cod_pais" value="<?= htmlspecialchars($settings['fiscal_endereco_cod_pais'] ?? '1058') ?>" placeholder="1058" maxlength="4">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">País</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_pais" value="<?= htmlspecialchars($settings['fiscal_endereco_pais'] ?? 'Brasil') ?>" placeholder="Brasil">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Telefone</label>
+                            <input type="text" class="form-control" name="fiscal_endereco_fone" value="<?= htmlspecialchars($settings['fiscal_endereco_fone'] ?? '') ?>" placeholder="(00) 00000-0000">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Certificado Digital -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #8e44ad;">
+                        <i class="fas fa-key me-2"></i>Certificado Digital
+                    </legend>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Tipo do Certificado</label>
+                            <select class="form-select" name="fiscal_certificado_tipo">
+                                <option value="A1" <?= ($settings['fiscal_certificado_tipo'] ?? 'A1') === 'A1' ? 'selected' : '' ?>>A1 — Arquivo digital (.pfx)</option>
+                                <option value="A3" <?= ($settings['fiscal_certificado_tipo'] ?? '') === 'A3' ? 'selected' : '' ?>>A3 — Token / Smartcard</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Senha do Certificado</label>
+                            <input type="password" class="form-control" name="fiscal_certificado_senha" value="<?= htmlspecialchars($settings['fiscal_certificado_senha'] ?? '') ?>" placeholder="••••••••" autocomplete="new-password">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Validade do Certificado</label>
+                            <input type="date" class="form-control" name="fiscal_certificado_validade" value="<?= htmlspecialchars($settings['fiscal_certificado_validade'] ?? '') ?>">
+                            <?php 
+                            $validade = $settings['fiscal_certificado_validade'] ?? '';
+                            if ($validade && strtotime($validade) < strtotime('+30 days')): ?>
+                                <small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Certificado próximo do vencimento ou vencido!</small>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Configurações NF-e -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #8e44ad;">
+                        <i class="fas fa-cog me-2"></i>Configurações NF-e
+                    </legend>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Ambiente</label>
+                            <select class="form-select" name="fiscal_ambiente">
+                                <option value="2" <?= ($settings['fiscal_ambiente'] ?? '2') == '2' ? 'selected' : '' ?>>2 — Homologação (Testes)</option>
+                                <option value="1" <?= ($settings['fiscal_ambiente'] ?? '') == '1' ? 'selected' : '' ?>>1 — Produção</option>
+                            </select>
+                            <small class="text-muted" style="font-size:0.65rem;">Use homologação para testes</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Modelo</label>
+                            <select class="form-select" name="fiscal_modelo_nfe">
+                                <option value="55" <?= ($settings['fiscal_modelo_nfe'] ?? '55') == '55' ? 'selected' : '' ?>>55 — NF-e</option>
+                                <option value="65" <?= ($settings['fiscal_modelo_nfe'] ?? '') == '65' ? 'selected' : '' ?>>65 — NFC-e</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Série</label>
+                            <input type="number" class="form-control" name="fiscal_serie_nfe" value="<?= htmlspecialchars($settings['fiscal_serie_nfe'] ?? '1') ?>" min="1" max="999">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Próximo Nº NF-e</label>
+                            <input type="number" class="form-control" name="fiscal_proximo_numero_nfe" value="<?= htmlspecialchars($settings['fiscal_proximo_numero_nfe'] ?? '1') ?>" min="1">
+                            <small class="text-muted" style="font-size:0.65rem;">Incrementado automaticamente</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Tipo de Emissão</label>
+                            <select class="form-select" name="fiscal_tipo_emissao">
+                                <option value="1" <?= ($settings['fiscal_tipo_emissao'] ?? '1') == '1' ? 'selected' : '' ?>>1 — Normal</option>
+                                <option value="2" <?= ($settings['fiscal_tipo_emissao'] ?? '') == '2' ? 'selected' : '' ?>>2 — Contingência FS-IA</option>
+                                <option value="5" <?= ($settings['fiscal_tipo_emissao'] ?? '') == '5' ? 'selected' : '' ?>>5 — Contingência FS-DA</option>
+                                <option value="6" <?= ($settings['fiscal_tipo_emissao'] ?? '') == '6' ? 'selected' : '' ?>>6 — SVC-AN</option>
+                                <option value="7" <?= ($settings['fiscal_tipo_emissao'] ?? '') == '7' ? 'selected' : '' ?>>7 — SVC-RS</option>
+                                <option value="9" <?= ($settings['fiscal_tipo_emissao'] ?? '') == '9' ? 'selected' : '' ?>>9 — Contingência offline NFC-e</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Finalidade</label>
+                            <select class="form-select" name="fiscal_finalidade">
+                                <option value="1" <?= ($settings['fiscal_finalidade'] ?? '1') == '1' ? 'selected' : '' ?>>1 — Normal</option>
+                                <option value="2" <?= ($settings['fiscal_finalidade'] ?? '') == '2' ? 'selected' : '' ?>>2 — Complementar</option>
+                                <option value="3" <?= ($settings['fiscal_finalidade'] ?? '') == '3' ? 'selected' : '' ?>>3 — Ajuste</option>
+                                <option value="4" <?= ($settings['fiscal_finalidade'] ?? '') == '4' ? 'selected' : '' ?>>4 — Devolução</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Natureza da Operação</label>
+                            <input type="text" class="form-control" name="fiscal_nat_operacao" value="<?= htmlspecialchars($settings['fiscal_nat_operacao'] ?? 'Venda de mercadoria') ?>" placeholder="Venda de mercadoria">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Alíquotas Padrão -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #8e44ad;">
+                        <i class="fas fa-percentage me-2"></i>Alíquotas Padrão da Empresa
+                    </legend>
+                    <div class="alert alert-info py-2 px-3 small mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Estas alíquotas serão usadas como padrão quando o produto não tiver alíquotas próprias definidas.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Alíq. ICMS Padrão (%)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" class="form-control" name="fiscal_aliq_icms_padrao" value="<?= htmlspecialchars($settings['fiscal_aliq_icms_padrao'] ?? '') ?>" placeholder="0.00" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Alíq. PIS Padrão (%)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" class="form-control" name="fiscal_aliq_pis_padrao" value="<?= htmlspecialchars($settings['fiscal_aliq_pis_padrao'] ?? '0.65') ?>" placeholder="0.65" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Alíq. COFINS Padrão (%)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" class="form-control" name="fiscal_aliq_cofins_padrao" value="<?= htmlspecialchars($settings['fiscal_aliq_cofins_padrao'] ?? '3.00') ?>" placeholder="3.00" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Alíq. ISS Padrão (%)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" class="form-control" name="fiscal_aliq_iss_padrao" value="<?= htmlspecialchars($settings['fiscal_aliq_iss_padrao'] ?? '') ?>" placeholder="0.00" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <small class="text-muted" style="font-size:0.65rem;">Para prestação de serviços</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Informações Complementares -->
+                <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
+                    <legend class="float-none w-auto px-2 fs-5 fw-bold" style="color: #8e44ad;">
+                        <i class="fas fa-sticky-note me-2"></i>Informações Complementares
+                    </legend>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted">Informações Complementares Padrão (NF-e)</label>
+                            <textarea class="form-control" name="fiscal_info_complementar" rows="3" placeholder="Texto padrão que aparecerá no campo de Informações Complementares de todas as NF-e emitidas."><?= htmlspecialchars($settings['fiscal_info_complementar'] ?? '') ?></textarea>
+                            <small class="text-muted" style="font-size:0.65rem;">Ex: "Documento emitido por ME ou EPP optante pelo Simples Nacional..."</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="text-end mb-4">
+                    <button type="submit" class="btn px-4 fw-bold text-white" style="background:#8e44ad;"><i class="fas fa-save me-2"></i>Salvar Configurações Fiscais</button>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Info e Resumo -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header py-2" style="background: #f0e6f6;">
+                        <h6 class="mb-0 fw-bold" style="color:#8e44ad;"><i class="fas fa-info-circle me-2"></i>Sobre Dados Fiscais</h6>
+                    </div>
+                    <div class="card-body small">
+                        <p><strong>Configurações fiscais</strong> são necessárias para emissão de Nota Fiscal Eletrônica (NF-e/NFC-e).</p>
+                        <ul class="mb-2">
+                            <li>A <strong>Razão Social</strong> e o <strong>CNPJ</strong> devem ser idênticos ao cadastro na Receita Federal.</li>
+                            <li>A <strong>Inscrição Estadual</strong> é obrigatória para contribuintes de ICMS.</li>
+                            <li>O <strong>CRT</strong> (Regime Tributário) define como o ICMS será calculado na NF-e.</li>
+                            <li>O <strong>Código do Município</strong> (IBGE) é necessário para o XML da NF-e.</li>
+                            <li>O <strong>Certificado Digital A1</strong> (.pfx) é necessário para assinar a NF-e.</li>
+                        </ul>
+                        <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:0.75rem;">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong>Importante:</strong> Utilize o ambiente de <strong>Homologação</strong> para testes antes de mudar para Produção.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumo Fiscal -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header py-2" style="background: #f0e6f6;">
+                        <h6 class="mb-0 fw-bold" style="color:#8e44ad;"><i class="fas fa-eye me-2"></i>Resumo Fiscal</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="border rounded p-3 bg-light" style="font-size:0.75rem;">
+                            <div class="fw-bold mb-2"><?= htmlspecialchars($settings['fiscal_razao_social'] ?? '(Razão Social)') ?></div>
+                            <?php if (!empty($settings['fiscal_nome_fantasia'])): ?>
+                            <div class="text-muted mb-1"><i class="fas fa-store me-1"></i><?= htmlspecialchars($settings['fiscal_nome_fantasia']) ?></div>
+                            <?php endif; ?>
+                            <div class="mb-1"><strong>CNPJ:</strong> <?= htmlspecialchars($settings['fiscal_cnpj'] ?? '—') ?></div>
+                            <div class="mb-1"><strong>IE:</strong> <?= htmlspecialchars($settings['fiscal_ie'] ?? '—') ?></div>
+                            <?php if (!empty($settings['fiscal_im'])): ?>
+                            <div class="mb-1"><strong>IM:</strong> <?= htmlspecialchars($settings['fiscal_im']) ?></div>
+                            <?php endif; ?>
+                            <div class="mb-2"><strong>CRT:</strong> 
+                                <?php 
+                                $crtMap = ['1' => 'Simples Nacional', '2' => 'SN (excesso)', '3' => 'Regime Normal', '4' => 'MEI'];
+                                echo $crtMap[$settings['fiscal_crt'] ?? '1'] ?? '—';
+                                ?>
+                            </div>
+                            <hr class="my-2">
+                            <div class="mb-1">
+                                <strong>Ambiente:</strong> 
+                                <span class="badge <?= ($settings['fiscal_ambiente'] ?? '2') == '1' ? 'bg-success' : 'bg-warning text-dark' ?>">
+                                    <?= ($settings['fiscal_ambiente'] ?? '2') == '1' ? 'Produção' : 'Homologação' ?>
+                                </span>
+                            </div>
+                            <div class="mb-1"><strong>Modelo:</strong> <?= ($settings['fiscal_modelo_nfe'] ?? '55') == '55' ? 'NF-e (55)' : 'NFC-e (65)' ?></div>
+                            <div class="mb-1"><strong>Série:</strong> <?= htmlspecialchars($settings['fiscal_serie_nfe'] ?? '1') ?></div>
+                            <div class="mb-1"><strong>Próx. Nº:</strong> <?= htmlspecialchars($settings['fiscal_proximo_numero_nfe'] ?? '1') ?></div>
+                            <?php if (!empty($settings['fiscal_certificado_validade'])): 
+                                $certDate = strtotime($settings['fiscal_certificado_validade']);
+                                $isExpired = $certDate < time();
+                                $isExpiring = $certDate < strtotime('+30 days');
+                            ?>
+                            <hr class="my-2">
+                            <div class="mb-0">
+                                <strong>Certificado:</strong> 
+                                <span class="badge <?= $isExpired ? 'bg-danger' : ($isExpiring ? 'bg-warning text-dark' : 'bg-success') ?>">
+                                    <?= $isExpired ? 'Vencido' : ($isExpiring ? 'Expirando' : 'Válido') ?>
+                                </span>
+                                <small class="text-muted d-block"><?= date('d/m/Y', $certDate) ?></small>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Links Úteis -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header py-2" style="background: #f0e6f6;">
+                        <h6 class="mb-0 fw-bold" style="color:#8e44ad;"><i class="fas fa-external-link-alt me-2"></i>Links Úteis</h6>
+                    </div>
+                    <div class="card-body small">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2"><a href="https://www.ibge.gov.br/explica/codigos-dos-municipios.php" target="_blank"><i class="fas fa-external-link-alt me-1"></i>Códigos de Municípios IBGE</a></li>
+                            <li class="mb-2"><a href="https://portalunico.siscomex.gov.br/classif/#/nomenclatura/tabela" target="_blank"><i class="fas fa-external-link-alt me-1"></i>Tabela NCM</a></li>
+                            <li class="mb-2"><a href="https://www.confaz.fazenda.gov.br/legislacao/convenios/2015/cv085_15" target="_blank"><i class="fas fa-external-link-alt me-1"></i>Tabela CEST</a></li>
+                            <li class="mb-0"><a href="https://www.nfe.fazenda.gov.br/portal/principal.aspx" target="_blank"><i class="fas fa-external-link-alt me-1"></i>Portal NF-e (SEFAZ)</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
     <?php endif; ?>
 </div>
 

@@ -56,7 +56,7 @@ foreach ($menuConfig as $key => $info) {
 }
 $needsPermission = isset($flatMenuConfig[$page]) && !empty($flatMenuConfig[$page]['permission']);
 
-if (isset($_SESSION['user_id']) && $page !== 'login' && $action !== 'logout' && $action !== 'getSubcategories' && $needsPermission) {
+if (isset($_SESSION['user_id']) && $page !== 'login' && $action !== 'logout' && $action !== 'getSubcategories' && $action !== 'getInheritedGrades' && $needsPermission) {
     $db = (new Database())->getConnection();
     $user = new User($db);
     if (!$user->checkPermission($_SESSION['user_id'], $page)) {
@@ -119,6 +119,16 @@ switch ($page) {
             $controller->deleteImage();
         } elseif ($action == 'getSubcategories') {
             $controller->getSubcategories();
+        } elseif ($action == 'createGradeType') {
+            $controller->createGradeTypeAjax();
+        } elseif ($action == 'getGradeTypes') {
+            $controller->getGradeTypes();
+        } elseif ($action == 'generateCombinations') {
+            $controller->generateCombinationsAjax();
+        } elseif ($action == 'downloadImportTemplate') {
+            $controller->downloadImportTemplate();
+        } elseif ($action == 'importProducts') {
+            $controller->importProducts();
         } else {
             $controller->index();
         }
@@ -140,6 +150,12 @@ switch ($page) {
             $controller->updateSub();
         } elseif ($action == 'deleteSub') {
             $controller->deleteSub();
+        } elseif ($action == 'getInheritedGrades') {
+            $controller->getInheritedGradesAjax();
+        } elseif ($action == 'toggleCategoryCombination') {
+            $controller->toggleCategoryCombinationAjax();
+        } elseif ($action == 'toggleSubcategoryCombination') {
+            $controller->toggleSubcategoryCombinationAjax();
         } else {
             $controller->index();
         }
@@ -336,6 +352,10 @@ switch ($page) {
             $controller->deletePreparationStep();
         } elseif ($action == 'togglePreparationStep') {
             $controller->togglePreparationStep();
+        } elseif ($action == 'saveBankSettings') {
+            $controller->saveBankSettings();
+        } elseif ($action == 'saveFiscalSettings') {
+            $controller->saveFiscalSettings();
         } else {
             $controller->index();
         }

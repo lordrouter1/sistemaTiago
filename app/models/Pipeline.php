@@ -207,10 +207,16 @@ class Pipeline {
                     installments = :installments,
                     installment_value = :installment_value,
                     discount = :discount,
+                    down_payment = :down_payment,
                     shipping_type = :shipping_type,
                     shipping_address = :shipping_address,
                     tracking_code = :tracking_code,
-                    price_table_id = :price_table_id
+                    price_table_id = :price_table_id,
+                    nf_number = :nf_number,
+                    nf_series = :nf_series,
+                    nf_status = :nf_status,
+                    nf_access_key = :nf_access_key,
+                    nf_notes = :nf_notes
                   WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':priority', $data['priority']);
@@ -223,10 +229,16 @@ class Pipeline {
         $stmt->bindParam(':installments', $data['installments']);
         $stmt->bindParam(':installment_value', $data['installment_value']);
         $stmt->bindParam(':discount', $data['discount']);
+        $stmt->bindParam(':down_payment', $data['down_payment']);
         $stmt->bindParam(':shipping_type', $data['shipping_type']);
         $stmt->bindParam(':shipping_address', $data['shipping_address']);
         $stmt->bindParam(':tracking_code', $data['tracking_code']);
         $stmt->bindParam(':price_table_id', $data['price_table_id']);
+        $stmt->bindParam(':nf_number', $data['nf_number']);
+        $stmt->bindParam(':nf_series', $data['nf_series']);
+        $stmt->bindParam(':nf_status', $data['nf_status']);
+        $stmt->bindParam(':nf_access_key', $data['nf_access_key']);
+        $stmt->bindParam(':nf_notes', $data['nf_notes']);
         $stmt->bindParam(':id', $data['id']);
         return $stmt->execute();
     }

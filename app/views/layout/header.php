@@ -29,17 +29,20 @@
             padding: 0.5rem 1rem;
             font-size: 0.875rem;
             transition: background 0.15s, padding-left 0.15s;
+            text-decoration: none !important;
         }
         .navbar .dropdown-item:hover,
         .navbar .dropdown-item:focus {
             background: rgba(255,255,255,0.12);
             color: #fff;
             padding-left: 1.25rem;
+            text-decoration: none !important;
         }
         .navbar .dropdown-item.active,
         .navbar .dropdown-item:active {
             background: rgba(255,255,255,0.18);
             color: #fff;
+            text-decoration: none !important;
         }
         .navbar .dropdown-item i {
             width: 20px;

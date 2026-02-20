@@ -86,6 +86,15 @@
                                 </div>
                                 <?php endif; ?>
 
+                                <!-- Grades / Variações Padrão da Categoria -->
+                                <?php
+                                    $entityType = 'category';
+                                    $entityGrades = $editCategoryGrades ?? [];
+                                    $entityCombinations = $editCategoryCombinations ?? [];
+                                    // $gradeTypes is already available from controller
+                                    require 'app/views/categories/_grades_partial.php';
+                                ?>
+
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save me-1"></i><?= isset($editCategory) ? 'Salvar' : 'Criar Categoria' ?>
@@ -123,6 +132,11 @@
                                                 <td class="ps-4">
                                                     <i class="fas fa-folder text-warning me-2"></i>
                                                     <strong><?= htmlspecialchars($cat['name']) ?></strong>
+                                                    <?php if(!empty($categoryGradesMap[$cat['id']])): ?>
+                                                        <span class="badge bg-info ms-1" style="font-size:0.6rem;" title="Possui grades padrão">
+                                                            <i class="fas fa-th-large me-1"></i>Grades
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td>
                                                     <?php 
@@ -239,6 +253,15 @@
                                 </div>
                                 <?php endif; ?>
 
+                                <!-- Grades / Variações Padrão da Subcategoria -->
+                                <?php
+                                    $entityType = 'subcategory';
+                                    $entityGrades = $editSubcategoryGrades ?? [];
+                                    $entityCombinations = $editSubcategoryCombinations ?? [];
+                                    // $gradeTypes is already available from controller
+                                    require 'app/views/categories/_grades_partial.php';
+                                ?>
+
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-success">
                                         <i class="fas fa-save me-1"></i><?= isset($editSubcategory) ? 'Salvar' : 'Criar Subcategoria' ?>
@@ -275,6 +298,11 @@
                                                 <td class="ps-4">
                                                     <i class="fas fa-sitemap text-success me-2"></i>
                                                     <strong><?= htmlspecialchars($sub['name']) ?></strong>
+                                                    <?php if(!empty($subcategoryGradesMap[$sub['id']])): ?>
+                                                        <span class="badge bg-info ms-1" style="font-size:0.6rem;" title="Possui grades padrão">
+                                                            <i class="fas fa-th-large me-1"></i>Grades
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td>
                                                     <span class="badge bg-warning text-dark"><i class="fas fa-folder me-1"></i><?= htmlspecialchars($sub['category_name']) ?></span>

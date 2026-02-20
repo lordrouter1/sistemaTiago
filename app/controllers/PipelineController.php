@@ -139,6 +139,12 @@ class PipelineController {
         $prepStepModel = new PreparationStep($this->db);
         $preparoItems = $prepStepModel->getActiveAsMap();
 
+        // Carregar dados da empresa (para impressão de boletos e guias)
+        require_once 'app/models/CompanySettings.php';
+        $companySettings = new CompanySettings($this->db);
+        $company = $companySettings->getAll();
+        $companyAddress = $companySettings->getFormattedAddress();
+
         require 'app/views/layout/header.php';
         require 'app/views/pipeline/detail.php';
         require 'app/views/layout/footer.php';
@@ -161,10 +167,17 @@ class PipelineController {
                 'installments' => !empty($_POST['installments']) ? (int)$_POST['installments'] : null,
                 'installment_value' => !empty($_POST['installment_value']) ? (float)$_POST['installment_value'] : null,
                 'discount' => $_POST['discount'] ?? 0,
+                'down_payment' => !empty($_POST['down_payment']) ? (float)$_POST['down_payment'] : 0,
                 'shipping_type' => $_POST['shipping_type'] ?? 'retirada',
                 'shipping_address' => $_POST['shipping_address'] ?? '',
                 'tracking_code' => $_POST['tracking_code'] ?? '',
                 'price_table_id' => !empty($_POST['price_table_id']) ? $_POST['price_table_id'] : null,
+                // Campos fiscais (NF-e)
+                'nf_number' => $_POST['nf_number'] ?? null,
+                'nf_series' => $_POST['nf_series'] ?? null,
+                'nf_status' => $_POST['nf_status'] ?? null,
+                'nf_access_key' => $_POST['nf_access_key'] ?? null,
+                'nf_notes' => $_POST['nf_notes'] ?? null,
             ];
 
             $this->pipelineModel->updateOrderDetails($data);

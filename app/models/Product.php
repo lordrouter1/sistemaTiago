@@ -12,6 +12,14 @@ class Product {
     public $stock_quantity;
     public $photo_url;
 
+    // Campos fiscais (NF-e)
+    public static $fiscalFields = [
+        'fiscal_ncm', 'fiscal_cest', 'fiscal_cfop', 'fiscal_cst_icms', 'fiscal_csosn',
+        'fiscal_cst_pis', 'fiscal_cst_cofins', 'fiscal_cst_ipi', 'fiscal_origem',
+        'fiscal_unidade', 'fiscal_ean', 'fiscal_aliq_icms', 'fiscal_aliq_ipi',
+        'fiscal_aliq_pis', 'fiscal_aliq_cofins', 'fiscal_beneficio', 'fiscal_info_adicional'
+    ];
+
     public function __construct($db) {
         $this->conn = $db;
     }
@@ -35,9 +43,19 @@ class Product {
     }
 
     function create($data) {
+        // Build fiscal columns dynamically
+        $fiscalCols = '';
+        $fiscalPlaceholders = '';
+        foreach (self::$fiscalFields as $f) {
+            if (isset($data[$f])) {
+                $fiscalCols .= ", $f";
+                $fiscalPlaceholders .= ", :$f";
+            }
+        }
+
         $query = "INSERT INTO " . $this->table_name . " 
-                  (name, description, category_id, subcategory_id, price, stock_quantity, created_at) 
-                  VALUES (:name, :description, :category_id, :subcategory_id, :price, :stock_quantity, NOW())";
+                  (name, description, category_id, subcategory_id, price, stock_quantity, created_at{$fiscalCols}) 
+                  VALUES (:name, :description, :category_id, :subcategory_id, :price, :stock_quantity, NOW(){$fiscalPlaceholders})";
         
         $stmt = $this->conn->prepare($query);
 
@@ -47,6 +65,13 @@ class Product {
         $stmt->bindParam(':subcategory_id', $data['subcategory_id']);
         $stmt->bindParam(':price', $data['price']);
         $stmt->bindParam(':stock_quantity', $data['stock_quantity']);
+
+        foreach (self::$fiscalFields as $f) {
+            if (isset($data[$f])) {
+                $val = $data[$f] !== '' ? $data[$f] : null;
+                $stmt->bindValue(":$f", $val);
+            }
+        }
 
         if($stmt->execute()) {
             return $this->conn->lastInsertId();
@@ -73,13 +98,22 @@ class Product {
     }
 
     function update($data) {
+        // Build fiscal SET clause dynamically
+        $fiscalSet = '';
+        foreach (self::$fiscalFields as $f) {
+            if (array_key_exists($f, $data)) {
+                $fiscalSet .= ", $f = :$f";
+            }
+        }
+
         $query = "UPDATE " . $this->table_name . " 
                   SET name = :name, 
                       description = :description, 
                       category_id = :category_id, 
                       subcategory_id = :subcategory_id, 
                       price = :price, 
-                      stock_quantity = :stock_quantity 
+                      stock_quantity = :stock_quantity
+                      {$fiscalSet}
                   WHERE id = :id";
         
         $stmt = $this->conn->prepare($query);
@@ -92,6 +126,20 @@ class Product {
         $stmt->bindParam(':stock_quantity', $data['stock_quantity']);
         $stmt->bindParam(':id', $data['id']);
 
+        foreach (self::$fiscalFields as $f) {
+            if (array_key_exists($f, $data)) {
+                $val = $data[$f] !== '' ? $data[$f] : null;
+                $stmt->bindValue(":$f", $val);
+            }
+        }
+
+        return $stmt->execute();
+    }
+
+    function delete($id) {
+        $query = "DELETE FROM " . $this->table_name . " WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
     

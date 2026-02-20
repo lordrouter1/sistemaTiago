@@ -93,6 +93,41 @@ class SettingsController {
         exit;
     }
 
+    // ──────── CONFIGURAÇÕES BANCÁRIAS / BOLETO ────────
+
+    /**
+     * Salvar configurações bancárias para boletos (POST)
+     */
+    public function saveBankSettings() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /sistemaTiago/?page=settings&tab=boleto');
+            exit;
+        }
+
+        $keys = [
+            'boleto_banco', 'boleto_agencia', 'boleto_agencia_dv',
+            'boleto_conta', 'boleto_conta_dv', 'boleto_carteira',
+            'boleto_especie', 'boleto_cedente', 'boleto_cedente_documento',
+            'boleto_convenio', 'boleto_nosso_numero', 'boleto_nosso_numero_digitos',
+            'boleto_instrucoes', 'boleto_multa', 'boleto_juros',
+            'boleto_aceite', 'boleto_especie_doc', 'boleto_demonstrativo',
+            'boleto_local_pagamento', 'boleto_cedente_endereco',
+        ];
+
+        foreach ($keys as $key) {
+            if (isset($_POST[$key])) {
+                $this->companySettings->set($key, $_POST[$key]);
+            }
+        }
+
+        require_once 'app/models/Logger.php';
+        $logger = new Logger($this->db);
+        $logger->log('SETTINGS_UPDATE', 'Configurações bancárias/boleto atualizadas');
+
+        header('Location: /sistemaTiago/?page=settings&tab=boleto&status=saved');
+        exit;
+    }
+
     // ──────── TABELAS DE PREÇO ────────
 
     /**
@@ -307,6 +342,52 @@ class SettingsController {
         } else {
             echo json_encode(['success' => false, 'message' => 'ID não informado']);
         }
+        exit;
+    }
+
+    // ──────── CONFIGURAÇÕES FISCAIS / NF-e ────────
+
+    /**
+     * Salvar configurações fiscais da empresa (POST)
+     */
+    public function saveFiscalSettings() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /sistemaTiago/?page=settings&tab=fiscal');
+            exit;
+        }
+
+        $keys = [
+            // Identificação
+            'fiscal_razao_social', 'fiscal_nome_fantasia', 'fiscal_cnpj',
+            'fiscal_ie', 'fiscal_im', 'fiscal_cnae', 'fiscal_crt',
+            // Endereço fiscal
+            'fiscal_endereco_logradouro', 'fiscal_endereco_numero', 'fiscal_endereco_complemento',
+            'fiscal_endereco_bairro', 'fiscal_endereco_cidade', 'fiscal_endereco_uf',
+            'fiscal_endereco_cep', 'fiscal_endereco_cod_municipio',
+            'fiscal_endereco_cod_pais', 'fiscal_endereco_pais', 'fiscal_endereco_fone',
+            // Certificado digital
+            'fiscal_certificado_tipo', 'fiscal_certificado_senha', 'fiscal_certificado_validade',
+            // NF-e
+            'fiscal_ambiente', 'fiscal_serie_nfe', 'fiscal_proximo_numero_nfe',
+            'fiscal_modelo_nfe', 'fiscal_tipo_emissao', 'fiscal_finalidade',
+            // Alíquotas padrão
+            'fiscal_aliq_icms_padrao', 'fiscal_aliq_pis_padrao',
+            'fiscal_aliq_cofins_padrao', 'fiscal_aliq_iss_padrao',
+            // Natureza e informações complementares
+            'fiscal_nat_operacao', 'fiscal_info_complementar',
+        ];
+
+        foreach ($keys as $key) {
+            if (isset($_POST[$key])) {
+                $this->companySettings->set($key, $_POST[$key]);
+            }
+        }
+
+        require_once 'app/models/Logger.php';
+        $logger = new Logger($this->db);
+        $logger->log('SETTINGS_UPDATE', 'Configurações fiscais/NF-e atualizadas');
+
+        header('Location: /sistemaTiago/?page=settings&tab=fiscal&status=saved');
         exit;
     }
 

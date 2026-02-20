@@ -187,11 +187,13 @@
                 </fieldset>
 
                 <?php
-                // Mostrar seção de produtos quando o pedido está na etapa de orçamento ou posterior (exceto contato)
+                // Mostrar seção de produtos quando o pedido está na etapa de orçamento ou venda
                 // Mas NÃO mostrar na etapa "producao" (onde exibimos o controle de setores)
                 // Nem na etapa "preparacao" (onde exibimos o controle de preparo)
+                // Nem na etapa "envio" (onde focamos no card de envio/entrega)
+                // Nem na etapa "financeiro" (onde focamos no card financeiro completo)
                 // Em modo read-only (concluido/cancelado), mostrar sempre
-                $showProducts = $isReadOnly || ($currentStage !== 'contato' && $currentStage !== 'producao' && $currentStage !== 'preparacao');
+                $showProducts = $isReadOnly || !in_array($currentStage, ['contato', 'producao', 'preparacao', 'envio', 'financeiro']);
                 ?>
 
                 <?php if ($showProducts): ?>
@@ -484,7 +486,7 @@
                 <input type="hidden" name="price_table_id" value="<?= $order['price_table_id'] ?? '' ?>">
                 <?php endif; ?>
 
-                <?php if ($currentStage === 'producao' || $currentStage === 'preparacao' || ($isReadOnly && !empty($orderProductionSectors))): ?>
+                <?php if ($currentStage === 'producao' || ($isReadOnly && !empty($orderProductionSectors))): ?>
                 <?php if (!empty($orderProductionSectors)): ?>
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <!-- ═══ CONTROLE DE SETORES DE PRODUÇÃO (POR PRODUTO) ═══ -->
@@ -923,28 +925,67 @@
                 ?>
 
                 <?php if ($showFinancial): ?>
-                <!-- Financeiro -->
-                <fieldset class="p-4 mb-4">
-                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-coins me-2"></i>Financeiro</legend>
-                    <input type="hidden" name="discount" value="<?= $order['discount'] ?? 0 ?>">
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- ═══ FINANCEIRO — Card completo na etapa "financeiro" ═══ -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <?php
+                    $isFinanceiroStage = ($currentStage === 'financeiro');
+                    $finBorderColor = $isFinanceiroStage ? '#f39c12' : '#dee2e6';
+                ?>
+                <fieldset class="p-4 mb-4" style="border: 2px solid <?= $finBorderColor ?>; border-radius: 8px;">
+                    <legend class="float-none w-auto px-3 fs-5" style="color: <?= $isFinanceiroStage ? '#f39c12' : '' ?>;">
+                        <i class="fas fa-coins me-2"></i>Financeiro
+                        <?php if ($isFinanceiroStage): ?>
+                        <span class="badge ms-2" style="font-size:0.7rem;background:#f39c12;color:#fff;">
+                            <i class="fas fa-money-bill-wave me-1"></i>Etapa Atual
+                        </span>
+                        <?php endif; ?>
+                    </legend>
+
+                    <?php if ($isFinanceiroStage && !empty($orderItems)): ?>
+                    <!-- Resumo dos produtos (visível apenas na etapa financeiro) -->
+                    <div class="alert alert-light border py-2 px-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-bold text-muted"><i class="fas fa-boxes-stacked me-1"></i>Produtos do Pedido</small>
+                            <span class="badge bg-secondary"><?= count($orderItems) ?> item(ns)</span>
+                        </div>
+                        <div class="mt-1">
+                            <?php foreach ($orderItems as $oi): ?>
+                            <span class="badge bg-light text-dark border me-1 mb-1" style="font-size:0.75rem;">
+                                <i class="fas fa-box me-1 text-muted"></i><?= htmlspecialchars($oi['product_name']) ?>
+                                <strong class="ms-1">×<?= $oi['quantity'] ?></strong>
+                            </span>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="mt-2 text-end">
+                            <strong class="text-success" style="font-size:0.85rem;">
+                                <i class="fas fa-coins me-1"></i>Total: R$ <?= number_format($order['total_amount'], 2, ',', '.') ?>
+                            </strong>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <input type="hidden" name="discount" id="finDiscount" value="<?= $order['discount'] ?? 0 ?>">
+
+                    <!-- Linha 1: Valor, Status, Forma de Pagamento -->
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted">Valor Total</label>
+                            <label class="form-label small fw-bold text-muted"><i class="fas fa-dollar-sign me-1"></i>Valor Total</label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
-                                <input type="text" class="form-control fw-bold" value="<?= number_format($order['total_amount'], 2, ',', '.') ?>" disabled>
+                                <input type="text" class="form-control fw-bold fs-5" value="<?= number_format($order['total_amount'], 2, ',', '.') ?>" disabled>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted">Status Pagamento</label>
-                            <select class="form-select" name="payment_status" <?= $isReadOnly ? 'disabled' : '' ?>>
+                            <label class="form-label small fw-bold text-muted"><i class="fas fa-flag me-1"></i>Status Pagamento</label>
+                            <select class="form-select" name="payment_status" id="finPaymentStatus" <?= $isReadOnly ? 'disabled' : '' ?>>
                                 <option value="pendente" <?= ($order['payment_status'] ?? '') == 'pendente' ? 'selected' : '' ?>>⏳ Pendente</option>
                                 <option value="parcial" <?= ($order['payment_status'] ?? '') == 'parcial' ? 'selected' : '' ?>>💳 Parcial</option>
                                 <option value="pago" <?= ($order['payment_status'] ?? '') == 'pago' ? 'selected' : '' ?>>✅ Pago</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted">Forma de Pagamento</label>
+                            <label class="form-label small fw-bold text-muted"><i class="fas fa-credit-card me-1"></i>Forma de Pagamento</label>
                             <select class="form-select" name="payment_method" id="finPaymentMethod" <?= $isReadOnly ? 'disabled' : '' ?>>
                                 <option value="">Selecione...</option>
                                 <option value="dinheiro" <?= ($order['payment_method'] ?? '') == 'dinheiro' ? 'selected' : '' ?>>💵 Dinheiro</option>
@@ -957,30 +998,184 @@
                         </div>
                     </div>
 
-                    <!-- Parcelamento (aparece quando forma de pagamento aceita parcelas) -->
-                    <div class="row g-3 mt-1" id="installmentRow" style="display:none;">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted">Nº de Parcelas</label>
-                            <select class="form-select" name="installments" id="finInstallments" <?= $isReadOnly ? 'disabled' : '' ?>>
-                                <option value="">À vista</option>
-                                <?php for ($i = 2; $i <= 12; $i++): ?>
-                                <option value="<?= $i ?>" <?= ($order['installments'] ?? '') == $i ? 'selected' : '' ?>><?= $i ?>x</option>
-                                <?php endfor; ?>
-                            </select>
+                    <!-- ═══ PARCELAMENTO / BOLETO — Aparece para cartão crédito e boleto ═══ -->
+                    <div class="card mt-3 border-0 shadow-sm" id="installmentRow" style="display:none;">
+                        <div class="card-header py-2 bg-warning bg-opacity-10">
+                            <h6 class="mb-0 text-warning" style="font-size:0.85rem;" id="installmentCardTitle">
+                                <i class="fas fa-calculator me-2"></i><span id="installmentCardTitleText">Parcelamento</span>
+                            </h6>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted">Valor por Parcela</label>
-                            <div class="input-group">
-                                <span class="input-group-text">R$</span>
-                                <input type="text" class="form-control fw-bold" id="finInstallmentValue" name="installment_value_display" disabled
-                                       value="<?= ($order['installment_value'] ?? 0) > 0 ? number_format($order['installment_value'], 2, ',', '.') : '' ?>">
-                                <input type="hidden" name="installment_value" id="finInstallmentValueHidden" value="<?= $order['installment_value'] ?? '' ?>">
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Nº de Parcelas</label>
+                                    <select class="form-select" name="installments" id="finInstallments" <?= $isReadOnly ? 'disabled' : '' ?>>
+                                        <option value="">À vista</option>
+                                        <?php for ($i = 2; $i <= 12; $i++): ?>
+                                        <option value="<?= $i ?>" <?= ($order['installments'] ?? '') == $i ? 'selected' : '' ?>><?= $i ?>x</option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Entrada (R$)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" step="0.01" min="0" class="form-control" name="down_payment" id="finDownPayment"
+                                               value="<?= $order['down_payment'] ?? '0' ?>" 
+                                               placeholder="0,00"
+                                               <?= $isReadOnly ? 'disabled' : '' ?>>
+                                    </div>
+                                    <small class="text-muted" style="font-size:0.65rem;">Deixe 0 se não houver entrada</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Valor por Parcela</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control fw-bold" id="finInstallmentValue" name="installment_value_display" disabled
+                                               value="<?= ($order['installment_value'] ?? 0) > 0 ? number_format($order['installment_value'], 2, ',', '.') : '' ?>">
+                                        <input type="hidden" name="installment_value" id="finInstallmentValueHidden" value="<?= $order['installment_value'] ?? '' ?>">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <div class="alert alert-info py-1 px-3 mb-0 small w-100" id="installmentInfo" style="display:none;">
+                                        <i class="fas fa-calculator me-1"></i>
+                                        <span id="installmentInfoText"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tabela de parcelas detalhada (para boleto) -->
+                            <div id="boletoInstallmentTable" class="mt-3" style="display:none;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0 small fw-bold text-muted"><i class="fas fa-list-ol me-1"></i>Detalhamento das Parcelas</h6>
+                                    <button type="button" class="btn btn-sm btn-outline-dark" id="btnPrintBoletos" style="font-size:0.7rem;">
+                                        <i class="fas fa-print me-1"></i> Imprimir Boletos
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover align-middle mb-0" id="boletoTableBody">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:50px;">#</th>
+                                                <th>Vencimento</th>
+                                                <th class="text-end">Valor (R$)</th>
+                                                <th class="text-center" style="width:100px;">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <small class="text-muted" style="font-size:0.65rem;">
+                                    <i class="fas fa-info-circle me-1"></i>Os vencimentos são gerados a cada 30 dias a partir de hoje. Edite as datas conforme necessário antes de imprimir.
+                                </small>
                             </div>
                         </div>
-                        <div class="col-md-6 d-flex align-items-end">
-                            <div class="alert alert-info py-1 px-3 mb-0 small w-100" id="installmentInfo" style="display:none;">
-                                <i class="fas fa-calculator me-1"></i>
-                                <span id="installmentInfoText"></span>
+                    </div>
+
+                    <!-- ═══ LINKS DE PAGAMENTO — Integração futura ═══ -->
+                    <div class="card mt-3 border-dashed border-secondary border-opacity-25" style="border-style:dashed !important;" id="paymentLinksSection">
+                        <div class="card-header py-2 bg-light">
+                            <h6 class="mb-0 text-muted" style="font-size:0.85rem;">
+                                <i class="fas fa-link me-2"></i>Links de Pagamento
+                            </h6>
+                        </div>
+                        <div class="card-body p-3 text-center">
+                            <i class="fas fa-plug text-muted d-block mb-2" style="font-size:1.3rem;opacity:0.3;"></i>
+                            <p class="small text-muted mb-1"><strong>Integração com Gateways de Pagamento</strong></p>
+                            <p class="small text-muted mb-0" style="font-size:0.72rem;">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Em breve: gerar links de pagamento via PagSeguro, Mercado Pago, Stripe, PIX dinâmico e outros.
+                                O cliente receberá o link por WhatsApp/e-mail e poderá pagar online.
+                            </p>
+                            <?php if ($isFinanceiroStage && !$isReadOnly): ?>
+                            <div class="mt-2 d-flex justify-content-center gap-2">
+                                <span class="badge bg-light text-muted border" style="font-size:0.65rem;"><i class="fas fa-qrcode me-1"></i>PIX Dinâmico</span>
+                                <span class="badge bg-light text-muted border" style="font-size:0.65rem;"><i class="fas fa-credit-card me-1"></i>PagSeguro</span>
+                                <span class="badge bg-light text-muted border" style="font-size:0.65rem;"><i class="fas fa-shopping-bag me-1"></i>Mercado Pago</span>
+                                <span class="badge bg-light text-muted border" style="font-size:0.65rem;"><i class="fab fa-stripe-s me-1"></i>Stripe</span>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- ═══ FISCAL — Nota Fiscal ═══ -->
+                    <div class="card mt-3 border-0 shadow-sm" id="fiscalSection">
+                        <div class="card-header py-2 bg-success bg-opacity-10">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 text-success" style="font-size:0.85rem;">
+                                    <i class="fas fa-file-invoice me-2"></i>Fiscal / Nota Fiscal
+                                </h6>
+                                <?php if (!$isReadOnly): ?>
+                                <button type="button" class="btn btn-sm btn-outline-success" id="btnEmitirNF" style="font-size:0.7rem;">
+                                    <i class="fas fa-file-export me-1"></i> Emitir NF
+                                </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted">Nº da Nota Fiscal</label>
+                                    <input type="text" class="form-control" name="nf_number" id="nfNumber"
+                                           placeholder="Ex: 000123"
+                                           value="<?= htmlspecialchars($order['nf_number'] ?? '') ?>"
+                                           <?= $isReadOnly ? 'disabled' : '' ?>>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted">Série</label>
+                                    <input type="text" class="form-control" name="nf_series" id="nfSeries"
+                                           placeholder="Ex: 1"
+                                           value="<?= htmlspecialchars($order['nf_series'] ?? '') ?>"
+                                           <?= $isReadOnly ? 'disabled' : '' ?>>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted">Status NF</label>
+                                    <select class="form-select" name="nf_status" id="nfStatus" <?= $isReadOnly ? 'disabled' : '' ?>>
+                                        <option value="" <?= empty($order['nf_status'] ?? '') ? 'selected' : '' ?>>⬜ Não emitida</option>
+                                        <option value="emitida" <?= ($order['nf_status'] ?? '') == 'emitida' ? 'selected' : '' ?>>📄 Emitida</option>
+                                        <option value="enviada" <?= ($order['nf_status'] ?? '') == 'enviada' ? 'selected' : '' ?>>📨 Enviada ao cliente</option>
+                                        <option value="cancelada" <?= ($order['nf_status'] ?? '') == 'cancelada' ? 'selected' : '' ?>>❌ Cancelada</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-muted">Chave de Acesso (NFe)</label>
+                                    <input type="text" class="form-control" name="nf_access_key" id="nfAccessKey"
+                                           placeholder="44 dígitos da chave da NFe..."
+                                           value="<?= htmlspecialchars($order['nf_access_key'] ?? '') ?>"
+                                           <?= $isReadOnly ? 'disabled' : '' ?>>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-muted">Observações Fiscais</label>
+                                    <input type="text" class="form-control" name="nf_notes" id="nfNotes"
+                                           placeholder="Observações sobre a nota fiscal..."
+                                           value="<?= htmlspecialchars($order['nf_notes'] ?? '') ?>"
+                                           <?= $isReadOnly ? 'disabled' : '' ?>>
+                                </div>
+                            </div>
+
+                            <!-- Placeholder para integração com emissor de NF -->
+                            <div class="alert alert-light border mt-3 mb-0 py-2 px-3">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="fas fa-plug text-muted mt-1" style="opacity:0.4;"></i>
+                                    <div>
+                                        <p class="small text-muted mb-0" style="font-size:0.72rem;">
+                                            <strong>Integração com Emissor Fiscal:</strong>
+                                            Em breve será possível emitir NF-e e NFC-e diretamente pelo sistema, com integração 
+                                            via API (ex: Bling, Tiny ERP, NFe.io, eNotas). Por enquanto, preencha os dados manualmente 
+                                            após emitir pelo sistema fiscal.
+                                        </p>
+                                        <?php if ($isFinanceiroStage && !$isReadOnly): ?>
+                                        <div class="mt-1 d-flex gap-2">
+                                            <span class="badge bg-light text-muted border" style="font-size:0.6rem;"><i class="fas fa-file-invoice me-1"></i>NFe.io</span>
+                                            <span class="badge bg-light text-muted border" style="font-size:0.6rem;"><i class="fas fa-bolt me-1"></i>Bling</span>
+                                            <span class="badge bg-light text-muted border" style="font-size:0.6rem;"><i class="fas fa-cube me-1"></i>Tiny ERP</span>
+                                            <span class="badge bg-light text-muted border" style="font-size:0.6rem;"><i class="fas fa-file-alt me-1"></i>eNotas</span>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -992,28 +1187,205 @@
                 <input type="hidden" name="payment_method" value="<?= $order['payment_method'] ?? '' ?>">
                 <input type="hidden" name="installments" value="<?= $order['installments'] ?? '' ?>">
                 <input type="hidden" name="installment_value" value="<?= $order['installment_value'] ?? '' ?>">
+                <input type="hidden" name="down_payment" value="<?= $order['down_payment'] ?? '0' ?>">
+                <input type="hidden" name="nf_number" value="<?= htmlspecialchars($order['nf_number'] ?? '') ?>">
+                <input type="hidden" name="nf_series" value="<?= htmlspecialchars($order['nf_series'] ?? '') ?>">
+                <input type="hidden" name="nf_status" value="<?= $order['nf_status'] ?? '' ?>">
+                <input type="hidden" name="nf_access_key" value="<?= htmlspecialchars($order['nf_access_key'] ?? '') ?>">
+                <input type="hidden" name="nf_notes" value="<?= htmlspecialchars($order['nf_notes'] ?? '') ?>">
                 <?php endif; ?>
 
                 <?php if ($showShipping): ?>
-                <!-- Envio / Entrega -->
-                <fieldset class="p-4 mb-4">
-                    <legend class="float-none w-auto px-2 fs-5 text-primary"><i class="fas fa-truck me-2"></i>Envio / Entrega</legend>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted">Tipo de Envio</label>
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- ═══ ENVIO / ENTREGA — Card principal na etapa "envio" ═══ -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <?php 
+                    $isEnvioStage = ($currentStage === 'envio');
+                    $shippingType = $order['shipping_type'] ?? 'retirada';
+                    $shippingAddress = !empty($order['shipping_address']) ? $order['shipping_address'] : ($customerFormattedAddress ?? '');
+                    $trackingCode = $order['tracking_code'] ?? '';
+                    
+                    $shippingTypeLabels = [
+                        'retirada' => ['label' => 'Retirada na Loja', 'icon' => 'fas fa-store', 'color' => '#27ae60', 'emoji' => '🏪'],
+                        'entrega'  => ['label' => 'Entrega Própria',  'icon' => 'fas fa-motorcycle', 'color' => '#e67e22', 'emoji' => '🏍️'],
+                        'correios' => ['label' => 'Correios / Transportadora', 'icon' => 'fas fa-box', 'color' => '#3498db', 'emoji' => '📦'],
+                    ];
+                    $stInfo = $shippingTypeLabels[$shippingType] ?? $shippingTypeLabels['retirada'];
+                ?>
+                <fieldset class="p-4 mb-4" style="border: 2px solid <?= $stInfo['color'] ?>; border-radius: 8px;">
+                    <legend class="float-none w-auto px-3 fs-5" style="color: <?= $stInfo['color'] ?>;">
+                        <i class="fas fa-truck me-2"></i>Envio / Entrega
+                        <span class="badge ms-2" id="shippingBadgeLegend" style="font-size:0.7rem;background:<?= $stInfo['color'] ?>;color:#fff;">
+                            <i class="<?= $stInfo['icon'] ?> me-1"></i><?= $stInfo['label'] ?>
+                        </span>
+                    </legend>
+
+                    <?php if ($isEnvioStage && !empty($orderItems)): ?>
+                    <!-- Resumo dos produtos do pedido (visível apenas na etapa envio) -->
+                    <div class="alert alert-light border py-2 px-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-bold text-muted"><i class="fas fa-boxes-stacked me-1"></i>Produtos do Pedido</small>
+                            <span class="badge bg-secondary"><?= count($orderItems) ?> item(ns)</span>
+                        </div>
+                        <div class="mt-1">
+                            <?php foreach ($orderItems as $oi): ?>
+                            <span class="badge bg-light text-dark border me-1 mb-1" style="font-size:0.75rem;">
+                                <i class="fas fa-box me-1 text-muted"></i><?= htmlspecialchars($oi['product_name']) ?>
+                                <strong class="ms-1">×<?= $oi['quantity'] ?></strong>
+                            </span>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="mt-2 text-end">
+                            <strong class="text-success" style="font-size:0.85rem;">
+                                <i class="fas fa-coins me-1"></i>Total: R$ <?= number_format($order['total_amount'], 2, ',', '.') ?>
+                            </strong>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Tipo de Envio -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted"><i class="fas fa-shipping-fast me-1"></i>Modalidade de Envio</label>
                             <select class="form-select" name="shipping_type" id="shippingType" <?= $isReadOnly ? 'disabled' : '' ?>>
-                                <option value="retirada" <?= ($order['shipping_type'] ?? '') == 'retirada' ? 'selected' : '' ?>>🏪 Retirada na loja</option>
-                                <option value="entrega" <?= ($order['shipping_type'] ?? '') == 'entrega' ? 'selected' : '' ?>>🏍️ Entrega própria</option>
-                                <option value="correios" <?= ($order['shipping_type'] ?? '') == 'correios' ? 'selected' : '' ?>>📦 Correios</option>
+                                <option value="retirada" <?= $shippingType == 'retirada' ? 'selected' : '' ?>>🏪 Retirada na loja</option>
+                                <option value="entrega" <?= $shippingType == 'entrega' ? 'selected' : '' ?>>🏍️ Entrega própria</option>
+                                <option value="correios" <?= $shippingType == 'correios' ? 'selected' : '' ?>>📦 Correios / Transportadora</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted">Código de Rastreio</label>
-                            <input type="text" class="form-control" name="tracking_code" placeholder="Ex: BR123456789" value="<?= $order['tracking_code'] ?? '' ?>" <?= $isReadOnly ? 'disabled' : '' ?>>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted"><i class="fas fa-user me-1"></i>Destinatário</label>
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($order['customer_name'] ?? '—') ?> — <?= $order['customer_phone'] ?? '' ?>" disabled>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted">Endereço de Entrega</label>
-                            <textarea class="form-control" name="shipping_address" rows="1" placeholder="Endereço completo..." <?= $isReadOnly ? 'disabled' : '' ?>><?= !empty($order['shipping_address']) ? htmlspecialchars($order['shipping_address']) : htmlspecialchars($customerFormattedAddress) ?></textarea>
+                    </div>
+
+                    <!-- Retirada na loja (visível apenas quando tipo = retirada) -->
+                    <div class="card mb-3 border-light" id="shippingRetiradaCard" style="<?= ($shippingType !== 'retirada') ? 'display:none;' : '' ?>">
+                        <div class="card-body p-3 text-center">
+                            <i class="fas fa-store text-success d-block mb-2" style="font-size:2.2rem;opacity:0.6;"></i>
+                            <span class="text-muted fs-6">O cliente irá <strong>retirar na loja</strong>.</span>
+                            <p class="text-muted small mt-1 mb-0">Nenhum endereço de entrega necessário.</p>
+                        </div>
+                    </div>
+
+                    <!-- Endereço de Entrega (visível quando tipo = entrega ou correios) -->
+                    <div class="card mb-3 border-warning" id="shippingAddressCard" style="<?= ($shippingType === 'retirada') ? 'display:none;' : '' ?>">
+                        <div class="card-header py-2 bg-warning bg-opacity-10">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 text-warning" style="font-size:0.85rem;">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Endereço de Entrega
+                                </h6>
+                                <div class="d-flex gap-1">
+                                    <?php if (!empty($shippingAddress)): ?>
+                                    <a href="https://www.google.com/maps/search/<?= urlencode($shippingAddress) ?>" target="_blank" 
+                                       class="btn btn-sm btn-outline-primary" title="Ver no Google Maps" style="font-size:0.7rem;" id="btnVerMapa">
+                                        <i class="fas fa-map me-1"></i> Ver no Mapa
+                                    </a>
+                                    <?php endif; ?>
+                                    <button type="button" class="btn btn-sm btn-outline-dark" id="btnPrintLabel" title="Imprimir guia de endereçamento" style="font-size:0.7rem;">
+                                        <i class="fas fa-print me-1"></i> Imprimir Guia
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-3">
+                            <textarea class="form-control form-control-lg" name="shipping_address" id="shippingAddressTextarea" rows="2" 
+                                      placeholder="Endereço completo de entrega..." 
+                                      style="font-size:0.95rem;"
+                                      <?= $isReadOnly ? 'disabled' : '' ?>><?= htmlspecialchars($shippingAddress) ?></textarea>
+                            <?php if (!empty($customerFormattedAddress) && !$isReadOnly): ?>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnUseCustomerAddress">
+                                    <i class="fas fa-user-tag me-1"></i> Usar endereço do cliente
+                                </button>
+                                <small class="text-muted ms-2"><?= htmlspecialchars($customerFormattedAddress) ?></small>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Hidden field para manter o endereço quando retirada está selecionada -->
+                    <input type="hidden" name="shipping_address_backup" id="shippingAddressBackup" value="<?= htmlspecialchars($shippingAddress) ?>"
+
+                    >
+
+                    <!-- Rastreamento e Código -->
+                    <div class="card mb-3 border-0 shadow-sm" id="trackingSection">
+                        <div class="card-header py-2 bg-primary bg-opacity-10">
+                            <h6 class="mb-0 text-primary" style="font-size:0.85rem;">
+                                <i class="fas fa-barcode me-2"></i>Rastreamento
+                            </h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-muted">Código de Rastreio</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="tracking_code" id="trackingCodeInput"
+                                               placeholder="Ex: BR123456789XX" 
+                                               value="<?= htmlspecialchars($trackingCode) ?>" 
+                                               <?= $isReadOnly ? 'disabled' : '' ?>>
+                                        <?php if (!empty($trackingCode)): ?>
+                                        <a href="https://www.linkcorreios.com.br/?id=<?= urlencode($trackingCode) ?>" target="_blank" 
+                                           class="btn btn-outline-primary" title="Rastrear nos Correios">
+                                            <i class="fas fa-search"></i>
+                                        </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-muted">Status do Envio</label>
+                                    <div class="d-flex align-items-center gap-2 py-2">
+                                        <?php if (empty($trackingCode) && $shippingType !== 'retirada'): ?>
+                                        <span class="badge bg-warning bg-opacity-75 px-3 py-2">
+                                            <i class="fas fa-clock me-1"></i> Aguardando envio
+                                        </span>
+                                        <?php elseif ($shippingType === 'retirada'): ?>
+                                        <span class="badge bg-success bg-opacity-75 px-3 py-2">
+                                            <i class="fas fa-store me-1"></i> Aguardando retirada
+                                        </span>
+                                        <?php else: ?>
+                                        <span class="badge bg-info bg-opacity-75 px-3 py-2">
+                                            <i class="fas fa-shipping-fast me-1"></i> Enviado
+                                        </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <?php if (!empty($trackingCode)): ?>
+                            <div class="alert alert-info py-2 px-3 mt-2 mb-0 small">
+                                <i class="fas fa-truck me-1"></i>
+                                Código: <strong class="user-select-all"><?= htmlspecialchars($trackingCode) ?></strong>
+                                <?php if (!empty($order['customer_phone'])): ?>
+                                <a href="https://wa.me/55<?= preg_replace('/\D/', '', $order['customer_phone']) ?>?text=<?= urlencode('Olá! Seu pedido #' . str_pad($order['id'], 4, '0', STR_PAD_LEFT) . ' foi enviado. Código de rastreio: ' . $trackingCode) ?>" 
+                                   target="_blank" class="btn btn-sm btn-success ms-2" style="font-size:0.7rem;">
+                                    <i class="fab fa-whatsapp me-1"></i> Enviar rastreio via WhatsApp
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- API de Transportadoras (placeholder para integração futura) -->
+                    <div class="card border-dashed border-secondary border-opacity-25 mb-0" style="border-style:dashed !important;">
+                        <div class="card-body p-3 text-center">
+                            <i class="fas fa-plug text-muted d-block mb-2" style="font-size:1.5rem;opacity:0.3;"></i>
+                            <p class="small text-muted mb-1"><strong>Integração com Transportadoras</strong></p>
+                            <p class="small text-muted mb-0" style="font-size:0.72rem;">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Em breve: integração com APIs de Correios, Jadlog, Melhor Envio e outras transportadoras
+                                para calcular frete, gerar etiquetas e rastrear automaticamente.
+                            </p>
+                            <?php if ($isEnvioStage && !$isReadOnly): ?>
+                            <div class="mt-2 d-flex justify-content-center gap-2">
+                                <span class="badge bg-light text-muted border" style="font-size:0.65rem;"><i class="fas fa-box me-1"></i>Correios</span>
+                                <span class="badge bg-light text-muted border" style="font-size:0.65rem;"><i class="fas fa-truck me-1"></i>Jadlog</span>
+                                <span class="badge bg-light text-muted border" style="font-size:0.65rem;"><i class="fas fa-shipping-fast me-1"></i>Melhor Envio</span>
+                                <span class="badge bg-light text-muted border" style="font-size:0.65rem;"><i class="fas fa-dolly me-1"></i>Loggi</span>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </fieldset>
@@ -1752,7 +2124,7 @@ function formatDateBR(dateStr) {
         });
     });
 
-    <?php if (in_array($currentStage, ['producao', 'preparacao']) && !empty($orderProductionSectors)): ?>
+    <?php if ($currentStage === 'producao' && !empty($orderProductionSectors)): ?>
 // ════════════════════════════════════════════════════════════
 // ═══ CONTROLE DE PRODUÇÃO POR PRODUTO — Stepper + AJAX ═══
 // ════════════════════════════════════════════════════════════
@@ -1884,7 +2256,7 @@ setInterval(() => {
 <?php endif; ?>
 
 <?php if ($showFinancial): ?>
-// ── Parcelamento: mostrar/ocultar e calcular valor por parcela ──
+// ═══ FINANCEIRO — Lógica do card financeiro ═══
 (function() {
     const paymentMethod = document.getElementById('finPaymentMethod');
     const installmentRow = document.getElementById('installmentRow');
@@ -1894,51 +2266,828 @@ setInterval(() => {
     const installmentInfo = document.getElementById('installmentInfo');
     const installmentInfoText = document.getElementById('installmentInfoText');
     const discountField = document.getElementById('finDiscount');
+    const downPaymentField = document.getElementById('finDownPayment');
+    const boletoTable = document.getElementById('boletoInstallmentTable');
+    const boletoTableBody = document.querySelector('#boletoTableBody tbody');
     
     if (!paymentMethod || !installmentRow) return;
     
     const totalAmount = <?= (float)($order['total_amount'] ?? 0) ?>;
+    const cardTitleText = document.getElementById('installmentCardTitleText');
     
     // Formas de pagamento que aceitam parcelamento
     const parcelableMethods = ['cartao_credito', 'boleto'];
+    
+    function updateCardTitle() {
+        if (!cardTitleText) return;
+        const method = paymentMethod.value;
+        const n = parseInt(installments ? installments.value : 0) || 0;
+        if (method === 'boleto' && n < 2) {
+            cardTitleText.textContent = 'Boleto Bancário — À Vista';
+        } else if (method === 'boleto' && n >= 2) {
+            cardTitleText.textContent = 'Boleto Bancário — Parcelado em ' + n + 'x';
+        } else if (method === 'cartao_credito' && n >= 2) {
+            cardTitleText.textContent = 'Parcelamento — ' + n + 'x no Cartão';
+        } else {
+            cardTitleText.textContent = 'Pagamento';
+        }
+    }
     
     function toggleInstallmentRow() {
         const show = parcelableMethods.includes(paymentMethod.value);
         installmentRow.style.display = show ? '' : 'none';
         if (!show) {
-            installments.value = '';
-            installmentValue.value = '';
-            installmentValueHidden.value = '';
-            installmentInfo.style.display = 'none';
+            if (installments) installments.value = '';
+            if (installmentValue) installmentValue.value = '';
+            if (installmentValueHidden) installmentValueHidden.value = '';
+            if (installmentInfo) installmentInfo.style.display = 'none';
+            if (boletoTable) boletoTable.style.display = 'none';
         } else {
             calcInstallment();
         }
+        updateCardTitle();
     }
     
     function calcInstallment() {
-        const n = parseInt(installments.value) || 0;
-        const discount = parseFloat(discountField.value) || 0;
+        const n = parseInt(installments ? installments.value : 0) || 0;
+        const discount = parseFloat(discountField ? discountField.value : 0) || 0;
+        const downPayment = parseFloat(downPaymentField ? downPaymentField.value : 0) || 0;
         const finalTotal = Math.max(0, totalAmount - discount);
+        const amountAfterDown = Math.max(0, finalTotal - downPayment);
+        const isBoleto = (paymentMethod.value === 'boleto');
+        
+        updateCardTitle();
         
         if (n >= 2 && finalTotal > 0) {
-            const perInstallment = (finalTotal / n).toFixed(2);
-            installmentValue.value = parseFloat(perInstallment).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            installmentValueHidden.value = perInstallment;
-            installmentInfo.style.display = '';
-            installmentInfoText.textContent = `${n}x de R$ ${parseFloat(perInstallment).toLocaleString('pt-BR', {minimumFractionDigits: 2})} = R$ ${finalTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            const perInstallment = (amountAfterDown / n).toFixed(2);
+            if (installmentValue) installmentValue.value = parseFloat(perInstallment).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (installmentValueHidden) installmentValueHidden.value = perInstallment;
+            if (installmentInfo) {
+                installmentInfo.style.display = '';
+                var infoText = '';
+                if (downPayment > 0) {
+                    infoText = `Entrada: R$ ${downPayment.toLocaleString('pt-BR', {minimumFractionDigits: 2})} + ${n}x de R$ ${parseFloat(perInstallment).toLocaleString('pt-BR', {minimumFractionDigits: 2})} = R$ ${finalTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                } else {
+                    infoText = `${n}x de R$ ${parseFloat(perInstallment).toLocaleString('pt-BR', {minimumFractionDigits: 2})} = R$ ${finalTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                }
+                if (installmentInfoText) installmentInfoText.textContent = infoText;
+            }
+            renderBoletoTable(n, parseFloat(perInstallment), downPayment);
+        } else if (paymentMethod.value === 'boleto' && finalTotal > 0) {
+            // Boleto à vista (sem parcelamento) — 1 parcela
+            if (installmentValue) installmentValue.value = amountAfterDown.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (installmentValueHidden) installmentValueHidden.value = amountAfterDown.toFixed(2);
+            if (installmentInfo && downPayment > 0) {
+                installmentInfo.style.display = '';
+                if (installmentInfoText) installmentInfoText.textContent = `Entrada: R$ ${downPayment.toLocaleString('pt-BR', {minimumFractionDigits: 2})} + 1x de R$ ${amountAfterDown.toLocaleString('pt-BR', {minimumFractionDigits: 2})} = R$ ${finalTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            } else if (installmentInfo) {
+                installmentInfo.style.display = '';
+                if (installmentInfoText) installmentInfoText.textContent = `1x de R$ ${finalTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (à vista)`;
+            }
+            renderBoletoTable(1, amountAfterDown, downPayment);
         } else {
-            installmentValue.value = finalTotal > 0 ? finalTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '';
-            installmentValueHidden.value = finalTotal > 0 ? finalTotal.toFixed(2) : '';
-            installmentInfo.style.display = 'none';
+            if (installmentValue) installmentValue.value = finalTotal > 0 ? finalTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '';
+            if (installmentValueHidden) installmentValueHidden.value = finalTotal > 0 ? finalTotal.toFixed(2) : '';
+            if (installmentInfo) installmentInfo.style.display = 'none';
+            if (boletoTable) boletoTable.style.display = 'none';
+        }
+    }
+
+    function renderBoletoTable(numParcelas, valorParcela, entrada) {
+        if (!boletoTable || !boletoTableBody) return;
+        if (paymentMethod.value !== 'boleto') {
+            boletoTable.style.display = 'none';
+            return;
+        }
+        boletoTable.style.display = '';
+        boletoTableBody.innerHTML = '';
+
+        if (entrada > 0) {
+            var today = new Date();
+            var trEntry = document.createElement('tr');
+            trEntry.classList.add('table-success');
+            trEntry.innerHTML = `
+                <td class="fw-bold text-success"><i class="fas fa-hand-holding-usd me-1"></i>Entrada</td>
+                <td><input type="date" class="form-control form-control-sm boleto-date" value="${today.toISOString().split('T')[0]}" style="max-width:160px;"></td>
+                <td class="text-end fw-bold">R$ ${entrada.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td class="text-center"><span class="badge bg-warning" style="font-size:0.65rem;">⏳ Pendente</span></td>`;
+            boletoTableBody.appendChild(trEntry);
+        }
+
+        for (var i = 1; i <= numParcelas; i++) {
+            var dueDate = new Date();
+            if (numParcelas === 1 && entrada <= 0) {
+                // À vista sem entrada: vencimento em 3 dias úteis
+                dueDate.setDate(dueDate.getDate() + 3);
+            } else {
+                dueDate.setDate(dueDate.getDate() + (i * 30));
+            }
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="fw-bold">${numParcelas === 1 ? 'Única' : i + 'ª'}</td>
+                <td><input type="date" class="form-control form-control-sm boleto-date" value="${dueDate.toISOString().split('T')[0]}" style="max-width:160px;" name="boleto_due_${i}"></td>
+                <td class="text-end fw-bold">R$ ${valorParcela.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td class="text-center"><span class="badge bg-warning" style="font-size:0.65rem;">⏳ Pendente</span></td>`;
+            boletoTableBody.appendChild(tr);
         }
     }
     
     paymentMethod.addEventListener('change', toggleInstallmentRow);
-    installments.addEventListener('change', calcInstallment);
-    discountField.addEventListener('input', calcInstallment);
+    if (installments) installments.addEventListener('change', function() { calcInstallment(); updateCardTitle(); });
+    if (discountField) discountField.addEventListener('input', calcInstallment);
+    if (downPaymentField) downPaymentField.addEventListener('input', calcInstallment);
     
-    // Inicializar
     toggleInstallmentRow();
+
+    // ═══ Dados bancários das configurações (injetados via PHP) ═══
+    var bankConfig = {
+        banco:         <?= json_encode($company['boleto_banco'] ?? '') ?>,
+        agencia:       <?= json_encode($company['boleto_agencia'] ?? '') ?>,
+        agenciaDv:     <?= json_encode($company['boleto_agencia_dv'] ?? '') ?>,
+        conta:         <?= json_encode($company['boleto_conta'] ?? '') ?>,
+        contaDv:       <?= json_encode($company['boleto_conta_dv'] ?? '') ?>,
+        carteira:      <?= json_encode($company['boleto_carteira'] ?? '109') ?>,
+        especie:       <?= json_encode($company['boleto_especie'] ?? 'R$') ?>,
+        cedente:       <?= json_encode($company['boleto_cedente'] ?? $company['company_name'] ?? 'Empresa') ?>,
+        cedenteDoc:    <?= json_encode($company['boleto_cedente_documento'] ?? $company['company_document'] ?? '') ?>,
+        convenio:      <?= json_encode($company['boleto_convenio'] ?? '') ?>,
+        nossoNumero:   parseInt(<?= json_encode($company['boleto_nosso_numero'] ?? '1') ?>) || 1,
+        nossoNumDigitos: parseInt(<?= json_encode($company['boleto_nosso_numero_digitos'] ?? '7') ?>) || 7,
+        instrucoes:    <?= json_encode($company['boleto_instrucoes'] ?? "Não receber após o vencimento.\nMulta de 2% após o vencimento.\nJuros de 1% ao mês.") ?>,
+        multa:         <?= json_encode($company['boleto_multa'] ?? '2.00') ?>,
+        juros:         <?= json_encode($company['boleto_juros'] ?? '1.00') ?>,
+        aceite:        <?= json_encode($company['boleto_aceite'] ?? 'N') ?>,
+        especieDoc:    <?= json_encode($company['boleto_especie_doc'] ?? 'DM') ?>,
+        demonstrativo: <?= json_encode($company['boleto_demonstrativo'] ?? '') ?>,
+        localPagamento: <?= json_encode($company['boleto_local_pagamento'] ?? 'Pagável em qualquer banco até o vencimento') ?>,
+        cedenteEndereco: <?= json_encode($company['boleto_cedente_endereco'] ?? '') ?>
+    };
+
+    // Nomes dos bancos
+    var bancosNomes = {
+        '001': 'Banco do Brasil S.A.', '033': 'Banco Santander S.A.', '104': 'Caixa Econômica Federal',
+        '237': 'Banco Bradesco S.A.', '341': 'Itaú Unibanco S.A.', '399': 'HSBC', '422': 'Banco Safra S.A.',
+        '748': 'Sicredi', '756': 'Sicoob', '077': 'Banco Inter S.A.', '260': 'Nu Pagamentos S.A.',
+        '336': 'Banco C6 S.A.', '290': 'PagSeguro Internet S.A.', '380': 'PicPay', '323': 'Mercado Pago'
+    };
+
+    // ═══ Funções utilitárias para boleto FEBRABAN ═══
+    function mod10(value) {
+        var soma = 0, peso = 2;
+        for (var i = value.length - 1; i >= 0; i--) {
+            var parcial = parseInt(value[i]) * peso;
+            if (parcial > 9) parcial = Math.floor(parcial / 10) + (parcial % 10);
+            soma += parcial;
+            peso = peso === 2 ? 1 : 2;
+        }
+        var resto = soma % 10;
+        return resto === 0 ? 0 : 10 - resto;
+    }
+
+    function mod11(value, base) {
+        base = base || 9;
+        var soma = 0, peso = 2;
+        for (var i = value.length - 1; i >= 0; i--) {
+            soma += parseInt(value[i]) * peso;
+            peso++;
+            if (peso > base) peso = 2;
+        }
+        var resto = soma % 11;
+        if (resto === 0 || resto === 1 || resto === 10) return 1;
+        return 11 - resto;
+    }
+
+    function padLeft(str, len, ch) {
+        ch = ch || '0';
+        str = String(str);
+        while (str.length < len) str = ch + str;
+        return str;
+    }
+
+    function fatorVencimento(dateStr) {
+        var base = new Date(1997, 9, 7); // 07/10/1997
+        var dt = new Date(dateStr + 'T12:00:00');
+        var diff = Math.round((dt - base) / (1000 * 60 * 60 * 24));
+        return padLeft(Math.max(0, diff), 4);
+    }
+
+    function formatarValorBoleto(valor) {
+        return padLeft(Math.round(valor * 100), 10);
+    }
+
+    function gerarCodigoBarras(banco, vencStr, valor, nossoNumStr) {
+        var fv = fatorVencimento(vencStr);
+        var vl = formatarValorBoleto(valor);
+        var ag = padLeft(bankConfig.agencia, 4);
+        var ct = padLeft(bankConfig.conta, 8);
+        var ctDv = bankConfig.contaDv || '0';
+        var cart = padLeft(bankConfig.carteira, 3);
+        var nn = nossoNumStr;
+        var conv = padLeft(bankConfig.convenio, 7);
+
+        // Montar campo livre conforme banco (44 posições no total: banco(3)+moeda(1)+dv(1)+fv(4)+valor(10)+campolivre(25))
+        var campoLivre = '';
+        if (banco === '001') {
+            // BB: conv(7) + complemento NN(10) + agência(4) + conta(8) + carteira(2)
+            campoLivre = padLeft(conv, 7) + padLeft(nn, 10) + ag + padLeft(ct, 8) + padLeft(cart, 2).substring(0, 2);
+            campoLivre = campoLivre.substring(0, 25);
+        } else if (banco === '341') {
+            // Itaú: cart(3) + NN(8) + ag(4) + conta(5) + dac(1) + 000
+            var nn8 = padLeft(nn, 8);
+            var ct5 = padLeft(bankConfig.conta, 5);
+            var dacNN = mod10(ag + ct5 + cart + nn8);
+            campoLivre = (cart + nn8 + ag + ct5 + String(dacNN) + '000').substring(0, 25);
+        } else if (banco === '237') {
+            // Bradesco: ag(4) + cart(2) + NN(11) + conta(7) + zero
+            campoLivre = (ag + padLeft(cart, 2) + padLeft(nn, 11) + padLeft(ct, 7) + '0').substring(0, 25);
+        } else if (banco === '104') {
+            // Caixa: NN seguro - simplificado: cedente(6) + DV + nossonumero3(3) + 1(const) + cedente(3) + 4(const) + nn restante(7) + DV
+            // Simplificado para carteira RG/SR:
+            campoLivre = (padLeft(conv, 6) + padLeft(nn, 17) + '04').substring(0, 25);
+        } else if (banco === '033') {
+            // Santander: 9 + conv(7) + nn(12/13) + iof + carteira
+            campoLivre = ('9' + padLeft(conv, 7) + padLeft(nn, 13) + '0' + padLeft(cart, 3)).substring(0, 25);
+        } else {
+            // Genérico: agência + conta + carteira + nosso número
+            campoLivre = (ag + padLeft(ct, 8) + ctDv + padLeft(cart, 3) + padLeft(nn, 10)).substring(0, 25);
+            while (campoLivre.length < 25) campoLivre += '0';
+        }
+
+        // Montar sem DV geral
+        var semDv = banco + '9' + fv + vl + campoLivre;
+        // DV geral (posição 5 do código de barras)
+        var dvGeral = mod11(semDv.replace(/[^0-9]/g, ''), 9);
+        // Código de barras completo (44 dígitos)
+        var cb = banco + '9' + String(dvGeral) + fv + vl + campoLivre;
+        return cb.substring(0, 44);
+    }
+
+    function gerarLinhaDigitavel(cb) {
+        // Campo 1: banco(3) + moeda(1) + campolivre[0..4] => 9 dígitos + mod10
+        var campo1 = cb.substring(0, 4) + cb.substring(19, 24);
+        var dv1 = mod10(campo1);
+        var c1 = campo1.substring(0, 5) + '.' + campo1.substring(5) + String(dv1);
+
+        // Campo 2: campolivre[5..14] => 10 dígitos + mod10
+        var campo2 = cb.substring(24, 34);
+        var dv2 = mod10(campo2);
+        var c2 = campo2.substring(0, 5) + '.' + campo2.substring(5) + String(dv2);
+
+        // Campo 3: campolivre[15..24] => 10 dígitos + mod10
+        var campo3 = cb.substring(34, 44);
+        var dv3 = mod10(campo3);
+        var c3 = campo3.substring(0, 5) + '.' + campo3.substring(5) + String(dv3);
+
+        // Campo 4: DV geral (posição 5 do CB original)
+        var c4 = cb.substring(4, 5);
+
+        // Campo 5: fator vencimento + valor
+        var c5 = cb.substring(5, 19);
+
+        return c1 + ' ' + c2 + ' ' + c3 + ' ' + c4 + ' ' + c5;
+    }
+
+    function gerarBarcode128Svg(code, width, height) {
+        // Gerar representação visual do código de barras Interleaved 2 of 5 (ITF - padrão FEBRABAN)
+        var patterns = {
+            '0': 'nnwwn', '1': 'wnnnw', '2': 'nwnnw', '3': 'wwnnn', '4': 'nnwnw',
+            '5': 'wnwnn', '6': 'nwwnn', '7': 'nnnww', '8': 'wnnwn', '9': 'nwnwn'
+        };
+        
+        // Código deve ter número par de dígitos
+        var data = code;
+        if (data.length % 2 !== 0) data = '0' + data;
+        
+        var bars = 'nnnn'; // Start pattern
+        for (var i = 0; i < data.length; i += 2) {
+            var patBar = patterns[data[i]] || 'nnwwn';
+            var patSpace = patterns[data[i + 1]] || 'nnwwn';
+            for (var j = 0; j < 5; j++) {
+                bars += patBar[j];
+                bars += patSpace[j];
+            }
+        }
+        bars += 'wnn'; // Stop pattern
+        
+        var totalUnits = 0;
+        for (var k = 0; k < bars.length; k++) {
+            totalUnits += (bars[k] === 'w') ? 3 : 1;
+        }
+        
+        var unitWidth = width / totalUnits;
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '">';
+        var x = 0;
+        for (var m = 0; m < bars.length; m++) {
+            var bw = (bars[m] === 'w') ? unitWidth * 3 : unitWidth;
+            if (m % 2 === 0) { // barras pretas em posições pares
+                svg += '<rect x="' + x.toFixed(2) + '" y="0" width="' + bw.toFixed(2) + '" height="' + height + '" fill="#000"/>';
+            }
+            x += bw;
+        }
+        svg += '</svg>';
+        return svg;
+    }
+
+    function formatCurrency(v) {
+        return parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatDateBR(dateStr) {
+        if (!dateStr) return '—';
+        var d = new Date(dateStr + 'T12:00:00');
+        return d.toLocaleDateString('pt-BR');
+    }
+
+    // ═══ Impressão de Boletos FEBRABAN (CNAB 240/400) ═══
+    var btnPrintBoletos = document.getElementById('btnPrintBoletos');
+    if (btnPrintBoletos) {
+        btnPrintBoletos.addEventListener('click', function() {
+            var rows = boletoTableBody.querySelectorAll('tr');
+            if (!rows.length) return;
+
+            // Verificar se configurações bancárias existem
+            if (!bankConfig.banco || !bankConfig.agencia || !bankConfig.conta) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Configurações Bancárias Incompletas',
+                    html: '<p>Para gerar boletos no padrão FEBRABAN, é necessário configurar os dados bancários.</p><p class="small text-muted">Vá em <strong>Configurações → Boleto/Bancário</strong> e preencha os dados do banco, agência, conta e cedente.</p>',
+                    confirmButtonText: '<i class="fas fa-cog me-1"></i> Ir para Configurações',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#f39c12'
+                }).then(r => {
+                    if (r.isConfirmed) window.open('/sistemaTiago/?page=settings&tab=boleto', '_blank');
+                });
+                return;
+            }
+
+            if (!bankConfig.cedente || !bankConfig.cedenteDoc) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Dados do Cedente Incompletos',
+                    html: '<p>Preencha o <strong>Nome/Razão Social</strong> e o <strong>CNPJ/CPF do Cedente</strong> nas configurações.</p>',
+                    confirmButtonText: '<i class="fas fa-cog me-1"></i> Ir para Configurações',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#f39c12'
+                }).then(r => {
+                    if (r.isConfirmed) window.open('/sistemaTiago/?page=settings&tab=boleto', '_blank');
+                });
+                return;
+            }
+
+            var orderNum  = '<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?>';
+            var orderNumInt = <?= (int)$order['id'] ?>;
+            var custName  = <?= json_encode($order['customer_name'] ?? '—') ?>;
+            var custDoc   = <?= json_encode($order['customer_document'] ?? '') ?>;
+            var custAddr  = <?= json_encode($customerFormattedAddress ?? '') ?>;
+            var cedenteAddr = bankConfig.cedenteEndereco || <?= json_encode($companyAddress ?? '') ?>;
+            var bancoNome = bancosNomes[bankConfig.banco] || ('Banco ' + bankConfig.banco);
+            var bancoCode = padLeft(bankConfig.banco, 3);
+            var bancoDv   = mod11(bancoCode);
+            var bancoFull = bancoCode + '-' + bancoDv;
+            var agenciaStr = bankConfig.agencia + (bankConfig.agenciaDv ? '-' + bankConfig.agenciaDv : '');
+            var contaStr = bankConfig.conta + (bankConfig.contaDv ? '-' + bankConfig.contaDv : '');
+            var agCodCedente = agenciaStr + ' / ' + (bankConfig.convenio || contaStr);
+            var instrucoes = bankConfig.instrucoes ? bankConfig.instrucoes.split('\n') : [];
+            var dataProcessamento = new Date().toLocaleDateString('pt-BR');
+            var multaPct = parseFloat(bankConfig.multa) || 0;
+            var jurosPct = parseFloat(bankConfig.juros) || 0;
+
+            var boletosHtml = '';
+            var nossoNumBase = bankConfig.nossoNumero;
+
+            rows.forEach(function(tr, idx) {
+                var cells = tr.querySelectorAll('td');
+                var parcLabel = cells[0].textContent.trim();
+                var dateInput = cells[1].querySelector('input');
+                var dueDate = dateInput ? dateInput.value : '';
+                var dueDateFmt = formatDateBR(dueDate);
+                var valorStr = cells[2].textContent.replace(/[^\d,.]/g, '').replace('.','').replace(',','.');
+                var valorNum = parseFloat(valorStr) || 0;
+                var isEntrada = parcLabel.toLowerCase().indexOf('entrada') >= 0;
+
+                // Nosso Número para esta parcela (Entrada não gera boleto bancário real)
+                var nossoNum = padLeft(nossoNumBase + (isEntrada ? 0 : idx), bankConfig.nossoNumDigitos);
+                var nossoNumComDv = nossoNum + '-' + mod11(nossoNum);
+
+                // Número do documento
+                var numDocumento = orderNum + '-' + padLeft(idx + 1, 2);
+
+                // Gerar código de barras e linha digitável
+                var codigoBarras = gerarCodigoBarras(bancoCode, dueDate, valorNum, nossoNum);
+                var linhaDigitavel = gerarLinhaDigitavel(codigoBarras);
+                var barcodeSvg = gerarBarcode128Svg(codigoBarras, 580, 55);
+
+                // Informações de multa/juros para instruções
+                var instrCompletas = instrucoes.slice();
+                if (multaPct > 0 && !instrCompletas.some(l => l.toLowerCase().indexOf('multa') >= 0)) {
+                    instrCompletas.push('Multa de ' + multaPct.toFixed(2).replace('.', ',') + '% após o vencimento.');
+                }
+                if (jurosPct > 0 && !instrCompletas.some(l => l.toLowerCase().indexOf('juro') >= 0)) {
+                    instrCompletas.push('Juros de ' + jurosPct.toFixed(2).replace('.', ',') + '% ao mês por atraso.');
+                }
+
+                var pageBreak = idx > 0 ? 'style="page-break-before:always;"' : '';
+
+                boletosHtml += `
+                <div class="boleto-page" ${pageBreak}>
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!-- RECIBO DO SACADO (parte de cima — destacável pelo cliente) -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="recibo-sacado">
+                        <table class="topo w100">
+                            <tr>
+                                <td class="topo-logo"><strong class="banco-nome">${bancoNome}</strong></td>
+                                <td class="topo-codigo"><span class="banco-numero">${bancoFull}</span></td>
+                                <td class="topo-ld"><span class="linha-digitavel">${linhaDigitavel}</span></td>
+                            </tr>
+                        </table>
+                        <table class="w100 body-table">
+                            <tr>
+                                <td class="cell" style="width:60%;"><span class="lbl">Beneficiário</span><br><strong>${bankConfig.cedente}</strong><br><small>${bankConfig.cedenteDoc}</small></td>
+                                <td class="cell" style="width:20%;"><span class="lbl">Agência/Cód. Beneficiário</span><br>${agCodCedente}</td>
+                                <td class="cell" style="width:20%;"><span class="lbl">Nosso Número</span><br><strong>${nossoNumComDv}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="cell"><span class="lbl">Pagador</span><br>${custName}${custDoc ? ' — CPF/CNPJ: ' + custDoc : ''}</td>
+                                <td class="cell"><span class="lbl">Vencimento</span><br><strong class="venc">${dueDateFmt}</strong></td>
+                                <td class="cell"><span class="lbl">Valor Documento</span><br><strong class="valor">R$ ${formatCurrency(valorNum)}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="cell"><span class="lbl">Endereço Pagador</span><br><small>${custAddr || '—'}</small></td>
+                                <td class="cell" colspan="2">
+                                    <span class="lbl">Nº Documento</span> ${numDocumento}
+                                    &nbsp;|&nbsp; <span class="lbl">Parcela</span> ${parcLabel}
+                                    &nbsp;|&nbsp; <span class="lbl">Pedido</span> #${orderNum}
+                                </td>
+                            </tr>
+                        </table>
+                        <div class="recibo-footer">
+                            <span class="tesoura">✂</span>
+                            <span class="recibo-texto">Recibo do Sacado</span>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!-- FICHA DE COMPENSAÇÃO (parte principal — vai ao banco)  -->
+                    <!-- Padrão FEBRABAN — CNAB 240 / CNAB 400                 -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="ficha-compensacao">
+                        <table class="topo w100">
+                            <tr>
+                                <td class="topo-logo"><strong class="banco-nome">${bancoNome}</strong></td>
+                                <td class="topo-codigo"><span class="banco-numero">${bancoFull}</span></td>
+                                <td class="topo-ld"><span class="linha-digitavel">${linhaDigitavel}</span></td>
+                            </tr>
+                        </table>
+                        <table class="w100 body-table fc-body">
+                            <tr>
+                                <td class="cell" colspan="6"><span class="lbl">Local de Pagamento</span><br>${bankConfig.localPagamento}</td>
+                                <td class="cell r" style="width:25%;"><span class="lbl">Vencimento</span><br><strong class="venc venc-destaque">${dueDateFmt}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="cell" colspan="6"><span class="lbl">Beneficiário</span><br><strong>${bankConfig.cedente}</strong> — CNPJ/CPF: ${bankConfig.cedenteDoc}<br><small>${cedenteAddr}</small></td>
+                                <td class="cell r"><span class="lbl">Agência / Código Cedente</span><br><strong>${agCodCedente}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="cell"><span class="lbl">Data do Documento</span><br>${dataProcessamento}</td>
+                                <td class="cell" colspan="2"><span class="lbl">Nº do Documento</span><br>${numDocumento}</td>
+                                <td class="cell"><span class="lbl">Espécie Doc.</span><br>${bankConfig.especieDoc}</td>
+                                <td class="cell"><span class="lbl">Aceite</span><br>${bankConfig.aceite}</td>
+                                <td class="cell"><span class="lbl">Data Processamento</span><br>${dataProcessamento}</td>
+                                <td class="cell r"><span class="lbl">Nosso Número</span><br><strong>${nossoNumComDv}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="cell"><span class="lbl">Uso do Banco</span><br>&nbsp;</td>
+                                <td class="cell"><span class="lbl">Carteira</span><br>${bankConfig.carteira}</td>
+                                <td class="cell"><span class="lbl">Espécie</span><br>${bankConfig.especie}</td>
+                                <td class="cell" colspan="2"><span class="lbl">Quantidade</span><br>&nbsp;</td>
+                                <td class="cell"><span class="lbl">(x) Valor</span><br>&nbsp;</td>
+                                <td class="cell r"><span class="lbl">(=) Valor do Documento</span><br><strong class="valor">R$ ${formatCurrency(valorNum)}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="cell instrucoes" colspan="6" rowspan="5">
+                                    <span class="lbl">Instruções (Texto de responsabilidade do beneficiário)</span><br>
+                                    ${instrCompletas.map(l => l.trim()).filter(l => l).map(l => '<span class="inst-line">• ' + l + '</span>').join('<br>')}
+                                    ${bankConfig.demonstrativo ? '<br><br><span class="lbl">Demonstrativo:</span><br><span class="inst-line">' + bankConfig.demonstrativo + '</span>' : ''}
+                                    <br><br>
+                                    <span class="inst-line"><strong>Ref: Pedido #${orderNum} — Parcela: ${parcLabel}</strong></span>
+                                </td>
+                                <td class="cell r"><span class="lbl">(-) Desconto / Abatimento</span><br>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td class="cell r"><span class="lbl">(-) Outras Deduções</span><br>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td class="cell r"><span class="lbl">(+) Mora / Multa</span><br>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td class="cell r"><span class="lbl">(+) Outros Acréscimos</span><br>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td class="cell r"><span class="lbl">(=) Valor Cobrado</span><br>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td class="cell sacado" colspan="7">
+                                    <span class="lbl">Sacado / Pagador</span><br>
+                                    <strong>${custName}</strong>${custDoc ? ' — CPF/CNPJ: ' + custDoc : ''}<br>
+                                    ${custAddr || ''}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="cell" colspan="5" style="border-bottom:none;">
+                                    <span class="lbl">Sacador/Avalista</span><br>&nbsp;
+                                </td>
+                                <td class="cell" colspan="2" style="border-bottom:none;text-align:right;">
+                                    <span class="lbl">Cód. Baixa</span><br>&nbsp;
+                                </td>
+                            </tr>
+                        </table>
+                        <!-- Código de Barras ITF (Interleaved 2 of 5 — Padrão FEBRABAN) -->
+                        <div class="barcode-area">
+                            <div class="barcode-svg">${barcodeSvg}</div>
+                            <div class="barcode-numeros">${codigoBarras}</div>
+                        </div>
+                        <div class="fc-rodape">
+                            <span>Ficha de Compensação — Autenticação Mecânica</span>
+                            <span>FEBRABAN — CNAB 240/400</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            var printWin = window.open('', '_blank', 'width=850,height=1000');
+            printWin.document.write(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Boleto Bancário — Pedido #${orderNum}</title>
+<style>
+    @page { size: A4 portrait; margin: 8mm 10mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 10px; line-height: 1.3; background: #fff; }
+    .w100 { width: 100%; border-collapse: collapse; }
+
+    /* ═══ Cabeçalho (topo de cada seção: logo + código banco + linha digitável) ═══ */
+    table.topo { border-collapse: collapse; }
+    table.topo td { border: 2px solid #000; padding: 4px 8px; vertical-align: middle; }
+    .topo-logo { width: 22%; }
+    .topo-codigo { width: 13%; text-align: center; }
+    .topo-ld { width: 65%; }
+    .banco-nome { font-size: 13px; font-weight: bold; }
+    .banco-numero { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+    .linha-digitavel { font-size: 13px; font-weight: bold; letter-spacing: 0.8px; text-align: right; display: block; font-family: 'Courier New', monospace; }
+
+    /* ═══ Células da tabela principal ═══ */
+    .body-table { border-collapse: collapse; }
+    .cell { border: 1px solid #000; padding: 2px 5px; vertical-align: top; font-size: 9px; }
+    .cell.r { text-align: right; }
+    .lbl { font-size: 6.5px; color: #444; text-transform: uppercase; display: block; margin-bottom: 1px; letter-spacing: 0.3px; }
+    .venc { font-size: 13px; font-weight: bold; }
+    .venc-destaque { font-size: 14px; }
+    .valor { font-size: 12px; font-weight: bold; }
+    .inst-line { font-size: 9px; line-height: 1.6; display: block; }
+    .instrucoes { min-height: 90px; vertical-align: top; }
+    .sacado { min-height: 36px; }
+
+    /* ═══ Recibo do Sacado ═══ */
+    .recibo-sacado { margin-bottom: 0; }
+    .recibo-footer { 
+        display: flex; align-items: center; justify-content: center; gap: 15px;
+        padding: 2px 0; font-size: 8px; color: #777; 
+        border-bottom: 1px dashed #999; margin-bottom: 3px;
+        letter-spacing: 0.5px;
+    }
+    .recibo-footer .tesoura { font-size: 14px; }
+    .recibo-footer .recibo-texto { text-transform: uppercase; }
+
+    /* ═══ Ficha de Compensação ═══ */
+    .ficha-compensacao { margin-top: 4px; }
+    .fc-body { }
+
+    /* ═══ Código de Barras ═══ */
+    .barcode-area { padding: 6px 0 2px 0; text-align: left; }
+    .barcode-svg { }
+    .barcode-svg svg { max-width: 100%; height: 55px; }
+    .barcode-numeros { font-family: 'Courier New', monospace; font-size: 8px; color: #555; letter-spacing: 2px; margin-top: 2px; }
+
+    /* ═══ Rodapé ═══ */
+    .fc-rodape { 
+        display: flex; justify-content: space-between; 
+        font-size: 7px; color: #666; padding: 4px 4px 0; 
+        border-top: 2px solid #000; 
+    }
+
+    /* ═══ Paginação ═══ */
+    .boleto-page { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+
+    /* ═══ Impressão ═══ */
+    .no-print { text-align: center; padding: 20px; background: #f8f8f8; border-top: 2px solid #ddd; margin-top: 10px; }
+    .no-print .info-texto { font-size: 11px; color: #666; margin-bottom: 10px; }
+    @media print {
+        .no-print { display: none !important; }
+        .boleto-page { page-break-inside: avoid; border-bottom: none; margin-bottom: 0; }
+    }
+
+    /* ═══ Marca d'água quando entrada ═══ */
+    .entrada-marca { position: relative; }
+    .entrada-marca::after {
+        content: 'ENTRADA'; position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        font-size: 48px; font-weight: bold; color: rgba(39,174,96,0.08);
+        letter-spacing: 8px; pointer-events: none;
+    }
+</style></head><body>
+    <div class="no-print">
+        <p class="info-texto">
+            <strong>📄 Boleto Bancário — Pedido #${orderNum}</strong><br>
+            Banco: <strong>${bancoNome} (${bancoFull})</strong> | Cedente: <strong>${bankConfig.cedente}</strong> | ${rows.length} boleto(s) gerado(s)<br>
+            <small>Boletos gerados conforme padrão FEBRABAN (CNAB 240/400) com código de barras Interleaved 2 of 5</small>
+        </p>
+        <button onclick="window.print()" style="padding:10px 30px;font-size:14px;cursor:pointer;border:2px solid #333;border-radius:4px;background:#fff;font-weight:bold;">🖨️ Imprimir Boletos</button>
+        <button onclick="window.close()" style="padding:10px 20px;font-size:14px;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;margin-left:8px;">Fechar</button>
+    </div>
+    ${boletosHtml}
+    <div class="no-print" style="margin-top:20px;">
+        <button onclick="window.print()" style="padding:10px 30px;font-size:14px;cursor:pointer;border:2px solid #333;border-radius:4px;background:#fff;font-weight:bold;">🖨️ Imprimir Boletos</button>
+        <button onclick="window.close()" style="padding:10px 20px;font-size:14px;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;margin-left:8px;">Fechar</button>
+    </div>
+</body></html>`);
+            printWin.document.close();
+            printWin.focus();
+        });
+    }
+
+    // ═══ Emitir NF (placeholder) ═══
+    var btnNF = document.getElementById('btnEmitirNF');
+    if (btnNF) {
+        btnNF.addEventListener('click', function() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Emissão de Nota Fiscal',
+                html: '<p class="mb-2">A emissão automática de NF-e ainda não está integrada.</p><p class="small text-muted">Por enquanto, emita a nota no seu sistema fiscal e preencha os dados (número, série, chave de acesso) nos campos acima.</p><hr><p class="small text-muted mb-0"><i class="fas fa-plug me-1"></i>Integração futura com: NFe.io, Bling, Tiny ERP, eNotas</p>',
+                confirmButtonText: 'Entendi',
+                confirmButtonColor: '#27ae60'
+            });
+        });
+    }
 })();
 <?php endif; ?>
+
+// ═══ ENVIO — Interações do card de envio ═══
+(function() {
+    // Botão "Usar endereço do cliente"
+    var btnUseAddr = document.getElementById('btnUseCustomerAddress');
+    if (btnUseAddr) {
+        btnUseAddr.addEventListener('click', function() {
+            var textarea = document.getElementById('shippingAddressTextarea');
+            if (textarea) {
+                textarea.value = <?= json_encode($customerFormattedAddress ?? '') ?>;
+                document.getElementById('shippingAddressBackup').value = textarea.value;
+                Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1200, timerProgressBar: true })
+                    .fire({ icon: 'success', title: 'Endereço preenchido!' });
+            }
+        });
+    }
+
+    // Alternar visibilidade dos cards conforme tipo de envio
+    var shippingTypeSelect = document.getElementById('shippingType');
+    if (shippingTypeSelect) {
+        shippingTypeSelect.addEventListener('change', function() {
+            var retiradaCard  = document.getElementById('shippingRetiradaCard');
+            var addressCard   = document.getElementById('shippingAddressCard');
+            var trackingSec   = document.getElementById('trackingSection');
+            var printBtn      = document.getElementById('btnPrintLabel');
+            var badgeLegend   = document.querySelector('#shippingBadgeLegend');
+
+            var isRetirada = (this.value === 'retirada');
+
+            // Labels dinâmicos
+            var labelsMap = {
+                'retirada': { label: 'Retirada na Loja', icon: 'fas fa-store', color: '#27ae60', emoji: '🏪' },
+                'entrega':  { label: 'Entrega Própria',  icon: 'fas fa-motorcycle', color: '#e67e22', emoji: '🏍️' },
+                'correios': { label: 'Correios / Transportadora', icon: 'fas fa-box', color: '#3498db', emoji: '📦' }
+            };
+            var info = labelsMap[this.value] || labelsMap['retirada'];
+
+            // Atualizar borda do fieldset e badge do legend
+            var fieldset = shippingTypeSelect.closest('fieldset');
+            if (fieldset) {
+                fieldset.style.borderColor = info.color;
+                var legend = fieldset.querySelector('legend');
+                if (legend) legend.style.color = info.color;
+            }
+            if (badgeLegend) {
+                badgeLegend.style.background = info.color;
+                badgeLegend.innerHTML = '<i class="' + info.icon + ' me-1"></i>' + info.label;
+            }
+
+            // Mostrar/ocultar cards
+            if (retiradaCard)  retiradaCard.style.display  = isRetirada ? '' : 'none';
+            if (addressCard)   addressCard.style.display    = isRetirada ? 'none' : '';
+
+            // Sincronizar hidden field com textarea quando alternando
+            var textarea = document.getElementById('shippingAddressTextarea');
+            var backup   = document.getElementById('shippingAddressBackup');
+            if (textarea && backup) {
+                if (!isRetirada && textarea.value === '' && backup.value !== '') {
+                    textarea.value = backup.value;
+                }
+            }
+        });
+    }
+
+    // Sincronizar backup quando textarea muda
+    var addrTextarea = document.getElementById('shippingAddressTextarea');
+    if (addrTextarea) {
+        addrTextarea.addEventListener('input', function() {
+            var backup = document.getElementById('shippingAddressBackup');
+            if (backup) backup.value = this.value;
+        });
+    }
+
+    // ═══ Impressão da Guia de Endereçamento ═══
+    var btnPrint = document.getElementById('btnPrintLabel');
+    if (btnPrint) {
+        btnPrint.addEventListener('click', function() {
+            var textarea   = document.getElementById('shippingAddressTextarea');
+            var address    = textarea ? textarea.value.trim() : '';
+            var selType    = document.getElementById('shippingType');
+            var typeLabel  = selType ? selType.options[selType.selectedIndex].text : '';
+
+            if (!address) {
+                Swal.fire({ icon: 'warning', title: 'Sem endereço', text: 'Preencha o endereço de entrega antes de imprimir a guia.', confirmButtonColor: '#e67e22' });
+                return;
+            }
+
+            var orderNum     = '<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?>';
+            var custName     = <?= json_encode($order['customer_name'] ?? '—') ?>;
+            var custPhone    = <?= json_encode($order['customer_phone'] ?? '') ?>;
+            var senderName   = <?= json_encode(($company['company_name'] ?? 'Gráfica')) ?>;
+            var senderPhone  = <?= json_encode(($company['company_phone'] ?? '')) ?>;
+            var senderAddr   = <?= json_encode($companyAddress ?? '') ?>;
+            var trackCode    = document.getElementById('trackingCodeInput') ? document.getElementById('trackingCodeInput').value.trim() : '';
+
+            var printWin = window.open('', '_blank', 'width=600,height=500');
+            printWin.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Guia de Endereçamento — Pedido #${orderNum}</title>
+    <style>
+        @page { size: A5 landscape; margin: 10mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #222; }
+        .label-container { border: 3px solid #333; border-radius: 10px; padding: 24px; max-width: 550px; margin: 0 auto; }
+        .label-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #ccc; padding-bottom: 12px; margin-bottom: 16px; }
+        .label-header h2 { font-size: 15px; color: #555; margin: 0; }
+        .label-header .order-num { font-size: 18px; font-weight: bold; color: #333; }
+        .sender-section { background: #f8f9fa; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: #666; }
+        .sender-section strong { color: #333; }
+        .sender-addr { font-size: 11px; color: #888; margin-top: 4px; }
+        .dest-section { border: 2px solid #e67e22; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+        .dest-label { font-size: 11px; font-weight: bold; color: #e67e22; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .dest-name { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+        .dest-phone { font-size: 13px; color: #666; margin-bottom: 10px; }
+        .dest-address { font-size: 16px; font-weight: 600; line-height: 1.5; padding: 10px; background: #fff8f0; border-left: 4px solid #e67e22; border-radius: 4px; }
+        .footer-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: #888; }
+        .footer-row .box { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 6px 10px; text-align: center; }
+        .footer-row .box strong { display: block; font-size: 12px; color: #333; }
+        .tracking-code { font-size: 14px; font-weight: bold; color: #3498db; letter-spacing: 1px; }
+        .print-note { text-align: center; margin-top: 10px; font-size: 10px; color: #bbb; }
+        @media print { .no-print { display: none !important; } body { padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="label-container">
+        <div class="label-header">
+            <h2>📦 GUIA DE ENDEREÇAMENTO</h2>
+            <span class="order-num">Pedido #${orderNum}</span>
+        </div>
+        <div class="sender-section">
+            <strong>REMETENTE:</strong> ${senderName}${senderPhone ? ' — ' + senderPhone : ''}
+            ${senderAddr ? '<div class="sender-addr">' + senderAddr + '</div>' : ''}
+        </div>
+        <div class="dest-section">
+            <div class="dest-label">✉ Destinatário</div>
+            <div class="dest-name">${custName}</div>
+            ${custPhone ? '<div class="dest-phone">📞 ' + custPhone + '</div>' : ''}
+            <div class="dest-address">${address.replace(/\\n/g, '<br>')}</div>
+        </div>
+        <div class="footer-row">
+            <div class="box">Modalidade<br><strong>${typeLabel}</strong></div>
+            <div class="box">Rastreio<br><strong class="tracking-code">${trackCode || '—'}</strong></div>
+            <div class="box">Data<br><strong>${new Date().toLocaleDateString('pt-BR')}</strong></div>
+        </div>
+        <p class="print-note">Recortar e colar na embalagem do pedido</p>
+    </div>
+    <div class="text-center no-print" style="margin-top:16px;">
+        <button onclick="window.print()" style="padding:8px 24px;font-size:14px;cursor:pointer;border:1px solid #333;border-radius:4px;background:#fff;">🖨️ Imprimir</button>
+        <button onclick="window.close()" style="padding:8px 18px;font-size:14px;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;margin-left:6px;">Fechar</button>
+    </div>
+</body>
+</html>`);
+            printWin.document.close();
+            printWin.focus();
+        });
+    }
+})();
 </script>

@@ -112,6 +112,24 @@ CREATE TABLE IF NOT EXISTS products (
     subcategory_id INT NULL,
     price DECIMAL(10, 2) NOT NULL,
     stock_quantity INT DEFAULT 0,
+    -- Campos Fiscais (NF-e)
+    fiscal_ncm VARCHAR(10) DEFAULT NULL COMMENT 'NCM - Nomenclatura Comum do Mercosul',
+    fiscal_cest VARCHAR(10) DEFAULT NULL COMMENT 'CEST - Código Especificador da Substituição Tributária',
+    fiscal_cfop VARCHAR(10) DEFAULT NULL COMMENT 'CFOP - Código Fiscal de Operações e Prestações',
+    fiscal_cst_icms VARCHAR(5) DEFAULT NULL COMMENT 'CST ICMS',
+    fiscal_csosn VARCHAR(5) DEFAULT NULL COMMENT 'CSOSN - Simples Nacional',
+    fiscal_cst_pis VARCHAR(5) DEFAULT NULL COMMENT 'CST PIS',
+    fiscal_cst_cofins VARCHAR(5) DEFAULT NULL COMMENT 'CST COFINS',
+    fiscal_cst_ipi VARCHAR(5) DEFAULT NULL COMMENT 'CST IPI',
+    fiscal_origem VARCHAR(2) DEFAULT '0' COMMENT 'Origem da mercadoria',
+    fiscal_unidade VARCHAR(10) DEFAULT 'UN' COMMENT 'Unidade de medida fiscal',
+    fiscal_ean VARCHAR(14) DEFAULT NULL COMMENT 'Código EAN/GTIN',
+    fiscal_aliq_icms DECIMAL(5,2) DEFAULT NULL COMMENT 'Alíquota ICMS (%)',
+    fiscal_aliq_ipi DECIMAL(5,2) DEFAULT NULL COMMENT 'Alíquota IPI (%)',
+    fiscal_aliq_pis DECIMAL(5,4) DEFAULT NULL COMMENT 'Alíquota PIS (%)',
+    fiscal_aliq_cofins DECIMAL(5,4) DEFAULT NULL COMMENT 'Alíquota COFINS (%)',
+    fiscal_beneficio VARCHAR(20) DEFAULT NULL COMMENT 'Código de benefício fiscal',
+    fiscal_info_adicional TEXT DEFAULT NULL COMMENT 'Info adicional do produto na NF-e',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE SET NULL
@@ -125,6 +143,68 @@ CREATE TABLE IF NOT EXISTS product_images (
     is_main TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ─────────────────────────────────────────────────────
+-- MÓDULO: GRADES / VARIAÇÕES DE PRODUTOS
+-- ─────────────────────────────────────────────────────
+
+-- Tipos de Grade (templates reutilizáveis: Tamanho, Cor, Material, etc.)
+CREATE TABLE IF NOT EXISTS product_grade_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description VARCHAR(255) DEFAULT NULL,
+    icon VARCHAR(50) DEFAULT 'fas fa-th',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Inserir tipos de grade comuns
+INSERT IGNORE INTO product_grade_types (name, description, icon) VALUES
+('Tamanho', 'Variações de tamanho do produto (P, M, G, GG, etc.)', 'fas fa-ruler-combined'),
+('Cor', 'Variações de cor do produto', 'fas fa-palette'),
+('Material', 'Tipo de material ou papel utilizado', 'fas fa-layer-group'),
+('Acabamento', 'Tipo de acabamento (laminação, verniz, etc.)', 'fas fa-magic'),
+('Gramatura', 'Gramatura do papel (90g, 150g, 300g, etc.)', 'fas fa-weight-hanging'),
+('Formato', 'Formato ou dimensão do produto', 'fas fa-expand-arrows-alt'),
+('Quantidade', 'Faixas de quantidade (100un, 500un, 1000un)', 'fas fa-boxes');
+
+-- Grades vinculadas a um produto (um produto pode ter múltiplas grades)
+CREATE TABLE IF NOT EXISTS product_grades (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    grade_type_id INT NOT NULL,
+    sort_order INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (grade_type_id) REFERENCES product_grade_types(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_product_grade (product_id, grade_type_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Valores de cada grade (ex: grade "Tamanho" → valores "P", "M", "G", "GG")
+CREATE TABLE IF NOT EXISTS product_grade_values (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_grade_id INT NOT NULL,
+    value VARCHAR(100) NOT NULL,
+    sort_order INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_grade_id) REFERENCES product_grades(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Combinações de grades (produto cartesiano dos valores de todas as grades)
+CREATE TABLE IF NOT EXISTS product_grade_combinations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    combination_key VARCHAR(255) NOT NULL COMMENT 'Chave serializada ex: "2:5|3:8"',
+    combination_label VARCHAR(500) DEFAULT NULL COMMENT 'Label legível ex: "M / Branca"',
+    sku VARCHAR(100) DEFAULT NULL,
+    price_override DECIMAL(10,2) DEFAULT NULL COMMENT 'Preço específico (NULL = usa preço do produto)',
+    stock_quantity INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_product_combination (product_id, combination_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Itens das Tabelas de Preço (preço customizado por tabela/produto)
@@ -172,6 +252,8 @@ CREATE TABLE IF NOT EXISTS order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     product_id INT NOT NULL,
+    grade_combination_id INT DEFAULT NULL,
+    grade_description VARCHAR(500) DEFAULT NULL COMMENT 'Texto legível da combinação escolhida',
     quantity INT NOT NULL,
     unit_price DECIMAL(10, 2) NOT NULL,
     subtotal DECIMAL(10, 2) NOT NULL,
@@ -276,6 +358,82 @@ CREATE TABLE IF NOT EXISTS subcategory_sectors (
     FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE,
     FOREIGN KEY (sector_id) REFERENCES production_sectors(id) ON DELETE CASCADE,
     UNIQUE KEY unique_sub_sector (subcategory_id, sector_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ─────────────────────────────────────────────────────
+-- MÓDULO: GRADES DE CATEGORIAS E SUBCATEGORIAS
+-- ─────────────────────────────────────────────────────
+
+-- Grades vinculadas a uma categoria (grades padrão que produtos herdam)
+CREATE TABLE IF NOT EXISTS category_grades (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    grade_type_id INT NOT NULL,
+    sort_order INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    FOREIGN KEY (grade_type_id) REFERENCES product_grade_types(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_category_grade (category_id, grade_type_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Valores de cada grade de categoria
+CREATE TABLE IF NOT EXISTS category_grade_values (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_grade_id INT NOT NULL,
+    value VARCHAR(100) NOT NULL,
+    sort_order INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_grade_id) REFERENCES category_grades(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Combinações de grades de categoria (com controle de inativação)
+CREATE TABLE IF NOT EXISTS category_grade_combinations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    combination_key VARCHAR(255) NOT NULL,
+    combination_label VARCHAR(500) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_category_combination (category_id, combination_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Grades vinculadas a uma subcategoria (grades padrão com prioridade sobre categoria)
+CREATE TABLE IF NOT EXISTS subcategory_grades (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subcategory_id INT NOT NULL,
+    grade_type_id INT NOT NULL,
+    sort_order INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE,
+    FOREIGN KEY (grade_type_id) REFERENCES product_grade_types(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_subcategory_grade (subcategory_id, grade_type_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Valores de cada grade de subcategoria
+CREATE TABLE IF NOT EXISTS subcategory_grade_values (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subcategory_grade_id INT NOT NULL,
+    value VARCHAR(100) NOT NULL,
+    sort_order INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subcategory_grade_id) REFERENCES subcategory_grades(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Combinações de grades de subcategoria (com controle de inativação)
+CREATE TABLE IF NOT EXISTS subcategory_grade_combinations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subcategory_id INT NOT NULL,
+    combination_key VARCHAR(255) NOT NULL,
+    combination_label VARCHAR(500) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_subcategory_combination (subcategory_id, combination_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ─────────────────────────────────────────────────────

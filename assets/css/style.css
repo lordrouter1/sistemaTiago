@@ -16,11 +16,21 @@ h1, h2, h3, h4, h5, h6 {
 .navbar-dark .navbar-nav .nav-link {
     color: rgba(255,255,255,0.85);
     font-weight: 500;
+    text-decoration: none !important;
+    border-bottom: none !important;
 }
 .navbar-dark .navbar-nav .nav-link:hover, 
+.navbar-dark .navbar-nav .nav-link:focus,
 .navbar-dark .navbar-nav .nav-link.active {
     color: #fff;
-    border-bottom: 2px solid var(--accent-color);
+    background-color: rgba(255,255,255,0.12);
+    border-radius: 0.375rem;
+    text-decoration: none !important;
+    border-bottom: none !important;
+}
+/* Remove underline de todos os links do navbar */
+.navbar a, .navbar a:hover, .navbar a:focus, .navbar a:active {
+    text-decoration: none !important;
 }
 
 /* Botões Personalizados */
@@ -95,10 +105,115 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Kanban Board Wrapper */
 .pipeline-board-wrapper {
+    position: relative;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: var(--accent-color) #e9ecef;
+}
+
+/* Kanban Board — always fits all columns on screen */
+.pipeline-board {
+    display: flex;
+    width: 100%;
+}
+
+/* Each column fills equally, shrinking to fit */
+.pipeline-column {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+}
+
+/* Scroll indicators for when content overflows on very small screens */
+.pipeline-board-wrapper::after {
+    content: '';
+    position: sticky;
+    right: 0;
+    top: 0;
+    width: 30px;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+    flex-shrink: 0;
+    display: none;
+}
+
+.pipeline-board-wrapper.has-scroll::after {
+    display: block;
+}
+
+/* Navigation buttons for Kanban scroll */
+.pipeline-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #dee2e6;
+    background: rgba(255,255,255,0.95);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: #495057;
+    transition: all 0.2s;
+}
+
+.pipeline-nav-btn:hover {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
+.pipeline-nav-btn.nav-left { left: 4px; }
+.pipeline-nav-btn.nav-right { right: 4px; }
+
+.pipeline-board-wrapper.has-scroll .pipeline-nav-btn {
+    display: flex;
+}
+
+/* Column minimap / navigator strip */
+.pipeline-minimap {
+    display: none;
+    gap: 3px;
+    padding: 6px 0;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.pipeline-minimap-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.pipeline-minimap-item:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.pipeline-minimap-item .minimap-count {
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
 }
 
 .pipeline-board-wrapper::-webkit-scrollbar {
@@ -115,14 +230,64 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 4px;
 }
 
+/* On very small screens (mobile), allow horizontal scroll with fixed min-width per column */
+@media (max-width: 576px) {
+    .pipeline-board {
+        width: max-content;
+    }
+    .pipeline-column {
+        flex: 0 0 240px !important;
+        min-width: 240px !important;
+    }
+    .pipeline-minimap {
+        display: flex;
+    }
+}
+
+/* On medium screens, show minimap if many columns */
+@media (min-width: 577px) and (max-width: 991px) {
+    .pipeline-board {
+        width: max-content;
+    }
+    .pipeline-column {
+        flex: 0 0 220px !important;
+        min-width: 220px !important;
+    }
+    .pipeline-minimap {
+        display: flex;
+    }
+}
+
+/* On large screens (>=992px), all columns share space equally — no scroll */
+@media (min-width: 992px) {
+    .pipeline-board {
+        width: 100%;
+    }
+    .pipeline-column {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+}
+
 /* Colunas do Pipeline */
 .pipeline-column {
     transition: transform 0.2s ease;
+    overflow: hidden;
 }
 
 .pipeline-column-header {
-    font-size: 0.85rem;
-    letter-spacing: 0.3px;
+    font-size: 0.8rem;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 40px;
+}
+
+.pipeline-column-header .fw-bold {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .pipeline-column-body {
@@ -213,17 +378,7 @@ h1, h2, h3, h4, h5, h6 {
     border-left-color: var(--warning-color) !important;
 }
 
-/* Responsividade do pipeline */
-@media (max-width: 768px) {
-    .pipeline-column {
-        min-width: 260px !important;
-        width: 260px !important;
-    }
-    
-    .pipeline-board {
-        padding-bottom: 15px;
-    }
-}
+/* Responsividade do pipeline — handled by new responsive rules above */
 
 /* ========================================
    DASHBOARD MELHORADO
@@ -282,6 +437,58 @@ fieldset {
 fieldset legend {
     font-size: 1rem;
     font-weight: 600;
+}
+
+/* ========================================
+   GRADES / VARIAÇÕES DE PRODUTOS
+   ======================================== */
+
+.grade-item {
+    transition: box-shadow 0.2s ease;
+}
+
+.grade-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.grade-item .card-header {
+    border-bottom: 2px solid rgba(23, 162, 184, 0.2);
+}
+
+.grade-value-item {
+    transition: all 0.15s ease;
+}
+
+.grade-value-item .grade-value-input {
+    border-color: #17a2b8;
+    font-weight: 500;
+}
+
+.grade-value-item .grade-value-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+}
+
+.grade-value-item .btn-remove-value {
+    border-color: #dee2e6;
+    color: #999;
+}
+
+.grade-value-item .btn-remove-value:hover {
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+    background: rgba(231, 76, 60, 0.05);
+}
+
+#combinations-table td {
+    vertical-align: middle;
+}
+
+#combinations-table .form-control-sm {
+    font-size: 0.8rem;
+}
+
+.pipeline-minimap-item {
+    user-select: none;
 }
 
 /* Print styles */

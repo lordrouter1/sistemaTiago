@@ -100,8 +100,23 @@
         $allowedStages = array_keys($stages);
     }
     ?>
-    <div class="pipeline-board-wrapper">
-        <div class="pipeline-board d-flex gap-3 pb-3" style="overflow-x: auto; min-height: 500px;">
+    <div class="pipeline-board-wrapper position-relative" id="pipelineBoardWrapper">
+        <!-- Navigation buttons for horizontal scroll (mobile/tablet) -->
+        <button class="pipeline-nav-btn nav-left" id="pipelineNavLeft" title="Rolar para esquerda"><i class="fas fa-chevron-left"></i></button>
+        <button class="pipeline-nav-btn nav-right" id="pipelineNavRight" title="Rolar para direita"><i class="fas fa-chevron-right"></i></button>
+
+        <div class="pipeline-board d-flex gap-2 pb-3" id="pipelineBoard" style="min-height: 500px;">
+            <?php 
+            // Contar quantas colunas visíveis teremos
+            $visibleStageCount = 0;
+            $visibleStages = [];
+            foreach ($stages as $sk => $si) {
+                if ($sk === 'concluido' || $sk === 'cancelado') continue;
+                if (!in_array($sk, $allowedStages)) continue;
+                $visibleStageCount++;
+                $visibleStages[$sk] = $si;
+            }
+            ?>
             <?php foreach ($stages as $stageKey => $stageInfo): ?>
             <?php 
                 if ($stageKey === 'concluido' || $stageKey === 'cancelado') continue; // Concluído e Cancelado não aparecem no kanban
@@ -109,7 +124,7 @@
                 $stageOrders = $ordersByStage[$stageKey] ?? [];
                 $stageGoal = isset($goals[$stageKey]) ? (int)$goals[$stageKey]['max_hours'] : 24;
             ?>
-            <div class="pipeline-column flex-shrink-0" style="min-width: 280px; width: 280px;">
+            <div class="pipeline-column" data-stage-key="<?= $stageKey ?>">
                 <!-- Cabeçalho da Coluna -->
                 <div class="pipeline-column-header rounded-top p-2 px-3 d-flex align-items-center justify-content-between" 
                      style="background: <?= $stageInfo['color'] ?>; color: #fff;">
@@ -275,6 +290,19 @@
             </div>
             <?php endforeach; ?>
         </div>
+        
+        <!-- Column Minimap / Quick Navigator (visible on smaller screens) -->
+        <div class="pipeline-minimap" id="pipelineMinimap">
+            <?php foreach ($visibleStages as $mKey => $mInfo): 
+                $mCount = count($ordersByStage[$mKey] ?? []);
+            ?>
+            <span class="pipeline-minimap-item" style="background:<?= $mInfo['color'] ?>;" data-target="<?= $mKey ?>" title="<?= $mInfo['label'] ?>">
+                <i class="<?= $mInfo['icon'] ?>"></i>
+                <?= $mInfo['label'] ?>
+                <span class="minimap-count"><?= $mCount ?></span>
+            </span>
+            <?php endforeach; ?>
+        </div>
     </div>
 </div>
 
@@ -365,6 +393,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     <?php endif; ?>
+
+    // ── Pipeline Scroll Navigation ──
+    (function initPipelineScroll() {
+        const wrapper = document.getElementById('pipelineBoardWrapper');
+        const board = document.getElementById('pipelineBoard');
+        const navLeft = document.getElementById('pipelineNavLeft');
+        const navRight = document.getElementById('pipelineNavRight');
+        if (!wrapper || !board) return;
+
+        function checkScroll() {
+            const hasScroll = wrapper.scrollWidth > wrapper.clientWidth + 2;
+            wrapper.classList.toggle('has-scroll', hasScroll);
+            if (navLeft) navLeft.style.opacity = wrapper.scrollLeft > 10 ? '1' : '0.3';
+            if (navRight) navRight.style.opacity = (wrapper.scrollLeft + wrapper.clientWidth < wrapper.scrollWidth - 10) ? '1' : '0.3';
+        }
+
+        if (navLeft) navLeft.addEventListener('click', () => { wrapper.scrollBy({ left: -250, behavior: 'smooth' }); });
+        if (navRight) navRight.addEventListener('click', () => { wrapper.scrollBy({ left: 250, behavior: 'smooth' }); });
+
+        wrapper.addEventListener('scroll', checkScroll);
+        window.addEventListener('resize', checkScroll);
+        checkScroll();
+
+        // Minimap click-to-scroll
+        document.querySelectorAll('.pipeline-minimap-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const targetStage = this.dataset.target;
+                const col = board.querySelector(`.pipeline-column[data-stage-key="${targetStage}"]`);
+                if (col) {
+                    col.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            });
+        });
+    })();
 
     // Confirmação antes de avançar etapa
     document.querySelectorAll('.btn-advance-stage').forEach(btn => {

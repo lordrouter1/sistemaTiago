@@ -1,10 +1,33 @@
 /* Reset e Estilos Globais */
 /* Variáveis importadas de theme.css */
 
+:root{
+    --bs-primary: var(--primary-color);
+    --bs-secondary: #6c757d;
+    --bs-success: #198754;
+    --bs-info: #0dcaf0;
+    --bs-warning: #ffc107;
+    --bs-danger: #dc3545;
+    --bs-light: #f8f9fa;
+    --bs-dark: #212529;
+
+    --bs-primary-rgb: var(--primary-color-rgb);
+    --bs-secondary-rgb: var(--secondary-color-rgb);
+    --bs-success-rgb: var(--success-color-rgb);
+    --bs-info-rgb: var(--info-color-rgb);
+    --bs-warning-rgb: var(--warning-color-rgb);
+    --bs-danger-rgb: var(--danger-color-rgb);
+    --bs-light-rgb: var(--light-color-rgb);
+    --bs-dark-rgb: var(--dark-color-rgb);
+}
+
 body {
-    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
     background-color: var(--bg-body);
     color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -12,35 +35,293 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
 }
 
-/* Navbar Customization Override */
-.navbar-dark .navbar-nav .nav-link {
-    color: rgba(255,255,255,0.85);
+/* ========================================
+   NAVBAR PROFISSIONAL
+   ======================================== */
+.navbar-akti {
+    background: var(--primary-color);
+    height: var(--navbar-height);
+    padding: 0 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    z-index: 1040;
+}
+
+.navbar-akti .navbar-brand {
+    padding: 0;
+    margin-right: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-akti .navbar-brand img {
+    height: 34px;
+    transition: opacity var(--transition-fast);
+}
+
+.navbar-akti .navbar-brand:hover img {
+    opacity: 0.85;
+}
+
+.navbar-akti .nav-link {
+    color: rgba(255,255,255,0.7) !important;
     font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.875rem !important;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
     text-decoration: none !important;
-    border-bottom: none !important;
+    border: none !important;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
 }
-.navbar-dark .navbar-nav .nav-link:hover, 
-.navbar-dark .navbar-nav .nav-link:focus,
-.navbar-dark .navbar-nav .nav-link.active {
+
+.navbar-akti .nav-link:hover,
+.navbar-akti .nav-link:focus {
+    color: #fff !important;
+    background: rgba(255,255,255,0.08);
+}
+
+.navbar-akti .nav-link.active {
+    color: #fff !important;
+    background: var(--accent-color);
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
+.navbar-akti .nav-link i {
+    font-size: 0.8rem;
+    opacity: 0.85;
+    width: 16px;
+    text-align: center;
+}
+
+.navbar-akti .nav-link.active i {
+    opacity: 1;
+}
+
+/* Navbar divider vertical */
+.navbar-akti .nav-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,0.12);
+    margin: 0 0.5rem;
+    align-self: center;
+}
+
+/* Right side icons */
+.navbar-akti .nav-icon-btn {
+    color: rgba(255,255,255,0.6) !important;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.625rem !important;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.navbar-akti .nav-icon-btn:hover,
+.navbar-akti .nav-icon-btn:focus {
+    color: #fff !important;
+    background: rgba(255,255,255,0.08);
+}
+
+.navbar-akti .nav-icon-btn.active {
+    color: #fff !important;
+    background: rgba(255,255,255,0.12);
+}
+
+/* User badge */
+.navbar-akti .user-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.navbar-akti .user-badge.admin {
+    background: rgba(59, 130, 246, 0.25);
+    color: var(--accent-light);
+}
+
+/* Notification badge */
+.navbar-akti .notification-badge {
+    position: absolute;
+    top: 4px;
+    right: 2px;
+    font-size: 0.55rem;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--danger-color);
     color: #fff;
-    background-color: rgba(255,255,255,0.12);
-    border-radius: 0.375rem;
-    text-decoration: none !important;
-    border-bottom: none !important;
+    font-weight: 700;
+    padding: 0 4px;
+    line-height: 1;
+    border: 2px solid var(--primary-color);
 }
-/* Remove underline de todos os links do navbar */
-.navbar a, .navbar a:hover, .navbar a:focus, .navbar a:active {
+
+/* Logout button */
+.navbar-akti .btn-logout {
+    color: rgba(255,255,255,0.55) !important;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.75rem !important;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.navbar-akti .btn-logout:hover {
+    color: #fff !important;
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Dropdown menu override for akti navbar */
+.navbar-akti .dropdown-menu {
+    background: var(--primary-color);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    padding: 0.35rem;
+    margin-top: 0.375rem;
+    min-width: 200px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+}
+
+.navbar-akti .dropdown-item {
+    color: rgba(255,255,255,0.75);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
     text-decoration: none !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-akti .dropdown-item:hover,
+.navbar-akti .dropdown-item:focus {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+
+.navbar-akti .dropdown-item.active,
+.navbar-akti .dropdown-item:active {
+    background: var(--accent-color);
+    color: #fff;
+}
+
+.navbar-akti .dropdown-item i {
+    width: 18px;
+    text-align: center;
+    opacity: 0.6;
+    font-size: 0.8rem;
+}
+
+.navbar-akti .dropdown-item:hover i {
+    opacity: 1;
+}
+
+.navbar-akti .dropdown-divider {
+    border-color: rgba(255,255,255,0.08);
+    margin: 0.25rem 0;
+}
+
+.navbar-akti .dropdown-toggle::after {
+    font-size: 0.6rem;
+    vertical-align: 0.15em;
+    margin-left: 0.3rem;
+    opacity: 0.5;
+}
+
+/* ── Bell dropdown override (fundo branco) ── */
+.navbar-akti #bellDropdownMenu {
+    background: #fff !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+.navbar-akti #bellDropdownMenu .dropdown-item {
+    color: var(--text-main) !important;
+    border-radius: 0;
+}
+.navbar-akti #bellDropdownMenu .dropdown-item:hover,
+.navbar-akti #bellDropdownMenu .dropdown-item:focus {
+    background: var(--bg-body) !important;
+    color: var(--text-main) !important;
+}
+.navbar-akti #bellDropdownToggle::after {
+    display: none;
+}
+
+/* Remove underline de todos os links do navbar */
+.navbar-akti a, .navbar-akti a:hover, .navbar-akti a:focus, .navbar-akti a:active {
+    text-decoration: none !important;
+}
+
+/* ========================================
+   FOOTER PROFISSIONAL
+   ======================================== */
+.footer-akti {
+    background: var(--primary-dark);
+    color: rgba(255,255,255,0.4);
+    padding: 0.875rem 1.5rem;
+    font-size: 0.78rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+.footer-akti a {
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.footer-akti a:hover {
+    color: rgba(255,255,255,0.75);
+}
+
+.footer-akti .footer-logo {
+    height: 22px;
+    opacity: 0.35;
+    transition: opacity var(--transition-fast);
+}
+
+.footer-akti .footer-logo:hover {
+    opacity: 0.6;
+}
+
+.footer-akti .footer-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(255,255,255,0.1);
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 0.75rem;
 }
 
 /* Botões Personalizados */
 .btn-primary {
     background-color: var(--accent-color);
     border-color: var(--accent-color);
+    transition: all var(--transition-fast);
 }
 .btn-primary:hover {
-    background-color: #2980b9; /* Darker accent */
-    border-color: #2980b9;
+    background-color: var(--accent-dark);
+    border-color: var(--accent-dark);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
 
 .btn-secondary {
@@ -62,8 +343,13 @@ h1, h2, h3, h4, h5, h6 {
 .card, .table-responsive, fieldset {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md);
+    transition: box-shadow var(--transition-fast);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
 }
 
 /* Sidebar Customizado (se houver) */
@@ -96,7 +382,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-control:focus, .form-select:focus {
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.2);
 }
 
 /* ========================================

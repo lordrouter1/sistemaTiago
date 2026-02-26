@@ -10,9 +10,12 @@ $companyName = $company['company_name'] ?? 'Catálogo de Produtos';
 $companyLogo = $company['company_logo'] ?? '';
 
 // Indexar carrinho por product_id para lookup rápido
+// Indexar carrinho por product_id — agregar quantidade (pode haver múltiplas combinações)
 $cartByProduct = [];
+$cartQtyByProduct = [];
 foreach ($cartItems as $ci) {
     $cartByProduct[$ci['product_id']] = $ci;
+    $cartQtyByProduct[$ci['product_id']] = ($cartQtyByProduct[$ci['product_id']] ?? 0) + $ci['quantity'];
 }
 $cartTotal = array_sum(array_column($cartItems, 'subtotal'));
 $cartCount = count($cartItems);
@@ -302,7 +305,7 @@ $cartCount = count($cartItems);
         <div class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
                 <?php if ($companyLogo): ?>
-                <img src="/sistemaTiago/<?= htmlspecialchars($companyLogo) ?>" alt="Logo" class="logo-img">
+                <img src="<?= htmlspecialchars($companyLogo) ?>" alt="Logo" class="logo-img">
                 <?php else: ?>
                 <div class="d-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-10" style="width:42px;height:42px;">
                     <i class="fas fa-store text-white"></i>
@@ -380,11 +383,12 @@ $cartCount = count($cartItems);
              data-product-id="<?= $prod['id'] ?>" 
              data-category="<?= $prod['category_id'] ?>"
              data-name="<?= htmlspecialchars(strtolower($prod['name'])) ?>"
-             data-price="<?= $displayPrice ?>">
+             data-price="<?= $displayPrice ?>"
+             data-has-combos="<?= !empty($productCombinations[$prod['id']]) ? '1' : '0' ?>">
             
             <?php if ($inCart): ?>
             <div class="in-cart-badge" id="badge-<?= $prod['id'] ?>">
-                <i class="fas fa-check me-1"></i> <span class="badge-qty"><?= $cartQty ?></span> no carrinho
+                <i class="fas fa-check me-1"></i> <span class="badge-qty"><?= $cartQtyByProduct[$prod['id']] ?? $cartQty ?></span> no carrinho
             </div>
             <?php else: ?>
             <div class="in-cart-badge" id="badge-<?= $prod['id'] ?>" style="display:none;">
@@ -394,7 +398,7 @@ $cartCount = count($cartItems);
             
             <div class="card-img-wrap">
                 <?php if ($mainImage): ?>
-                <img src="/sistemaTiago/<?= htmlspecialchars($mainImage) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" loading="lazy">
+                <img src="<?= htmlspecialchars($mainImage) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" loading="lazy">
                 <?php else: ?>
                 <div class="no-image"><i class="fas fa-image"></i></div>
                 <?php endif; ?>
@@ -408,6 +412,25 @@ $cartCount = count($cartItems);
                 
                 <?php if ($showPrices): ?>
                 <div class="product-price">R$ <?= number_format($displayPrice, 2, ',', '.') ?></div>
+                <?php endif; ?>
+
+                <?php if (!empty($productCombinations[$prod['id']])): ?>
+                <div class="mb-2">
+                    <select class="form-select form-select-sm variation-catalog-select" id="var-<?= $prod['id'] ?>"
+                            style="font-size:0.78rem; border-radius:8px;">
+                        <option value="">Selecione a variação...</option>
+                        <?php foreach ($productCombinations[$prod['id']] as $combo): ?>
+                        <option value="<?= $combo['id'] ?>" 
+                                data-label="<?= htmlspecialchars($combo['combination_label']) ?>"
+                                data-price="<?= $combo['price_override'] !== null ? $combo['price_override'] : '' ?>">
+                            <?= htmlspecialchars($combo['combination_label']) ?>
+                            <?php if ($showPrices && $combo['price_override'] !== null): ?>
+                            — R$ <?= number_format($combo['price_override'], 2, ',', '.') ?>
+                            <?php endif; ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <?php endif; ?>
                 
                 <div class="d-flex gap-2 mt-auto">
@@ -462,7 +485,7 @@ $cartCount = count($cartItems);
             ?>
             <div class="cart-item" data-item-id="<?= $ci['id'] ?>" data-product-id="<?= $ci['product_id'] ?>">
                 <?php if ($ciMainImg): ?>
-                <img src="/sistemaTiago/<?= htmlspecialchars($ciMainImg) ?>" class="cart-item-img" alt="">
+                <img src="<?= htmlspecialchars($ciMainImg) ?>" class="cart-item-img" alt="">
                 <?php else: ?>
                 <div class="cart-item-img d-flex align-items-center justify-content-center">
                     <i class="fas fa-image text-muted"></i>
@@ -470,6 +493,9 @@ $cartCount = count($cartItems);
                 <?php endif; ?>
                 <div class="cart-item-info">
                     <div class="cart-item-name"><?= htmlspecialchars($ci['product_name']) ?></div>
+                    <?php if (!empty($ci['combination_label']) || !empty($ci['grade_description'])): ?>
+                    <div class="small text-info"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($ci['combination_label'] ?? $ci['grade_description']) ?></div>
+                    <?php endif; ?>
                     <?php if ($showPrices): ?>
                     <div class="cart-item-price">R$ <?= number_format($ci['unit_price'], 2, ',', '.') ?> × <?= $ci['quantity'] ?></div>
                     <?php else: ?>
@@ -521,7 +547,7 @@ $cartCount = count($cartItems);
 <script>
 const TOKEN = '<?= htmlspecialchars($token) ?>';
 const SHOW_PRICES = <?= $showPrices ? 'true' : 'false' ?>;
-const BASE_URL = '/sistemaTiago/?page=catalog';
+const BASE_URL = '?page=catalog';
 
 // ── Busca e Filtros ──
 const searchInput = document.getElementById('searchInput');
@@ -572,12 +598,32 @@ function changeQty(productId, delta) {
 // ── Adicionar ao Carrinho ──
 function addToCart(productId) {
     const qty = parseInt(document.getElementById('qty-' + productId).textContent);
+    const card = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+    const hasCombos = card && card.dataset.hasCombos === '1';
+    
+    let combinationId = '';
+    let gradeDescription = '';
+    
+    if (hasCombos) {
+        const varSelect = document.getElementById('var-' + productId);
+        if (varSelect && !varSelect.value) {
+            showToast('Selecione uma variação antes de adicionar.', 'warning');
+            varSelect.focus();
+            return;
+        }
+        if (varSelect) {
+            combinationId = varSelect.value;
+            const opt = varSelect.options[varSelect.selectedIndex];
+            gradeDescription = opt ? (opt.dataset.label || '') : '';
+        }
+    }
+    
     showLoading(true);
     
     fetch(BASE_URL + '&action=addToCart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `token=${TOKEN}&product_id=${productId}&quantity=${qty}`
+        body: `token=${TOKEN}&product_id=${productId}&quantity=${qty}&combination_id=${combinationId}&grade_description=${encodeURIComponent(gradeDescription)}`
     })
     .then(r => r.json())
     .then(data => {
@@ -689,11 +735,13 @@ function updateCartUI(data) {
     let html = '';
     data.cart.forEach(item => {
         const imgHtml = getProductImageHtml(item.product_id);
+        const variationLabel = item.combination_label || item.grade_description || '';
         html += `
         <div class="cart-item" data-item-id="${item.id}" data-product-id="${item.product_id}">
             ${imgHtml}
             <div class="cart-item-info">
                 <div class="cart-item-name">${escHtml(item.product_name)}</div>
+                ${variationLabel ? `<div class="small text-info"><i class="fas fa-layer-group me-1"></i>${escHtml(variationLabel)}</div>` : ''}
                 ${SHOW_PRICES 
                     ? `<div class="cart-item-price">R$ ${formatMoney(item.unit_price)} × ${item.quantity}</div>` 
                     : `<div class="cart-item-price">Qtd: ${item.quantity}</div>`}

@@ -72,6 +72,15 @@ class CatalogController {
             $productImages[$p['id']] = $images;
         }
 
+        // Carregar combinações de grade ativas para cada produto
+        $productCombinations = [];
+        foreach ($products as $p) {
+            $combos = $productModel->getActiveCombinations($p['id']);
+            if (!empty($combos)) {
+                $productCombinations[$p['id']] = $combos;
+            }
+        }
+
         require 'app/views/catalog/index.php';
         exit;
     }
@@ -137,10 +146,13 @@ class CatalogController {
             exit;
         }
 
-        $catalogModel = new CatalogLink($this->db);
-        $catalogModel->deactivateByOrder($orderId);
-
-        echo json_encode(['success' => true]);
+        try {
+            $catalogModel = new CatalogLink($this->db);
+            $catalogModel->deactivateByOrder($orderId);
+            echo json_encode(['success' => true]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Erro ao desativar link: ' . $e->getMessage()]);
+        }
         exit;
     }
 
@@ -184,6 +196,8 @@ class CatalogController {
         $token = $_POST['token'] ?? '';
         $productId = $_POST['product_id'] ?? null;
         $quantity = (int)($_POST['quantity'] ?? 1);
+        $combinationId = !empty($_POST['combination_id']) ? (int)$_POST['combination_id'] : null;
+        $gradeDescription = $_POST['grade_description'] ?? null;
 
         $catalogModel = new CatalogLink($this->db);
         $link = $catalogModel->findByToken($token);
@@ -200,12 +214,23 @@ class CatalogController {
         $priceTableModel = new PriceTable($this->db);
         $unitPrice = $priceTableModel->getProductPriceForCustomer($productId, $customerId);
 
-        // Verificar se o produto já está no carrinho
+        // Se a combinação tem preço override, usá-lo
+        if ($combinationId) {
+            $comboStmt = $this->db->prepare("SELECT price_override FROM product_grade_combinations WHERE id = :id AND is_active = 1");
+            $comboStmt->bindParam(':id', $combinationId, PDO::PARAM_INT);
+            $comboStmt->execute();
+            $combo = $comboStmt->fetch(PDO::FETCH_ASSOC);
+            if ($combo && $combo['price_override'] !== null) {
+                $unitPrice = (float)$combo['price_override'];
+            }
+        }
+
+        // Verificar se o produto (com mesma combinação) já está no carrinho
         $orderModel = new Order($this->db);
         $currentItems = $orderModel->getItems($orderId);
         $existingItem = null;
         foreach ($currentItems as $item) {
-            if ($item['product_id'] == $productId) {
+            if ($item['product_id'] == $productId && ($item['grade_combination_id'] ?? null) == $combinationId) {
                 $existingItem = $item;
                 break;
             }
@@ -217,7 +242,7 @@ class CatalogController {
             $orderModel->updateItem($existingItem['id'], $newQty, $unitPrice);
         } else {
             // Adicionar novo item
-            $orderModel->addItem($orderId, $productId, $quantity, $unitPrice);
+            $orderModel->addItem($orderId, $productId, $quantity, $unitPrice, $combinationId, $gradeDescription);
         }
 
         // Retornar carrinho atualizado

@@ -3,63 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão - Gráfica</title>
+    <title>Akti - Gestão em Produção</title>
+
+    <link rel="icon" type="image/x-icon" href="assets/logos/akti-icon-dark.ico">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/sistemaTiago/assets/css/theme.css">
-    <link rel="stylesheet" href="/sistemaTiago/assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/theme.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
-        /* ── Estilos para os dropdowns do menu ── */
-        .navbar .dropdown-menu {
-            background: var(--primary-color, #2c3e50);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 0.5rem;
-            padding: 0.35rem 0;
-            margin-top: 0.25rem;
-            min-width: 200px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-        }
-        .navbar .dropdown-item {
-            color: rgba(255,255,255,0.85);
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            transition: background 0.15s, padding-left 0.15s;
-            text-decoration: none !important;
-        }
-        .navbar .dropdown-item:hover,
-        .navbar .dropdown-item:focus {
-            background: rgba(255,255,255,0.12);
-            color: #fff;
-            padding-left: 1.25rem;
-            text-decoration: none !important;
-        }
-        .navbar .dropdown-item.active,
-        .navbar .dropdown-item:active {
-            background: rgba(255,255,255,0.18);
-            color: #fff;
-            text-decoration: none !important;
-        }
-        .navbar .dropdown-item i {
-            width: 20px;
-            text-align: center;
-            opacity: 0.7;
-        }
-        .navbar .dropdown-item:hover i {
-            opacity: 1;
-        }
-        .navbar .dropdown-divider {
-            border-color: rgba(255,255,255,0.1);
-        }
-        .navbar .dropdown-toggle::after {
-            font-size: 0.65rem;
-            vertical-align: 0.15em;
-            margin-left: 0.35rem;
-        }
         /* ── Bell dropdown override (fundo branco) ── */
         #bellDropdownMenu {
             background: #fff !important;
@@ -207,12 +168,12 @@
     }
 ?>
 
-<nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm" style="background-color: var(--primary-color);">
+<nav class="navbar navbar-expand-lg navbar-akti sticky-top">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="/sistemaTiago/">
-        <i class="fas fa-print me-2"></i>Gestão Gráfica
+    <a class="navbar-brand" href="?">
+        <img src="assets/logos/akti-logo-dark-nBg.svg" alt="Akti" style="height: 70px !important;">
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
@@ -225,7 +186,7 @@
           <?php if (isset($pageInfo['children'])): ?>
             <?php // ── DROPDOWN (submenu) ── ?>
             <?php if (!hasVisibleChild($pageInfo['children'], $isAdmin, $userPermissions)) continue; ?>
-            <li class="nav-item dropdown">
+            <li class="nav-item me-1 dropdown">
               <a class="nav-link dropdown-toggle <?= isChildActive($pageInfo['children'], $currentPage) ? 'active' : '' ?>"
                  href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="<?= $pageInfo['icon'] ?> me-1"></i><?= $pageInfo['label'] ?>
@@ -236,7 +197,7 @@
                   <?php if (!canShowInMenu($childKey, $childInfo, $isAdmin, $userPermissions)) continue; ?>
                   <li>
                     <a class="dropdown-item <?= ($currentPage == $childKey) ? 'active' : '' ?>"
-                       href="/sistemaTiago/?page=<?= $childKey ?>">
+                       href="?page=<?= $childKey ?>">
                       <i class="<?= $childInfo['icon'] ?> me-2"></i><?= $childInfo['label'] ?>
                     </a>
                   </li>
@@ -246,9 +207,9 @@
           <?php else: ?>
             <?php // ── LINK DIRETO (sem submenu) ── ?>
             <?php if (!canShowInMenu($pageKey, $pageInfo, $isAdmin, $userPermissions)) continue; ?>
-            <li class="nav-item">
+            <li class="nav-item me-1">
               <a class="nav-link <?= ($currentPage == $pageKey) ? 'active' : '' ?>"
-                 href="/sistemaTiago/<?= $pageKey === 'home' ? '' : '?page=' . $pageKey ?>">
+                 href="<?= $pageKey === 'home' ? '?' : '?page=' . $pageKey ?>">
                 <i class="<?= $pageInfo['icon'] ?> me-1"></i><?= $pageInfo['label'] ?>
               </a>
             </li>
@@ -258,14 +219,14 @@
       </ul>
 
       <!-- ── Menu Direito (Perfil / Config / Sair) ── -->
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center gap-1">
         <?php if ($headerDelayedCount > 0): ?>
         <li class="nav-item dropdown">
-          <a href="#" class="nav-link text-white position-relative me-2 dropdown-toggle" 
+          <a href="#" class="nav-link nav-icon-btn dropdown-toggle" 
              role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"
-             title="<?= $headerDelayedCount ?> pedido(s) atrasado(s)" id="bellDropdownToggle" style="cursor:pointer;">
+             title="<?= $headerDelayedCount ?> pedido(s) atrasado(s)" id="bellDropdownToggle">
             <i class="fas fa-bell"></i>
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;">
+            <span class="notification-badge">
                 <?= $headerDelayedCount ?>
             </span>
           </a>
@@ -299,7 +260,7 @@
                 $priorityEmoji = ['urgente' => '🔴', 'alta' => '🟡', 'normal' => '🔵', 'baixa' => '🟢'];
                 $pEmoji = $priorityEmoji[$dOrder['priority'] ?? 'normal'] ?? '🔵';
             ?>
-            <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $dOrder['id'] ?>" 
+            <a href="?page=pipeline&action=detail&id=<?= $dOrder['id'] ?>" 
                class="dropdown-item px-3 py-2 border-bottom" style="white-space:normal;color:#333 !important;">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="d-flex align-items-start gap-2">
@@ -353,7 +314,7 @@
                 <small class="text-muted fw-bold px-2"><i class="fas fa-industry me-1"></i>PRODUTOS EM PRODUÇÃO (SETOR ATUAL)</small>
             </div>
             <?php foreach (array_slice($headerDelayedProducts, 0, 8) as $dProd): ?>
-            <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $dProd['order_id'] ?>" 
+            <a href="?page=pipeline&action=detail&id=<?= $dProd['order_id'] ?>" 
                class="dropdown-item px-3 py-2 border-bottom" style="white-space:normal;color:#333 !important;">
                 <div class="d-flex align-items-center gap-2">
                     <span class="d-inline-flex align-items-center justify-content-center rounded-circle" 
@@ -387,7 +348,7 @@
 
             <!-- Footer -->
             <div class="px-3 py-2 border-top text-center" style="background:#f8f9fa;">
-                <a href="/sistemaTiago/?page=pipeline" class="text-decoration-none small fw-bold" style="color:#3498db;">
+                <a href="?page=pipeline" class="text-decoration-none small fw-bold" style="color:#3498db;">
                     <i class="fas fa-columns me-1"></i>Ver Pipeline Completo
                 </a>
             </div>
@@ -395,26 +356,27 @@
         </li>
         <?php elseif (isset($_SESSION['user_id'])): ?>
         <li class="nav-item">
-          <a href="#" class="nav-link text-white position-relative me-2" title="Sem avisos" style="opacity:0.5;">
+          <a href="#" class="nav-link nav-icon-btn" title="Sem avisos" style="opacity:0.4;">
             <i class="fas fa-bell"></i>
           </a>
         </li>
         <?php endif; ?>
+        <li class="nav-item d-none d-lg-block"><span class="nav-divider"></span></li>
         <li class="nav-item">
-          <a href="/sistemaTiago/?page=profile"
-             class="nav-link small me-2 text-decoration-none <?= ($currentPage == 'profile') ? 'active' : 'text-white' ?>"
+          <a href="?page=profile"
+             class="nav-link <?= ($currentPage == 'profile') ? 'active' : '' ?>"
              title="Meu Perfil">
-            <i class="fas fa-user-circle me-1"></i>
+            <i class="fas fa-user-circle"></i>
             <?= $_SESSION['user_name'] ?? 'Visitante' ?>
-            <span class="badge bg-light text-dark ms-1" style="font-size: 0.65rem;">
+            <span class="user-badge <?= (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') ? 'admin' : '' ?>">
               <?= isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin' ? 'Admin' : 'Usuário' ?>
             </span>
           </a>
         </li>
         <?php if($isAdmin || in_array('settings', $userPermissions)): ?>
         <li class="nav-item">
-          <a href="/sistemaTiago/?page=settings"
-             class="nav-link btn btn-sm px-3 me-1 border-0 <?= ($currentPage == 'settings') ? 'active' : 'text-white' ?>"
+          <a href="?page=settings"
+             class="nav-link nav-icon-btn <?= ($currentPage == 'settings') ? 'active' : '' ?>"
              title="Configurações">
             <i class="fas fa-building"></i>
           </a>
@@ -422,16 +384,16 @@
         <?php endif; ?>
         <?php if($isAdmin || in_array('users', $userPermissions)): ?>
         <li class="nav-item">
-          <a href="/sistemaTiago/?page=users"
-             class="nav-link btn btn-sm px-3 me-1 border-0 <?= ($currentPage == 'users') ? 'active' : 'text-white' ?>"
+          <a href="?page=users"
+             class="nav-link nav-icon-btn <?= ($currentPage == 'users') ? 'active' : '' ?>"
              title="Gestão de Usuários">
             <i class="fas fa-users-cog"></i>
           </a>
         </li>
         <?php endif; ?>
         <li class="nav-item">
-          <a class="nav-link text-white btn btn-sm px-3" href="/sistemaTiago/?page=login&action=logout" title="Sair do sistema">
-            <i class="fas fa-sign-out-alt"></i> Sair
+          <a class="nav-link btn-logout" href="?page=login&action=logout" title="Sair do sistema">
+            <i class="fas fa-sign-out-alt"></i><span class="d-none d-lg-inline">Sair</span>
           </a>
         </li>
       </ul>

@@ -54,20 +54,20 @@ class CustomerController {
                 'price_table_id' => $_POST['price_table_id'] ?? null
             ]);
             
-            header('Location: /sistemaTiago/?page=customers&status=success');
+            header('Location: ?page=customers&status=success');
             exit;
         }
     }
 
     public function edit() {
         if (!isset($_GET['id'])) {
-            header('Location: /sistemaTiago/?page=customers');
+            header('Location: ?page=customers');
             exit;
         }
         
         $customer = $this->customerModel->readOne($_GET['id']);
         if (!$customer) {
-            header('Location: /sistemaTiago/?page=customers');
+            header('Location: ?page=customers');
             exit;
         }
 
@@ -106,7 +106,7 @@ class CustomerController {
                 'price_table_id' => $_POST['price_table_id'] ?? null
             ]);
             
-            header('Location: /sistemaTiago/?page=customers&status=success');
+            header('Location: ?page=customers&status=success');
             exit;
         }
     }
@@ -114,7 +114,7 @@ class CustomerController {
     public function delete() {
         if (isset($_GET['id'])) {
             $this->customerModel->delete($_GET['id']);
-            header('Location: /sistemaTiago/?page=customers&status=success');
+            header('Location: ?page=customers&status=success');
             exit;
         }
     }

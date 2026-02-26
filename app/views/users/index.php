@@ -1,10 +1,10 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-users-cog me-2"></i>Gestão de Usuários</h1>
     <div class="btn-toolbar mb-2 mb-md-0 gap-2">
-        <a href="/sistemaTiago/?page=users&action=groups" class="btn btn-sm btn-outline-secondary">
+        <a href="?page=users&action=groups" class="btn btn-sm btn-outline-secondary">
             <i class="fas fa-layer-group"></i> Grupos e Permissões
         </a>
-        <a href="/sistemaTiago/?page=users&action=create" class="btn btn-sm btn-primary">
+        <a href="?page=users&action=create" class="btn btn-sm btn-primary">
             <i class="fas fa-user-plus"></i> Novo Usuário
         </a>
     </div>
@@ -49,7 +49,7 @@
                 </td>
                 <td class="text-end pe-4">
                     <div class="btn-group">
-                        <a href="/sistemaTiago/?page=users&action=edit&id=<?= $user['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                        <a href="?page=users&action=edit&id=<?= $user['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                             <i class="fas fa-edit"></i>
                         </a>
                         <?php if($user['id'] != $_SESSION['user_id']): ?>
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = `/sistemaTiago/?page=users&action=delete&id=${id}`;
+                    window.location.href = `?page=users&action=delete&id=${id}`;
                 }
             });
         });

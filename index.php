@@ -30,12 +30,12 @@ if ($page === 'catalog') {
 // Authentication Check
 if (!isset($_SESSION['user_id'])) {
     if ($page !== 'login') {
-        header('Location: /sistemaTiago/?page=login');
+        header('Location: ?page=login');
         exit;
     }
 } else {
     if ($page === 'login' && $action !== 'logout') {
-        header('Location: /sistemaTiago/');
+        header('Location: ?');
         exit;
     }
 }
@@ -420,7 +420,7 @@ switch ($page) {
     default:
         http_response_code(404);
         require 'app/views/layout/header.php';
-        echo "<div class='container mt-5 text-center py-5'><h2 class='text-muted'><i class='fas fa-search me-2'></i>Página não encontrada</h2><p class='text-muted'>A página que você procura não existe.</p><a href='/sistemaTiago/' class='btn btn-primary mt-3'>Voltar ao Início</a></div>";
+        echo "<div class='container mt-5 text-center py-5'><h2 class='text-muted'><i class='fas fa-search me-2'></i>Página não encontrada</h2><p class='text-muted'>A página que você procura não existe.</p><a href='' class='btn btn-primary mt-3'>Voltar ao Início</a></div>";
         require 'app/views/layout/footer.php';
         break;
 }

@@ -54,8 +54,8 @@ class Product {
         }
 
         $query = "INSERT INTO " . $this->table_name . " 
-                  (name, description, category_id, subcategory_id, price, stock_quantity, created_at{$fiscalCols}) 
-                  VALUES (:name, :description, :category_id, :subcategory_id, :price, :stock_quantity, NOW(){$fiscalPlaceholders})";
+                  (name, description, category_id, subcategory_id, price, stock_quantity, use_stock_control, created_at{$fiscalCols}) 
+                  VALUES (:name, :description, :category_id, :subcategory_id, :price, :stock_quantity, :use_stock_control, NOW(){$fiscalPlaceholders})";
         
         $stmt = $this->conn->prepare($query);
 
@@ -65,6 +65,8 @@ class Product {
         $stmt->bindParam(':subcategory_id', $data['subcategory_id']);
         $stmt->bindParam(':price', $data['price']);
         $stmt->bindParam(':stock_quantity', $data['stock_quantity']);
+        $useStockControl = isset($data['use_stock_control']) ? (int)$data['use_stock_control'] : 0;
+        $stmt->bindParam(':use_stock_control', $useStockControl, PDO::PARAM_INT);
 
         foreach (self::$fiscalFields as $f) {
             if (isset($data[$f])) {
@@ -112,7 +114,8 @@ class Product {
                       category_id = :category_id, 
                       subcategory_id = :subcategory_id, 
                       price = :price, 
-                      stock_quantity = :stock_quantity
+                      stock_quantity = :stock_quantity,
+                      use_stock_control = :use_stock_control
                       {$fiscalSet}
                   WHERE id = :id";
         
@@ -125,6 +128,8 @@ class Product {
         $stmt->bindParam(':price', $data['price']);
         $stmt->bindParam(':stock_quantity', $data['stock_quantity']);
         $stmt->bindParam(':id', $data['id']);
+        $useStockControl = isset($data['use_stock_control']) ? (int)$data['use_stock_control'] : 0;
+        $stmt->bindParam(':use_stock_control', $useStockControl, PDO::PARAM_INT);
 
         foreach (self::$fiscalFields as $f) {
             if (array_key_exists($f, $data)) {
@@ -171,5 +176,31 @@ class Product {
         $stmt2->bindParam(':id', $imageId);
         $stmt2->bindParam(':product_id', $productId);
         return $stmt2->execute();
+    }
+
+    /**
+     * Busca as combinações de grade ativas de um produto
+     */
+    function getActiveCombinations($productId) {
+        $query = "SELECT id, combination_label, sku, price_override, stock_quantity
+                  FROM product_grade_combinations
+                  WHERE product_id = :product_id AND is_active = 1
+                  ORDER BY combination_label ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':product_id', $productId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Verifica se o produto tem combinações de grade ativas
+     */
+    function hasCombinations($productId) {
+        $query = "SELECT COUNT(*) FROM product_grade_combinations
+                  WHERE product_id = :product_id AND is_active = 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':product_id', $productId, PDO::PARAM_INT);
+        $stmt->execute();
+        return (int)$stmt->fetchColumn() > 0;
     }
 }

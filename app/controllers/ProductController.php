@@ -91,7 +91,8 @@ class ProductController {
                 'category_id' => $category_id ? $category_id : null,
                 'subcategory_id' => $subcategory_id ? $subcategory_id : null,
                 'price' => $_POST['price'],
-                'stock_quantity' => $_POST['stock_quantity']
+                'stock_quantity' => $_POST['stock_quantity'],
+                'use_stock_control' => isset($_POST['use_stock_control']) ? 1 : 0
             ];
 
             // Coletar campos fiscais
@@ -171,7 +172,7 @@ class ProductController {
                     }
                 }
                 
-                header('Location: /sistemaTiago/?page=products&status=success');
+                header('Location: ?page=products&status=success');
                 exit;
             } else {
                 echo "Erro ao cadastrar produto.";
@@ -203,7 +204,7 @@ class ProductController {
 
     public function edit() {
         if (!isset($_GET['id'])) {
-             header('Location: /sistemaTiago/?page=products');
+             header('Location: ?page=products');
              exit;
         }
 
@@ -211,7 +212,7 @@ class ProductController {
         $product = $this->productModel->readOne($id);
 
         if (!$product) {
-            header('Location: /sistemaTiago/?page=products');
+            header('Location: ?page=products');
             exit;
         }
 
@@ -277,7 +278,8 @@ class ProductController {
                  'category_id' => $_POST['category_id'],
                  'subcategory_id' => $_POST['subcategory_id'] ?? null,
                  'price' => $_POST['price'],
-                 'stock_quantity' => $_POST['stock_quantity']
+                 'stock_quantity' => $_POST['stock_quantity'],
+                 'use_stock_control' => isset($_POST['use_stock_control']) ? 1 : 0
             ];
 
             // Coletar campos fiscais
@@ -315,7 +317,7 @@ class ProductController {
                     $ptModel->saveProductPrices($data['id'], $_POST['table_prices']);
                 }
 
-                header('Location: /sistemaTiago/?page=products&status=success');
+                header('Location: ?page=products&status=success');
                 exit;
             }
         }
@@ -334,7 +336,7 @@ class ProductController {
             
             if ($this->productModel->delete($id)) {
                 $this->logger->log('DELETE_PRODUCT', 'Deleted product ID: ' . $id);
-                header('Location: /sistemaTiago/?page=products&status=success');
+                header('Location: ?page=products&status=success');
                 exit;
             }
         }

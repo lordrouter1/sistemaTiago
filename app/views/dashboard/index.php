@@ -3,14 +3,14 @@
     <h1 class="h2 mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
     <div class="btn-toolbar gap-2">
         <?php if(!empty($delayedOrders)): ?>
-        <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-danger position-relative">
+        <a href="?page=pipeline" class="btn btn-sm btn-danger position-relative">
             <i class="fas fa-exclamation-triangle me-1"></i> Atrasados
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
                 <?= count($delayedOrders) ?>
             </span>
         </a>
         <?php endif; ?>
-        <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-primary">
+        <a href="?page=pipeline" class="btn btn-sm btn-primary">
             <i class="fas fa-stream me-1"></i> Linha de Produção
         </a>
     </div>
@@ -76,7 +76,7 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 text-primary fw-bold"><i class="fas fa-stream me-2"></i>Visão do Pipeline</h5>
-        <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-outline-primary">Ver Kanban Completo <i class="fas fa-arrow-right ms-1"></i></a>
+        <a href="?page=pipeline" class="btn btn-sm btn-outline-primary">Ver Kanban Completo <i class="fas fa-arrow-right ms-1"></i></a>
     </div>
     <div class="card-body p-3">
         <div class="row g-2">
@@ -86,7 +86,7 @@
                 if ($sKey === 'concluido') continue; // Pular concluído da barra principal
             ?>
             <div class="col">
-                <a href="/sistemaTiago/?page=pipeline" class="text-decoration-none">
+                <a href="?page=pipeline" class="text-decoration-none">
                     <div class="text-center p-2 rounded pipeline-mini-card" style="background:<?= $sInfo['color'] ?>15; border:1px solid <?= $sInfo['color'] ?>30;">
                         <div class="rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-1" 
                              style="width:36px;height:36px;background:<?= $sInfo['color'] ?>;color:#fff;font-size:0.8rem;">
@@ -127,8 +127,8 @@
 <!-- Pedidos Atrasados (se houver) -->
 <?php if(!empty($delayedOrders)): ?>
 <div class="card border-0 shadow-sm mb-4 border-start border-danger border-4">
-    <div class="card-header bg-danger text-white p-3">
-        <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Pedidos Atrasados (<?= count($delayedOrders) ?>)</h6>
+    <div class="card-header bg-danger p-3">
+        <h6 class="mb-0 text-white"><i class="fas fa-exclamation-triangle me-2"></i>Pedidos Atrasados (<?= count($delayedOrders) ?>)</h6>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -158,7 +158,7 @@
                             <span class="badge bg-danger rounded-pill">+<?= $dOrder['delay_hours'] ?>h atrasado</span>
                         </td>
                         <td class="text-end pe-3">
-                            <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $dOrder['id'] ?>" class="btn btn-sm btn-outline-danger">
+                            <a href="?page=pipeline&action=detail&id=<?= $dOrder['id'] ?>" class="btn btn-sm btn-outline-danger">
                                 <i class="fas fa-eye me-1"></i> Resolver
                             </a>
                         </td>
@@ -169,7 +169,7 @@
         </div>
         <?php if(count($delayedOrders) > 5): ?>
         <div class="p-2 text-center border-top">
-            <a href="/sistemaTiago/?page=pipeline" class="text-danger small fw-bold"><i class="fas fa-arrow-right me-1"></i> Ver todos os <?= count($delayedOrders) ?> atrasados</a>
+            <a href="?page=pipeline" class="text-danger small fw-bold"><i class="fas fa-arrow-right me-1"></i> Ver todos os <?= count($delayedOrders) ?> atrasados</a>
         </div>
         <?php endif; ?>
     </div>
@@ -181,7 +181,7 @@
 <div class="row g-4 justify-content-center">
     <!-- Atalho Clientes -->
     <div class="col-md-3 col-sm-6">
-        <a href="/sistemaTiago/?page=customers" class="text-decoration-none">
+        <a href="?page=customers" class="text-decoration-none">
             <div class="card shadow-sm border-0 h-100 hover-card">
                 <div class="card-body text-center p-4">
                     <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
@@ -197,7 +197,7 @@
 
     <!-- Atalho Produtos -->
     <div class="col-md-3 col-sm-6">
-        <a href="/sistemaTiago/?page=products" class="text-decoration-none">
+        <a href="?page=products" class="text-decoration-none">
             <div class="card shadow-sm border-0 h-100 hover-card">
                 <div class="card-body text-center p-4">
                     <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
@@ -212,7 +212,7 @@
 
     <!-- Atalho Pedidos -->
     <div class="col-md-3 col-sm-6">
-        <a href="/sistemaTiago/?page=orders" class="text-decoration-none">
+        <a href="?page=orders" class="text-decoration-none">
             <div class="card shadow-sm border-0 h-100 hover-card">
                 <div class="card-body text-center p-4">
                     <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
@@ -228,7 +228,7 @@
 
     <!-- Atalho Linha de Produção -->
     <div class="col-md-3 col-sm-6">
-        <a href="/sistemaTiago/?page=pipeline" class="text-decoration-none">
+        <a href="?page=pipeline" class="text-decoration-none">
             <div class="card shadow-sm border-0 h-100 hover-card">
                 <div class="card-body text-center p-4">
                     <div class="bg-info bg-opacity-10 text-info rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
@@ -245,7 +245,7 @@
     <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
     <!-- Atalho Usuários -->
     <div class="col-md-3 col-sm-6">
-        <a href="/sistemaTiago/?page=users" class="text-decoration-none">
+        <a href="?page=users" class="text-decoration-none">
             <div class="card shadow-sm border-0 h-100 hover-card">
                 <div class="card-body text-center p-4">
                     <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmButtonColor: '#c0392b'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = '/sistemaTiago/?page=pipeline';
+            window.location.href = '?page=pipeline';
         }
     });
 });

@@ -56,7 +56,7 @@
             <div>
                 <?php if (!empty($company['company_logo']) && file_exists($company['company_logo'])): ?>
                 <div class="company-logo mb-1">
-                    <img src="/sistemaTiago/<?= $company['company_logo'] ?>" alt="Logo">
+                    <img src="<?= $company['company_logo'] ?>" alt="Logo">
                 </div>
                 <?php endif; ?>
                 <div class="company-name"><?= htmlspecialchars($company['company_name'] ?? 'Minha Gráfica') ?></div>
@@ -177,7 +177,14 @@
                             <?php $subtotal = $item['quantity'] * $item['unit_price']; $total += $subtotal; ?>
                             <tr>
                                 <td class="ps-3 text-muted"><?= $idx++ ?></td>
-                                <td><strong><?= htmlspecialchars($item['product_name']) ?></strong></td>
+                                <td>
+                                    <strong><?= htmlspecialchars($item['product_name']) ?></strong>
+                                    <?php if (!empty($item['combination_label'])): ?>
+                                    <br><small class="text-muted"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($item['combination_label']) ?></small>
+                                    <?php elseif (!empty($item['grade_description'])): ?>
+                                    <br><small class="text-muted"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($item['grade_description']) ?></small>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="text-center"><?= $item['quantity'] ?></td>
                                 <td class="text-end">R$ <?= number_format($item['unit_price'], 2, ',', '.') ?></td>
                                 <td class="text-end pe-3 fw-bold">R$ <?= number_format($subtotal, 2, ',', '.') ?></td>

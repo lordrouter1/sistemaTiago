@@ -2,14 +2,14 @@
     <h1 class="h2"><i class="fas fa-box-open me-2"></i>Produtos</h1>
     <div class="btn-toolbar mb-2 mb-md-0 gap-2">
         <div class="btn-group">
-            <a href="/sistemaTiago/?page=products&action=downloadImportTemplate" class="btn btn-sm btn-outline-success" title="Baixar modelo de planilha para importação">
+            <a href="?page=products&action=downloadImportTemplate" class="btn btn-sm btn-outline-success" title="Baixar modelo de planilha para importação">
                 <i class="fas fa-file-excel me-1"></i> Modelo Importação
             </a>
             <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#importModal" title="Importar produtos em massa via planilha">
                 <i class="fas fa-file-import me-1"></i> Importar Produtos
             </button>
         </div>
-        <a href="/sistemaTiago/?page=products&action=create" class="btn btn-sm btn-primary">
+        <a href="?page=products&action=create" class="btn btn-sm btn-primary">
             <i class="fas fa-plus me-1"></i> Novo Produto
         </a>
     </div>
@@ -28,7 +28,7 @@
                 <div class="alert alert-info py-2">
                     <h6 class="mb-1 fw-bold"><i class="fas fa-info-circle me-1"></i>Como importar:</h6>
                     <ol class="mb-0 small ps-3">
-                        <li>Baixe o <a href="/sistemaTiago/?page=products&action=downloadImportTemplate" class="fw-bold">modelo de planilha</a> (CSV).</li>
+                        <li>Baixe o <a href="?page=products&action=downloadImportTemplate" class="fw-bold">modelo de planilha</a> (CSV).</li>
                         <li>Preencha uma linha para cada produto. Os campos <strong>Nome</strong> e <strong>Preço</strong> são obrigatórios.</li>
                         <li>Salve o arquivo e faça o upload abaixo.</li>
                     </ol>
@@ -139,7 +139,7 @@
                 </td>
                 <td class="text-end pe-4">
                     <div class="btn-group">
-                        <a href="/sistemaTiago/?page=products&action=edit&id=<?= $product['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                        <a href="?page=products&action=edit&id=<?= $product['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                             <i class="fas fa-edit"></i>
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-danger ms-1 btn-delete-product" data-id="<?= $product['id'] ?>" data-name="<?= $product['name'] ?>" title="Excluir">
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btnDoImport.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Importando...';
             importResult.style.display = 'none';
 
-            fetch('/sistemaTiago/?page=products&action=importProducts', {
+            fetch('?page=products&action=importProducts', {
                 method: 'POST',
                 body: formData
             })
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = `/sistemaTiago/?page=products&action=delete&id=${id}`;
+                    window.location.href = `?page=products&action=delete&id=${id}`;
                 }
             });
         });

@@ -7,7 +7,7 @@
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-exchange-alt me-2"></i>Movimentação de Estoque</h1>
-    <a href="/sistemaTiago/?page=stock" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Voltar</a>
+    <a href="?page=stock" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Voltar</a>
 </div>
 
 <div class="row g-4">
@@ -168,7 +168,7 @@
         <div class="card shadow-sm">
             <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="fas fa-history text-muted me-2"></i>Últimas Movimentações</h6>
-                <a href="/sistemaTiago/?page=stock&action=movements" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.7rem;">Ver Todas</a>
+                <a href="?page=stock&action=movements" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.7rem;">Ver Todas</a>
             </div>
             <div class="card-body p-0" id="recentMovements" style="max-height:300px;overflow-y:auto;">
                 <div class="text-center text-muted small py-3"><i class="fas fa-spinner fa-spin me-1"></i>Carregando...</div>
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selCombination.innerHTML = '<option value="">Sem variação</option>';
         if (!pid) return;
 
-        fetch(`/sistemaTiago/?page=stock&action=getProductCombinations&product_id=${pid}`)
+        fetch(`?page=stock&action=getProductCombinations&product_id=${pid}`)
             .then(r => r.json())
             .then(combos => {
                 if (combos.length > 0) {
@@ -335,12 +335,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 fd.append(`items[${i}][quantity]`, item.quantity);
             });
 
-            fetch('/sistemaTiago/?page=stock&action=storeMovement', { method:'POST', body:fd })
+            fetch('?page=stock&action=storeMovement', { method:'POST', body:fd })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
                         Swal.fire({ icon:'success', title:'Movimentação Registrada!', html:`${data.processed} item(s) processado(s).`, timer:2500, showConfirmButton:true })
-                            .then(() => { window.location.href = '/sistemaTiago/?page=stock&status=moved'; });
+                            .then(() => { window.location.href = '?page=stock&status=moved'; });
                     } else {
                         Swal.fire({ icon:'error', title:'Erro', text: data.message || 'Erro ao processar.' });
                         btnProcess.disabled = false;
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ── Load recent movements ──
-    fetch('/sistemaTiago/?page=stock&action=movements&format=json&limit=10')
+    fetch('?page=stock&action=movements&format=json&limit=10')
         .catch(() => {})
         .then(r => { if(r && r.ok) return r.json(); return null; })
         .then(data => {

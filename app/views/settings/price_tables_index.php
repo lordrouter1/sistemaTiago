@@ -44,11 +44,11 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="/sistemaTiago/?page=price_tables&action=editPriceTable&id=<?= $pt['id'] ?>&ref=price_tables" class="btn btn-outline-primary" title="Editar Preços">
+                                            <a href="?page=price_tables&action=editPriceTable&id=<?= $pt['id'] ?>&ref=price_tables" class="btn btn-outline-primary" title="Editar Preços">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <?php if (!$pt['is_default']): ?>
-                                            <a href="/sistemaTiago/?page=price_tables&action=deletePriceTable&id=<?= $pt['id'] ?>&ref=price_tables" class="btn btn-outline-danger btn-delete-table" title="Excluir">
+                                            <a href="?page=price_tables&action=deletePriceTable&id=<?= $pt['id'] ?>&ref=price_tables" class="btn btn-outline-danger btn-delete-table" title="Excluir">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
                                             <?php endif; ?>
@@ -89,7 +89,7 @@
 <!-- Modal Nova Tabela -->
 <div class="modal fade" id="modalNewTable" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST" action="/sistemaTiago/?page=price_tables&action=createPriceTable">
+        <form method="POST" action="?page=price_tables&action=createPriceTable">
             <input type="hidden" name="ref_page" value="price_tables">
             <div class="modal-content">
                 <div class="modal-header">

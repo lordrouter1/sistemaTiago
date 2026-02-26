@@ -45,7 +45,7 @@ class SectorController {
             $this->sectorModel->create($_POST);
             $this->logger->log('CREATE_SECTOR', 'Created sector: ' . $_POST['name']);
         }
-        header('Location: /sistemaTiago/?page=sectors&status=success');
+        header('Location: ?page=sectors&status=success');
         exit;
     }
 
@@ -54,7 +54,7 @@ class SectorController {
             $this->sectorModel->update($_POST);
             $this->logger->log('UPDATE_SECTOR', 'Updated sector ID: ' . $_POST['id']);
         }
-        header('Location: /sistemaTiago/?page=sectors&status=success');
+        header('Location: ?page=sectors&status=success');
         exit;
     }
 
@@ -63,7 +63,7 @@ class SectorController {
             $this->sectorModel->delete($_GET['id']);
             $this->logger->log('DELETE_SECTOR', 'Deleted sector ID: ' . $_GET['id']);
         }
-        header('Location: /sistemaTiago/?page=sectors&status=success');
+        header('Location: ?page=sectors&status=success');
         exit;
     }
 }

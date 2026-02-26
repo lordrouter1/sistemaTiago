@@ -7,7 +7,7 @@
                 <span class="badge bg-success ms-2 fs-6"><i class="fas fa-star me-1"></i>Padrão</span>
             <?php endif; ?>
         </h1>
-        <a href="/sistemaTiago/?page=<?= $refPage === 'price_tables' ? 'price_tables' : 'settings&tab=prices' ?>" class="btn btn-outline-secondary btn-sm">
+        <a href="?page=<?= $refPage === 'price_tables' ? 'price_tables' : 'settings&tab=prices' ?>" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-arrow-left me-1"></i> Voltar
         </a>
     </div>
@@ -58,7 +58,7 @@
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
-                                        <a href="/sistemaTiago/?page=<?= $refPage === 'price_tables' ? 'price_tables' : 'settings' ?>&action=deletePriceItem&item_id=<?= $item['id'] ?>&table_id=<?= $table['id'] ?>&ref=<?= $refPage ?>"
+                                        <a href="?page=<?= $refPage === 'price_tables' ? 'price_tables' : 'settings' ?>&action=deletePriceItem&item_id=<?= $item['id'] ?>&table_id=<?= $table['id'] ?>&ref=<?= $refPage ?>"
                                            class="btn btn-sm btn-outline-danger btn-delete-item" title="Remover">
                                             <i class="fas fa-trash-alt"></i>
                                         </a>
@@ -85,7 +85,7 @@
                     <h6 class="mb-0 text-primary"><i class="fas fa-plus-circle me-2"></i>Adicionar/Atualizar Produto</h6>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="/sistemaTiago/?page=<?= $refPage === 'price_tables' ? 'price_tables' : 'settings' ?>&action=savePriceItem">
+                    <form method="POST" action="?page=<?= $refPage === 'price_tables' ? 'price_tables' : 'settings' ?>&action=savePriceItem">
                         <input type="hidden" name="price_table_id" value="<?= $table['id'] ?>">
                         <input type="hidden" name="ref_page" value="<?= $refPage ?>">
                         <div class="mb-3">

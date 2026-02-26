@@ -49,7 +49,7 @@ class UserController {
              
              if ($this->userModel->create()) {
                  $this->logger->log('CREATE_USER', 'Created user: ' . $this->userModel->email);
-                 header('Location: /sistemaTiago/?page=users&status=success');
+                 header('Location: ?page=users&status=success');
                  exit;
              } else {
                  echo "Erro ao cadastrar usuário.";
@@ -61,7 +61,7 @@ class UserController {
         $this->checkAdmin();
         
         if (!isset($_GET['id'])) {
-            header('Location: /sistemaTiago/?page=users');
+            header('Location: ?page=users');
             exit;
         }
         
@@ -69,7 +69,7 @@ class UserController {
         $user = $this->userModel->readOne($id);
         
         if (!$user) {
-            header('Location: /sistemaTiago/?page=users');
+            header('Location: ?page=users');
             exit;
         }
 
@@ -97,7 +97,7 @@ class UserController {
             
             if ($this->userModel->update()) {
                 $this->logger->log('UPDATE_USER', 'Updated user ID: ' . $this->userModel->id);
-                header('Location: /sistemaTiago/?page=users&status=success');
+                header('Location: ?page=users&status=success');
                 exit;
             } else {
                 echo "Erro ao atualizar usuário.";
@@ -112,7 +112,7 @@ class UserController {
             if ($this->userModel->delete($id)) {
                 $this->logger->log('DELETE_USER', 'Deleted user ID: ' . $id);
             }
-            header('Location: /sistemaTiago/?page=users');
+            header('Location: ?page=users');
             exit;
         }
     }
@@ -157,7 +157,7 @@ class UserController {
                         $this->groupModel->addPermission($groupId, $page);
                     }
                 }
-                header('Location: /sistemaTiago/?page=users&action=groups&status=success');
+                header('Location: ?page=users&action=groups&status=success');
             }
         }
     }
@@ -178,7 +178,7 @@ class UserController {
                         $this->groupModel->addPermission($_POST['id'], $page);
                     }
                 }
-                header('Location: /sistemaTiago/?page=users&action=groups&status=success');
+                header('Location: ?page=users&action=groups&status=success');
             }
         }
     }
@@ -187,7 +187,7 @@ class UserController {
         $this->checkAdmin();
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
             if ($this->groupModel->delete($_POST['id'])) {
-                header('Location: /sistemaTiago/?page=users&action=groups&status=success');
+                header('Location: ?page=users&action=groups&status=success');
                 exit;
             } else {
                  echo "Erro ao deletar grupo.";
@@ -197,7 +197,7 @@ class UserController {
 
     public function profile() {
         if (!isset($_SESSION['user_id'])) {
-             header('Location: /sistemaTiago/?page=login');
+             header('Location: ?page=login');
              exit;
         }
         
@@ -213,7 +213,7 @@ class UserController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              // Validar se o usuario esta editando o proprio perfil
              if (!isset($_SESSION['user_id'])) {
-                 header('Location: /sistemaTiago/?page=login');
+                 header('Location: ?page=login');
                  exit;
              }
              
@@ -237,7 +237,7 @@ class UserController {
              if ($this->userModel->update()) {
                  $_SESSION['user_name'] = $_POST['name'];
                  $this->logger->log('UPDATE_PROFILE', 'User updated own profile');
-                 header('Location: /sistemaTiago/?page=profile&success=1');
+                 header('Location: ?page=profile&success=1');
                  exit;
              } else {
                  echo "Erro ao atualizar perfil.";
@@ -247,7 +247,7 @@ class UserController {
 
     private function checkAdmin() {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
-            header('Location: /sistemaTiago/?page=dashboard&error=acesso_negado');
+            header('Location: ?page=dashboard&error=acesso_negado');
             exit;
         }
     }
@@ -255,7 +255,7 @@ class UserController {
     // Login
     public function login() {
         if (isset($_SESSION['user_id'])) {
-            header('Location: /sistemaTiago/');
+            header('Location: ?');
             exit;
         }
 
@@ -271,7 +271,7 @@ class UserController {
 
                  $this->logger->log('LOGIN', 'User logged in: ' . $email, $this->userModel->id);
                  
-                 header('Location: /sistemaTiago/');
+                 header('Location: ?');
                  exit;
              } else {
                  $this->logger->log('LOGIN_FAIL', 'Failed login attempt for: ' . $email);
@@ -288,7 +288,7 @@ class UserController {
              $this->logger->log('LOGOUT', 'User logged out', $_SESSION['user_id']);
         }
         session_destroy();
-        header('Location: /sistemaTiago/?page=login');
+        header('Location: ?page=login');
         exit;
     }
 }

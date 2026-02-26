@@ -210,7 +210,7 @@ $prioMap = [
             <button onclick="window.print()" class="btn btn-warning btn-sm text-dark">
                 <i class="fas fa-print me-1"></i> Imprimir
             </button>
-            <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>"
+            <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>"
                class="btn btn-outline-light btn-sm">
                 <i class="fas fa-arrow-left me-1"></i> Voltar
             </a>
@@ -231,7 +231,7 @@ $prioMap = [
         <div>
             <?php if (!empty($company['company_logo']) && file_exists($company['company_logo'])): ?>
                 <div class="company-logo mb-1">
-                    <img src="/sistemaTiago/<?= $company['company_logo'] ?>" alt="Logo">
+                    <img src="<?= $company['company_logo'] ?>" alt="Logo">
                 </div>
             <?php endif; ?>
 
@@ -331,6 +331,15 @@ $prioMap = [
                             </span>
                             <div>
                                 <strong style="font-size:0.85rem;"><?= htmlspecialchars($item['product_name']) ?></strong>
+                                <?php if (!empty($item['combination_label'])): ?>
+                                    <span class="badge bg-info text-white ms-1" style="font-size:0.68rem;font-weight:600;">
+                                        <i class="fas fa-layer-group me-1" style="font-size:0.55rem;"></i><?= htmlspecialchars($item['combination_label']) ?>
+                                    </span>
+                                <?php elseif (!empty($item['grade_description'])): ?>
+                                    <span class="badge bg-info text-white ms-1" style="font-size:0.68rem;font-weight:600;">
+                                        <i class="fas fa-layer-group me-1" style="font-size:0.55rem;"></i><?= htmlspecialchars($item['grade_description']) ?>
+                                    </span>
+                                <?php endif; ?>
                                 <small class="text-muted ms-2">
                                     Qtd: <strong><?= $item['quantity'] ?></strong>
                                     <?php if (!empty($sectors)): ?>

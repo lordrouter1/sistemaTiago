@@ -17,7 +17,7 @@
                     </h6>
                 </div>
                 <div class="card-body p-3">
-                    <form method="POST" action="/sistemaTiago/?page=sectors&action=<?= isset($editSector) ? 'update' : 'store' ?>">
+                    <form method="POST" action="?page=sectors&action=<?= isset($editSector) ? 'update' : 'store' ?>">
                         <?php if(isset($editSector)): ?>
                             <input type="hidden" name="id" value="<?= $editSector['id'] ?>">
                         <?php endif; ?>
@@ -82,7 +82,7 @@
                                 <i class="fas fa-save me-1"></i><?= isset($editSector) ? 'Salvar Alterações' : 'Criar Setor' ?>
                             </button>
                             <?php if(isset($editSector)): ?>
-                                <a href="/sistemaTiago/?page=sectors" class="btn btn-outline-secondary btn-sm">Cancelar</a>
+                                <a href="?page=sectors" class="btn btn-outline-secondary btn-sm">Cancelar</a>
                             <?php endif; ?>
                         </div>
                     </form>
@@ -133,7 +133,7 @@
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end pe-4">
-                                            <a href="/sistemaTiago/?page=sectors&action=edit&id=<?= $sector['id'] ?>" class="btn btn-sm btn-outline-primary me-1" title="Editar">
+                                            <a href="?page=sectors&action=edit&id=<?= $sector['id'] ?>" class="btn btn-sm btn-outline-primary me-1" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <button class="btn btn-sm btn-outline-danger btn-delete-sector" data-id="<?= $sector['id'] ?>" data-name="<?= htmlspecialchars($sector['name']) ?>" title="Excluir">
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: 'Excluir setor?', html: `Deseja excluir o setor <strong>${name}</strong>?`, icon: 'warning', showCancelButton: true,
                 confirmButtonColor: '#c0392b', confirmButtonText: '<i class="fas fa-trash me-1"></i> Excluir', cancelButtonText: 'Cancelar'
-            }).then(r => { if (r.isConfirmed) window.location = '/sistemaTiago/?page=sectors&action=delete&id=' + id; });
+            }).then(r => { if (r.isConfirmed) window.location = '?page=sectors&action=delete&id=' + id; });
         });
     });
 });

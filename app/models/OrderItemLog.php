@@ -165,7 +165,7 @@ class OrderItemLog {
 
         // Criar diretório
         $uploadDir = 'assets/uploads/item_logs/' . $orderId . '/' . $orderItemId;
-        $fullDir = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/sistemaTiago/' . $uploadDir;
+        $fullDir = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '' . $uploadDir;
         if (!is_dir($fullDir)) {
             mkdir($fullDir, 0777, true);
         }
@@ -174,7 +174,7 @@ class OrderItemLog {
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         $safeName = time() . '_' . bin2hex(random_bytes(4)) . '.' . strtolower($ext);
         $destPath = $fullDir . '/' . $safeName;
-        $webPath = '/sistemaTiago/' . $uploadDir . '/' . $safeName;
+        $webPath = '' . $uploadDir . '/' . $safeName;
 
         if (move_uploaded_file($file['tmp_name'], $destPath)) {
             return [

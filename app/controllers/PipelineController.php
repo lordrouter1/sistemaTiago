@@ -35,7 +35,7 @@ class PipelineController {
      */
     public function move() {
         if (!isset($_GET['id']) || !isset($_GET['stage'])) {
-            header('Location: /sistemaTiago/?page=pipeline');
+            header('Location: ?page=pipeline');
             exit;
         }
 
@@ -44,6 +44,54 @@ class PipelineController {
         $notes = $_POST['notes'] ?? '';
         $userId = $_SESSION['user_id'] ?? null;
 
+        // Se movendo para produção, verificar se todos os itens têm estoque e use_stock_control ativo
+        // Se sim, pular produção e ir direto para preparação
+        if ($newStage === 'producao') {
+            require_once 'app/models/Order.php';
+            require_once 'app/models/Product.php';
+            $orderModel = new Order($this->db);
+            $productModel = new Product($this->db);
+            $orderItems = $orderModel->getItems($orderId);
+            
+            $allFromStock = true;
+            if (!empty($orderItems)) {
+                foreach ($orderItems as $item) {
+                    $product = $productModel->readOne($item['product_id']);
+                    if (!$product || empty($product['use_stock_control'])) {
+                        $allFromStock = false;
+                        break;
+                    }
+                    // Checar estoque da combinação ou do produto
+                    if (!empty($item['grade_combination_id'])) {
+                        $comboStmt = $this->db->prepare("SELECT stock_quantity FROM product_grade_combinations WHERE id = :id");
+                        $comboStmt->bindParam(':id', $item['grade_combination_id'], PDO::PARAM_INT);
+                        $comboStmt->execute();
+                        $combo = $comboStmt->fetch(PDO::FETCH_ASSOC);
+                        if (!$combo || (int)$combo['stock_quantity'] < (int)$item['quantity']) {
+                            $allFromStock = false;
+                            break;
+                        }
+                    } else {
+                        if ((int)$product['stock_quantity'] < (int)$item['quantity']) {
+                            $allFromStock = false;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                $allFromStock = false;
+            }
+
+            if ($allFromStock) {
+                // Todos os itens atendem pelo estoque — pular produção, ir para preparação
+                $newStage = 'preparacao';
+                $notes = ($notes ? $notes . ' | ' : '') . 'Produção pulada: todos os itens atendidos pelo estoque.';
+                
+                // Registrar passagem pela produção
+                $this->pipelineModel->moveToStage($orderId, 'producao', $userId, 'Passagem automática — estoque disponível');
+            }
+        }
+
         $this->pipelineModel->moveToStage($orderId, $newStage, $userId, $notes);
 
         // Log
@@ -51,7 +99,7 @@ class PipelineController {
         $logger = new Logger($this->db);
         $logger->log('PIPELINE_MOVE', "Order #$orderId moved to stage: $newStage");
 
-        header('Location: /sistemaTiago/?page=pipeline&status=moved');
+        header('Location: ?page=pipeline&status=moved');
         exit;
     }
 
@@ -60,13 +108,13 @@ class PipelineController {
      */
     public function detail() {
         if (!isset($_GET['id'])) {
-            header('Location: /sistemaTiago/?page=pipeline');
+            header('Location: ?page=pipeline');
             exit;
         }
 
         $order = $this->pipelineModel->getOrderDetail($_GET['id']);
         if (!$order) {
-            header('Location: /sistemaTiago/?page=pipeline');
+            header('Location: ?page=pipeline');
             exit;
         }
 
@@ -85,6 +133,15 @@ class PipelineController {
         $productModel = new Product($this->db);
         $stmt_products = $productModel->readAll();
         $products = $stmt_products->fetchAll(PDO::FETCH_ASSOC);
+
+        // Buscar combinações de grade ativas para cada produto
+        $productCombinations = [];
+        foreach ($products as $p) {
+            $combos = $productModel->getActiveCombinations($p['id']);
+            if (!empty($combos)) {
+                $productCombinations[$p['id']] = $combos;
+            }
+        }
 
         $orderModel = new Order($this->db);
         $orderItems = $orderModel->getItems($_GET['id']);
@@ -186,7 +243,7 @@ class PipelineController {
             $logger = new Logger($this->db);
             $logger->log('PIPELINE_UPDATE', "Updated order details #" . $data['id']);
 
-            header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $data['id'] . '&status=success');
+            header('Location: ?page=pipeline&action=detail&id=' . $data['id'] . '&status=success');
             exit;
         }
     }
@@ -216,7 +273,7 @@ class PipelineController {
             $logger = new Logger($this->db);
             $logger->log('PIPELINE_SETTINGS', 'Updated pipeline stage goals');
 
-            header('Location: /sistemaTiago/?page=pipeline&action=settings&status=success');
+            header('Location: ?page=pipeline&action=settings&status=success');
             exit;
         }
     }
@@ -275,7 +332,7 @@ class PipelineController {
                 $orderModel->addExtraCost($orderId, $description, $amount);
             }
 
-            header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=extra_added');
+            header('Location: ?page=pipeline&action=detail&id=' . $orderId . '&status=extra_added');
             exit;
         }
     }
@@ -292,7 +349,7 @@ class PipelineController {
             $orderModel->deleteExtraCost($costId);
         }
 
-        header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=extra_deleted');
+        header('Location: ?page=pipeline&action=detail&id=' . $orderId . '&status=extra_deleted');
         exit;
     }
 
@@ -502,13 +559,13 @@ class PipelineController {
      */
     public function printProductionOrder() {
         if (!isset($_GET['id'])) {
-            header('Location: /sistemaTiago/?page=pipeline');
+            header('Location: ?page=pipeline');
             exit;
         }
 
         $order = $this->pipelineModel->getOrderDetail($_GET['id']);
         if (!$order) {
-            header('Location: /sistemaTiago/?page=pipeline');
+            header('Location: ?page=pipeline');
             exit;
         }
 

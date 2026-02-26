@@ -31,6 +31,15 @@ class OrderController {
         $stmt_products = $productModel->readAll();
         $products = $stmt_products->fetchAll(PDO::FETCH_ASSOC);
 
+        // Buscar combinações de grade ativas para cada produto
+        $productCombinations = [];
+        foreach ($products as $p) {
+            $combos = $productModel->getActiveCombinations($p['id']);
+            if (!empty($combos)) {
+                $productCombinations[$p['id']] = $combos;
+            }
+        }
+
         $customerModel = new Customer($db);
         $stmt_customers = $customerModel->readAll();
         $customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC);
@@ -72,11 +81,15 @@ class OrderController {
                 if ($initialStage === 'orcamento' && !empty($_POST['items'])) {
                     foreach ($_POST['items'] as $item) {
                         if (!empty($item['product_id']) && !empty($item['quantity']) && isset($item['price'])) {
+                            $combId = !empty($item['combination_id']) ? (int)$item['combination_id'] : null;
+                            $gradeDesc = $item['grade_description'] ?? null;
                             $this->orderModel->addItem(
                                 $this->orderModel->id,
                                 (int)$item['product_id'],
                                 (int)$item['quantity'],
-                                (float)$item['price']
+                                (float)$item['price'],
+                                $combId,
+                                $gradeDesc
                             );
                         }
                     }
@@ -95,7 +108,7 @@ class OrderController {
                 $logger = new Logger($db);
                 $logger->log('ORDER_CREATE', "Pedido #{$this->orderModel->id} criado na etapa " . ucfirst($initialStage));
 
-                header('Location: /sistemaTiago/?page=orders&status=success');
+                header('Location: ?page=orders&status=success');
                 exit;
             } else {
                 echo "Erro ao criar pedido.";
@@ -105,12 +118,12 @@ class OrderController {
 
     public function edit() {
         if (!isset($_GET['id'])) {
-            header('Location: /sistemaTiago/?page=orders');
+            header('Location: ?page=orders');
             exit;
         }
         $order = $this->orderModel->readOne($_GET['id']);
         if (!$order) {
-            header('Location: /sistemaTiago/?page=orders');
+            header('Location: ?page=orders');
             exit;
         }
 
@@ -130,6 +143,15 @@ class OrderController {
         $productModel = new Product($db);
         $stmt_products = $productModel->readAll();
         $products = $stmt_products->fetchAll(PDO::FETCH_ASSOC);
+
+        // Buscar combinações de grade ativas para cada produto
+        $productCombinations = [];
+        foreach ($products as $p) {
+            $combos = $productModel->getActiveCombinations($p['id']);
+            if (!empty($combos)) {
+                $productCombinations[$p['id']] = $combos;
+            }
+        }
 
         // Carregar preços específicos do cliente (tabela de preço)
         $customerPrices = [];
@@ -151,7 +173,7 @@ class OrderController {
             $this->orderModel->status = $_POST['status'];
             
             if ($this->orderModel->update()) {
-                header('Location: /sistemaTiago/?page=orders&status=success');
+                header('Location: ?page=orders&status=success');
                 exit;
             } else {
                 echo "Erro ao atualizar pedido.";
@@ -168,14 +190,16 @@ class OrderController {
             $productId = $_POST['product_id'];
             $quantity = (int)($_POST['quantity'] ?? 1);
             $unitPrice = (float)($_POST['unit_price'] ?? 0);
+            $combinationId = !empty($_POST['combination_id']) ? (int)$_POST['combination_id'] : null;
+            $gradeDescription = $_POST['grade_description'] ?? null;
 
-            $this->orderModel->addItem($orderId, $productId, $quantity, $unitPrice);
+            $this->orderModel->addItem($orderId, $productId, $quantity, $unitPrice, $combinationId, $gradeDescription);
 
             $redirect = $_POST['redirect'] ?? 'orders';
             if ($redirect === 'pipeline') {
-                header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=item_added');
+                header('Location: ?page=pipeline&action=detail&id=' . $orderId . '&status=item_added');
             } else {
-                header('Location: /sistemaTiago/?page=orders&action=edit&id=' . $orderId . '&status=item_added');
+                header('Location: ?page=orders&action=edit&id=' . $orderId . '&status=item_added');
             }
             exit;
         }
@@ -195,9 +219,9 @@ class OrderController {
 
             $redirect = $_POST['redirect'] ?? 'orders';
             if ($redirect === 'pipeline') {
-                header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=item_updated');
+                header('Location: ?page=pipeline&action=detail&id=' . $orderId . '&status=item_updated');
             } else {
-                header('Location: /sistemaTiago/?page=orders&action=edit&id=' . $orderId . '&status=item_updated');
+                header('Location: ?page=orders&action=edit&id=' . $orderId . '&status=item_updated');
             }
             exit;
         }
@@ -216,9 +240,9 @@ class OrderController {
         }
 
         if ($redirect === 'pipeline') {
-            header('Location: /sistemaTiago/?page=pipeline&action=detail&id=' . $orderId . '&status=item_deleted');
+            header('Location: ?page=pipeline&action=detail&id=' . $orderId . '&status=item_deleted');
         } else {
-            header('Location: /sistemaTiago/?page=orders&action=edit&id=' . $orderId . '&status=item_deleted');
+            header('Location: ?page=orders&action=edit&id=' . $orderId . '&status=item_deleted');
         }
         exit;
     }
@@ -229,12 +253,12 @@ class OrderController {
     public function printQuote() {
         $orderId = $_GET['id'] ?? null;
         if (!$orderId) {
-            header('Location: /sistemaTiago/?page=orders');
+            header('Location: ?page=orders');
             exit;
         }
         $order = $this->orderModel->readOne($orderId);
         if (!$order) {
-            header('Location: /sistemaTiago/?page=orders');
+            header('Location: ?page=orders');
             exit;
         }
         $orderItems = $this->orderModel->getItems($orderId);
@@ -254,7 +278,7 @@ class OrderController {
     public function delete() {
         if (isset($_GET['id'])) {
             $this->orderModel->delete($_GET['id']);
-            header('Location: /sistemaTiago/?page=orders&status=success');
+            header('Location: ?page=orders&status=success');
             exit;
         }
     }

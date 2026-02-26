@@ -167,9 +167,10 @@ class Order {
      * Busca os itens de um pedido com nome do produto
      */
     public function getItems($orderId) {
-        $query = "SELECT oi.*, p.name as product_name 
+        $query = "SELECT oi.*, p.name as product_name, pgc.combination_label
                   FROM order_items oi
                   LEFT JOIN products p ON oi.product_id = p.id
+                  LEFT JOIN product_grade_combinations pgc ON oi.grade_combination_id = pgc.id
                   WHERE oi.order_id = :order_id
                   ORDER BY oi.id ASC";
         $stmt = $this->conn->prepare($query);
@@ -181,13 +182,15 @@ class Order {
     /**
      * Adiciona um item ao pedido
      */
-    public function addItem($orderId, $productId, $quantity, $unitPrice) {
+    public function addItem($orderId, $productId, $quantity, $unitPrice, $combinationId = null, $gradeDescription = null) {
         $subtotal = $quantity * $unitPrice;
-        $query = "INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
-                  VALUES (:order_id, :product_id, :quantity, :unit_price, :subtotal)";
+        $query = "INSERT INTO order_items (order_id, product_id, grade_combination_id, grade_description, quantity, unit_price, subtotal)
+                  VALUES (:order_id, :product_id, :combination_id, :grade_description, :quantity, :unit_price, :subtotal)";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
         $stmt->bindParam(':product_id', $productId, PDO::PARAM_INT);
+        $stmt->bindValue(':combination_id', $combinationId ? (int)$combinationId : null, $combinationId ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue(':grade_description', $gradeDescription);
         $stmt->bindParam(':quantity', $quantity, PDO::PARAM_INT);
         $stmt->bindParam(':unit_price', $unitPrice);
         $stmt->bindParam(':subtotal', $subtotal);

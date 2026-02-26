@@ -12,13 +12,13 @@ $isLowStock = isset($_GET['low_stock']) && $_GET['low_stock'] == '1';
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-warehouse me-2"></i>Controle de Estoque</h1>
     <div class="btn-toolbar mb-2 mb-md-0 gap-2">
-        <a href="/sistemaTiago/?page=stock&action=entry" class="btn btn-sm btn-success">
+        <a href="?page=stock&action=entry" class="btn btn-sm btn-success">
             <i class="fas fa-arrow-down me-1"></i> Entrada / Saída
         </a>
-        <a href="/sistemaTiago/?page=stock&action=movements" class="btn btn-sm btn-outline-primary">
+        <a href="?page=stock&action=movements" class="btn btn-sm btn-outline-primary">
             <i class="fas fa-exchange-alt me-1"></i> Movimentações
         </a>
-        <a href="/sistemaTiago/?page=stock&action=warehouses" class="btn btn-sm btn-outline-secondary">
+        <a href="?page=stock&action=warehouses" class="btn btn-sm btn-outline-secondary">
             <i class="fas fa-building me-1"></i> Armazéns
         </a>
     </div>
@@ -90,7 +90,7 @@ $isLowStock = isset($_GET['low_stock']) && $_GET['low_stock'] == '1';
                 <small>(<?= $lsi['warehouse_name'] ?>)</small>
             </span>
         <?php endforeach; ?>
-        <a href="/sistemaTiago/?page=stock&low_stock=1" class="btn btn-sm btn-outline-danger ms-2">Ver todos</a>
+        <a href="?page=stock&low_stock=1" class="btn btn-sm btn-outline-danger ms-2">Ver todos</a>
     </div>
 </div>
 <?php endif; ?>
@@ -124,7 +124,7 @@ $isLowStock = isset($_GET['low_stock']) && $_GET['low_stock'] == '1';
     </div>
     <div class="col-md-3 d-flex gap-2">
         <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-filter me-1"></i>Filtrar</button>
-        <a href="/sistemaTiago/?page=stock" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times me-1"></i>Limpar</a>
+        <a href="?page=stock" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times me-1"></i>Limpar</a>
     </div>
 </form>
 
@@ -203,7 +203,7 @@ $isLowStock = isset($_GET['low_stock']) && $_GET['low_stock'] == '1';
                 <td colspan="8" class="text-center text-muted py-5">
                     <i class="fas fa-warehouse fa-3x mb-3 d-block text-secondary"></i>
                     Nenhum item no estoque <?= $currentWarehouse || $currentSearch ? 'com os filtros selecionados' : 'ainda' ?>.
-                    <br><a href="/sistemaTiago/?page=stock&action=entry" class="btn btn-success btn-sm mt-2"><i class="fas fa-plus me-1"></i>Dar entrada</a>
+                    <br><a href="?page=stock&action=entry" class="btn btn-success btn-sm mt-2"><i class="fas fa-plus me-1"></i>Dar entrada</a>
                 </td>
             </tr>
             <?php endif; ?>
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fd.append('min_quantity', minQty);
         fd.append('location_code', locCode);
 
-        fetch('/sistemaTiago/?page=stock&action=updateItemMeta', { method:'POST', body:fd })
+        fetch('?page=stock&action=updateItemMeta', { method:'POST', body:fd })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {

@@ -36,8 +36,8 @@ $currentPermissions = isset($editGroup) ? $editGroup['permissions'] : [];
     <!-- ═══════ FORMULÁRIO ═══════ -->
     <div class="col-lg-5 col-md-6 mb-4">
         <div class="card shadow-sm border-0 sticky-top" style="top: 90px; z-index: 1;">
-            <div class="card-header bg-primary text-white p-3">
-                <h5 class="mb-0">
+            <div class="card-header bg-primary p-3">
+                <h5 class="mb-0 text-white">
                     <?php if(isset($editGroup)): ?>
                         <i class="fas fa-edit me-2"></i>Editar Grupo: <?= htmlspecialchars($editGroup['name']) ?>
                     <?php else: ?>
@@ -46,7 +46,7 @@ $currentPermissions = isset($editGroup) ? $editGroup['permissions'] : [];
                 </h5>
             </div>
             <div class="card-body p-4" style="max-height: calc(100vh - 160px); overflow-y: auto;">
-                <form action="/sistemaTiago/?page=users&action=<?= isset($editGroup) ? 'updateGroup' : 'createGroup' ?>" method="POST">
+                <form action="?page=users&action=<?= isset($editGroup) ? 'updateGroup' : 'createGroup' ?>" method="POST">
                     <?php if(isset($editGroup)): ?>
                         <input type="hidden" name="id" value="<?= $editGroup['id'] ?>">
                     <?php endif; ?>
@@ -162,7 +162,7 @@ $currentPermissions = isset($editGroup) ? $editGroup['permissions'] : [];
                             <?php endif; ?>
                         </button>
                         <?php if(isset($editGroup)): ?>
-                            <a href="/sistemaTiago/?page=users&action=groups" class="btn btn-outline-secondary">Cancelar</a>
+                            <a href="?page=users&action=groups" class="btn btn-outline-secondary">Cancelar</a>
                         <?php endif; ?>
                     </div>
                 </form>
@@ -174,7 +174,7 @@ $currentPermissions = isset($editGroup) ? $editGroup['permissions'] : [];
     <div class="col-lg-7 col-md-6">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="text-primary mb-0"><i class="fas fa-list-ul me-2"></i>Grupos Existentes</h4>
-            <a href="/sistemaTiago/?page=users" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-2"></i>Voltar</a>
+            <a href="?page=users" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-2"></i>Voltar</a>
         </div>
 
         <?php if(empty($groups)): ?>
@@ -191,7 +191,7 @@ $currentPermissions = isset($editGroup) ? $editGroup['permissions'] : [];
                             <small class="text-muted"><?= htmlspecialchars($group2['description']) ?></small>
                         </div>
                         <div class="d-flex gap-1">
-                            <a href="/sistemaTiago/?page=users&action=groups&manage_id=<?= $group2['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                            <a href="?page=users&action=groups&manage_id=<?= $group2['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <button type="button" class="btn btn-sm btn-outline-danger btn-delete-group" data-id="<?= $group2['id'] ?>" data-name="<?= htmlspecialchars($group2['name']) ?>" title="Excluir">
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.isConfirmed) {
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = '/sistemaTiago/?page=users&action=deleteGroup';
+                    form.action = '?page=users&action=deleteGroup';
                     const input = document.createElement('input');
                     input.type = 'hidden'; input.name = 'id'; input.value = id;
                     form.appendChild(input);

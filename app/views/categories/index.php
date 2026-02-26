@@ -28,8 +28,8 @@
                 <!-- Form -->
                 <div class="col-md-5 mb-4">
                     <div class="card shadow-sm border-0">
-                        <div class="card-header bg-primary text-white p-3">
-                            <h6 class="mb-0">
+                        <div class="card-header bg-primary p-3">
+                            <h6 class="mb-0 text-white ">
                                 <?php if(isset($editCategory)): ?>
                                     <i class="fas fa-edit me-2"></i>Editar Categoria
                                 <?php else: ?>
@@ -38,7 +38,7 @@
                             </h6>
                         </div>
                         <div class="card-body p-3">
-                            <form method="POST" action="/sistemaTiago/?page=categories&action=<?= isset($editCategory) ? 'update' : 'store' ?>">
+                            <form method="POST" action="?page=categories&action=<?= isset($editCategory) ? 'update' : 'store' ?>">
                                 <?php if(isset($editCategory)): ?>
                                     <input type="hidden" name="id" value="<?= $editCategory['id'] ?>">
                                 <?php endif; ?>
@@ -100,7 +100,7 @@
                                         <i class="fas fa-save me-1"></i><?= isset($editCategory) ? 'Salvar' : 'Criar Categoria' ?>
                                     </button>
                                     <?php if(isset($editCategory)): ?>
-                                        <a href="/sistemaTiago/?page=categories" class="btn btn-outline-secondary btn-sm">Cancelar</a>
+                                        <a href="?page=categories" class="btn btn-outline-secondary btn-sm">Cancelar</a>
                                     <?php endif; ?>
                                 </div>
                             </form>
@@ -159,7 +159,7 @@
                                                     <span class="badge bg-secondary"><?= $cat['product_count'] ?></span>
                                                 </td>
                                                 <td class="text-end pe-4">
-                                                    <a href="/sistemaTiago/?page=categories&action=edit&id=<?= $cat['id'] ?>" class="btn btn-sm btn-outline-primary me-1" title="Editar">
+                                                    <a href="?page=categories&action=edit&id=<?= $cat['id'] ?>" class="btn btn-sm btn-outline-primary me-1" title="Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <button class="btn btn-sm btn-outline-danger btn-delete-cat" data-id="<?= $cat['id'] ?>" data-name="<?= htmlspecialchars($cat['name']) ?>" data-products="<?= $cat['product_count'] ?>" title="Excluir">
@@ -184,8 +184,8 @@
                 <!-- Form -->
                 <div class="col-md-5 mb-4">
                     <div class="card shadow-sm border-0">
-                        <div class="card-header bg-success text-white p-3">
-                            <h6 class="mb-0">
+                        <div class="card-header bg-success p-3">
+                            <h6 class="mb-0 text-white ">
                                 <?php if(isset($editSubcategory)): ?>
                                     <i class="fas fa-edit me-2"></i>Editar Subcategoria
                                 <?php else: ?>
@@ -194,7 +194,7 @@
                             </h6>
                         </div>
                         <div class="card-body p-3">
-                            <form method="POST" action="/sistemaTiago/?page=categories&action=<?= isset($editSubcategory) ? 'updateSub' : 'storeSub' ?>">
+                            <form method="POST" action="?page=categories&action=<?= isset($editSubcategory) ? 'updateSub' : 'storeSub' ?>">
                                 <?php if(isset($editSubcategory)): ?>
                                     <input type="hidden" name="id" value="<?= $editSubcategory['id'] ?>">
                                 <?php endif; ?>
@@ -267,7 +267,7 @@
                                         <i class="fas fa-save me-1"></i><?= isset($editSubcategory) ? 'Salvar' : 'Criar Subcategoria' ?>
                                     </button>
                                     <?php if(isset($editSubcategory)): ?>
-                                        <a href="/sistemaTiago/?page=categories&tab=subcategories" class="btn btn-outline-secondary btn-sm">Cancelar</a>
+                                        <a href="?page=categories&tab=subcategories" class="btn btn-outline-secondary btn-sm">Cancelar</a>
                                     <?php endif; ?>
                                 </div>
                             </form>
@@ -322,7 +322,7 @@
                                                     <?php endif; ?>
                                                 </td>
                                                 <td class="text-end pe-4">
-                                                    <a href="/sistemaTiago/?page=categories&action=editSub&id=<?= $sub['id'] ?>&tab=subcategories" class="btn btn-sm btn-outline-primary me-1" title="Editar">
+                                                    <a href="?page=categories&action=editSub&id=<?= $sub['id'] ?>&tab=subcategories" class="btn btn-sm btn-outline-primary me-1" title="Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <button class="btn btn-sm btn-outline-danger btn-delete-sub" data-id="<?= $sub['id'] ?>" data-name="<?= htmlspecialchars($sub['name']) ?>" title="Excluir">
@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: 'Excluir categoria?', html: msg, icon: 'warning', showCancelButton: true,
                 confirmButtonColor: '#c0392b', confirmButtonText: '<i class="fas fa-trash me-1"></i> Excluir', cancelButtonText: 'Cancelar'
-            }).then(r => { if (r.isConfirmed) window.location = '/sistemaTiago/?page=categories&action=delete&id=' + id; });
+            }).then(r => { if (r.isConfirmed) window.location = '?page=categories&action=delete&id=' + id; });
         });
     });
 
@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: 'Excluir subcategoria?', html: `Deseja excluir <strong>${name}</strong>?`, icon: 'warning', showCancelButton: true,
                 confirmButtonColor: '#c0392b', confirmButtonText: '<i class="fas fa-trash me-1"></i> Excluir', cancelButtonText: 'Cancelar'
-            }).then(r => { if (r.isConfirmed) window.location = '/sistemaTiago/?page=categories&action=deleteSub&id=' + id; });
+            }).then(r => { if (r.isConfirmed) window.location = '?page=categories&action=deleteSub&id=' + id; });
         });
     });
 });

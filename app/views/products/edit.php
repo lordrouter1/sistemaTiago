@@ -1,18 +1,18 @@
 <div class="container py-4">
     <div class="d-flex align-items-center mb-4">
-        <a href="/sistemaTiago/?page=products" class="btn btn-outline-secondary btn-sm me-3"><i class="fas fa-arrow-left"></i></a>
+        <a href="?page=products" class="btn btn-outline-secondary btn-sm me-3"><i class="fas fa-arrow-left"></i></a>
         <h2 class="mb-0 text-primary"><i class="fas fa-edit me-2"></i>Editar Produto</h2>
     </div>
     
-    <form id="productForm" method="post" action="/sistemaTiago/?page=products&action=update" enctype="multipart/form-data">
+    <form id="productForm" method="post" action="?page=products&action=update" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?= $product['id'] ?>">
 
         <!-- ════════════════════════════════════════════════════
              SEÇÃO 1 — CAMPOS OBRIGATÓRIOS (sempre visíveis)
              ════════════════════════════════════════════════════ -->
         <div class="card border-primary border-2 mb-4 shadow-sm">
-            <div class="card-header bg-primary text-white py-3">
-                <h5 class="mb-0"><i class="fas fa-star me-2"></i>Informações Essenciais <small class="opacity-75">— Campos obrigatórios para salvar</small></h5>
+            <div class="card-header bg-primary py-3">
+                <h5 class="mb-0 text-white"><i class="fas fa-star me-2"></i>Informações Essenciais <small class="opacity-75">— Campos obrigatórios para salvar</small></h5>
             </div>
             <div class="card-body p-4">
                 <div class="row g-3">
@@ -42,6 +42,13 @@
                     <div class="col-md-4">
                         <label for="stock_quantity" class="form-label fw-bold">Estoque</label>
                         <input type="number" class="form-control form-control-lg" id="stock_quantity" name="stock_quantity" value="<?= $product['stock_quantity'] ?>">
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="use_stock_control" name="use_stock_control" value="1" <?= !empty($product['use_stock_control']) ? 'checked' : '' ?>>
+                            <label class="form-check-label small text-muted" for="use_stock_control">
+                                <i class="fas fa-boxes-stacked me-1"></i>Usar controle de estoque
+                            </label>
+                        </div>
+                        <div class="form-text"><i class="fas fa-info-circle me-1"></i>Se ativado e houver estoque, o pedido não vai para produção.</div>
                     </div>
 
                     <!-- Categoria e Subcategoria -->
@@ -331,7 +338,7 @@
              BOTÕES DE AÇÃO
              ════════════════════════════════════════════════════ -->
         <div class="d-flex justify-content-between align-items-center py-3 sticky-bottom bg-body-tertiary rounded px-3 mb-3 shadow-sm">
-            <a href="/sistemaTiago/?page=products" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Cancelar</a>
+            <a href="?page=products" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Cancelar</a>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-outline-primary" id="btnExpandAll"><i class="fas fa-expand-alt me-1"></i>Expandir Tudo</button>
                 <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i>Salvar Alterações</button>
@@ -490,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function fetchSubcategories(categoryId) {
-        fetch(`/sistemaTiago/?page=products&action=getSubcategories&category_id=${categoryId}`)
+        fetch(`?page=products&action=getSubcategories&category_id=${categoryId}`)
             .then(response => response.json())
             .then(data => {
                 let options = '<option value="">Selecione...</option>';
@@ -617,7 +624,7 @@ function deleteImage(imageId) {
             const formData = new FormData();
             formData.append('image_id', imageId);
             
-            fetch('/sistemaTiago/?page=products&action=deleteImage', {
+            fetch('?page=products&action=deleteImage', {
                 method: 'POST',
                 body: formData
             })

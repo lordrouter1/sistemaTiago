@@ -1,11 +1,11 @@
 <div class="row">
     <div class="col-md-8 mx-auto">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white p-3">
-                <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Editar Usuário</h5>
+            <div class="card-header bg-primary p-3">
+                <h5 class="mb-0 text-white"><i class="fas fa-user-edit me-2"></i>Editar Usuário</h5>
             </div>
             <div class="card-body p-4">
-                <form action="/sistemaTiago/?page=users&action=update" method="POST">
+                <form action="?page=users&action=update" method="POST">
                     <input type="hidden" name="id" value="<?= $user['id'] ?>">
                     
                     <div class="row g-3">
@@ -43,7 +43,7 @@
                         </div>
 
                         <div class="col-12 text-end mt-4">
-                            <a href="/sistemaTiago/?page=users" class="btn btn-secondary px-4 me-2">Cancelar</a>
+                            <a href="?page=users" class="btn btn-secondary px-4 me-2">Cancelar</a>
                             <button type="submit" class="btn btn-primary px-4 fw-bold"><i class="fas fa-save me-2"></i>Salvar Alterações</button>
                         </div>
                     </div>

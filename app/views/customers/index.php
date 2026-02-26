@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-users me-2"></i>Clientes</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/sistemaTiago/?page=customers&action=create" class="btn btn-sm btn-primary">
+        <a href="?page=customers&action=create" class="btn btn-sm btn-primary">
             <i class="fas fa-plus me-1"></i> Novo Cliente
         </a>
     </div>
@@ -43,7 +43,7 @@
                 <td><span class="badge bg-light text-dark border"><?= $customer['document'] ?: '—' ?></span></td>
                 <td class="text-end pe-4">
                     <div class="btn-group">
-                        <a href="/sistemaTiago/?page=customers&action=edit&id=<?= $customer['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                        <a href="?page=customers&action=edit&id=<?= $customer['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                             <i class="fas fa-edit"></i>
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-danger ms-1 btn-delete-customer" data-id="<?= $customer['id'] ?>" data-name="<?= $customer['name'] ?>" title="Excluir">
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = `/sistemaTiago/?page=customers&action=delete&id=${id}`;
+                    window.location.href = `?page=customers&action=delete&id=${id}`;
                 }
             });
         });

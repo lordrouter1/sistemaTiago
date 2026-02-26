@@ -1,7 +1,7 @@
 <div class="container py-4">
     <h2 class="mb-4 text-primary"><i class="fas fa-user-plus me-2"></i>Novo Cliente</h2>
     
-    <form id="customerForm" method="post" action="/sistemaTiago/?page=customers&action=store" enctype="multipart/form-data">
+    <form id="customerForm" method="post" action="?page=customers&action=store" enctype="multipart/form-data">
         <div class="row">
             <div class="col-md-3">
                 <!-- Foto do Cliente -->
@@ -10,8 +10,8 @@
                     <div class="text-center">
                         <div class="mb-3 position-relative d-inline-block">
                              <img id="preview-photo" src="assets/img/default-avatar.png" class="rounded-circle border border-3 border-light shadow-sm" style="width: 150px; height: 150px; object-fit: cover; background-color: #f8f9fa;">
-                             <label for="photo" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 shadow-sm" style="cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-camera"></i>
+                             <label for="photo" class="position-absolute bottom-0 end-0 bg-primary rounded-circle p-2 shadow-sm" style="cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-camera text-white"></i>
                              </label>
                              <input type="file" id="photo" name="photo" class="d-none" accept="image/*">
                         </div>
@@ -120,7 +120,7 @@
                 </fieldset>
                 <div class="col-12 mt-4 text-end">
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="/sistemaTiago/?page=customers" class="btn btn-secondary px-4">Cancelar</a>
+                        <a href="?page=customers" class="btn btn-secondary px-4">Cancelar</a>
                         <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i>Salvar Cliente</button>
                     </div>
                 </div>

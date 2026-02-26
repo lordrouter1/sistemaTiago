@@ -267,7 +267,7 @@
         formData.append('name', name);
         formData.append('icon', icon);
 
-        fetch('/sistemaTiago/?page=products&action=createGradeType', {
+        fetch('?page=products&action=createGradeType', {
             method: 'POST',
             body: formData
         })
@@ -576,7 +576,7 @@
         if (subcategoryId && subcategoryId !== '' && subcategoryId !== 'new') params.append('subcategory_id', subcategoryId);
         if (categoryId && categoryId !== '' && categoryId !== 'new') params.append('category_id', categoryId);
 
-        fetch('/sistemaTiago/?page=categories&action=getInheritedGrades&' + params.toString())
+        fetch('?page=categories&action=getInheritedGrades&' + params.toString())
             .then(r => r.json())
             .then(data => {
                 if (data.success && data.grades && data.grades.length > 0) {

@@ -23,15 +23,15 @@
             <small class="text-muted">Criado em <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></small>
         </div>
         <div class="d-flex gap-2">
-            <a href="/sistemaTiago/?page=pipeline" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
+            <a href="?page=pipeline" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
             <?php if ($currentStage === 'producao'): ?>
-            <a href="/sistemaTiago/?page=production_board" class="btn btn-outline-success btn-sm"><i class="fas fa-tasks me-1"></i> Painel de Produção</a>
+            <a href="?page=production_board" class="btn btn-outline-success btn-sm"><i class="fas fa-tasks me-1"></i> Painel de Produção</a>
             <?php endif; ?>
             <?php if (in_array($currentStage, ['producao', 'preparacao'])): ?>
-            <a href="/sistemaTiago/?page=pipeline&action=printProductionOrder&id=<?= $order['id'] ?>" target="_blank" class="btn btn-outline-warning btn-sm text-dark"><i class="fas fa-print me-1"></i> Ordem de Produção</a>
+            <a href="?page=pipeline&action=printProductionOrder&id=<?= $order['id'] ?>" target="_blank" class="btn btn-outline-warning btn-sm text-dark"><i class="fas fa-print me-1"></i> Ordem de Produção</a>
             <?php endif; ?>
             <?php if (!$isReadOnly): ?>
-            <a href="/sistemaTiago/?page=orders&action=edit&id=<?= $order['id'] ?>" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit me-1"></i> Editar Pedido</a>
+            <a href="?page=orders&action=edit&id=<?= $order['id'] ?>" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit me-1"></i> Editar Pedido</a>
             <?php endif; ?>
         </div>
     </div>
@@ -95,7 +95,7 @@
                     <?php if (!$isReadOnly): ?>
                     <!-- Botão retroceder -->
                     <?php if ($currentIdx > 0): ?>
-                    <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $stageKeys[$currentIdx - 1] ?>" 
+                    <a href="?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $stageKeys[$currentIdx - 1] ?>" 
                        class="btn btn-sm btn-outline-secondary btn-move-stage" data-dir="Retroceder" data-stage="<?= $stages[$stageKeys[$currentIdx - 1]]['label'] ?>">
                         <i class="fas fa-arrow-left me-1"></i> <?= $stages[$stageKeys[$currentIdx - 1]]['label'] ?>
                     </a>
@@ -103,7 +103,7 @@
                     
                     <!-- Botão avançar -->
                     <?php if ($currentIdx < $totalStages - 1): ?>
-                    <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $stageKeys[$currentIdx + 1] ?>" 
+                    <a href="?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $stageKeys[$currentIdx + 1] ?>" 
                        class="btn btn-sm btn-success btn-move-stage" data-dir="Avançar" data-stage="<?= $stages[$stageKeys[$currentIdx + 1]]['label'] ?>">
                         <?= $stages[$stageKeys[$currentIdx + 1]]['label'] ?> <i class="fas fa-arrow-right ms-1"></i>
                     </a>
@@ -119,7 +119,7 @@
                             <?php foreach ($stages as $sKey => $sInfo): ?>
                             <?php if ($sKey !== $currentStage): ?>
                             <li>
-                                <a class="dropdown-item btn-move-stage" href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $sKey ?>" data-dir="Mover" data-stage="<?= $sInfo['label'] ?>">
+                                <a class="dropdown-item btn-move-stage" href="?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $sKey ?>" data-dir="Mover" data-stage="<?= $sInfo['label'] ?>">
                                     <i class="<?= $sInfo['icon'] ?> me-2" style="color:<?= $sInfo['color'] ?>;"></i> <?= $sInfo['label'] ?>
                                 </a>
                             </li>
@@ -145,7 +145,7 @@
     <div class="row g-4">
         <!-- Coluna Esquerda: Informações e Formulário -->
         <div class="col-lg-8">
-            <form method="POST" action="/sistemaTiago/?page=pipeline&action=updateDetails">
+            <form method="POST" action="?page=pipeline&action=updateDetails">
                 <input type="hidden" name="id" value="<?= $order['id'] ?>">
 
                 <!-- Dados do Cliente -->
@@ -202,7 +202,7 @@
                     <legend class="float-none w-auto px-2 fs-5 text-primary">
                         <i class="fas fa-file-invoice-dollar me-2"></i>Produtos do Orçamento
                         <?php if (!$isReadOnly): ?>
-                        <a href="/sistemaTiago/?page=orders&action=printQuote&id=<?= $order['id'] ?>" target="_blank" class="btn btn-sm btn-outline-success ms-3">
+                        <a href="?page=orders&action=printQuote&id=<?= $order['id'] ?>" target="_blank" class="btn btn-sm btn-outline-success ms-3">
                             <i class="fas fa-print me-1"></i> Imprimir Orçamento
                         </a>
                         <?php endif; ?>
@@ -323,13 +323,20 @@
                                 <?php foreach ($orderItems as $item): ?>
                                 <?php $subtotal = $item['quantity'] * $item['unit_price']; $totalItems += $subtotal; ?>
                                 <tr>
-                                    <td><strong><?= htmlspecialchars($item['product_name']) ?></strong></td>
+                                    <td>
+                                        <strong><?= htmlspecialchars($item['product_name']) ?></strong>
+                                        <?php if (!empty($item['combination_label'])): ?>
+                                        <br><small class="text-info"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($item['combination_label']) ?></small>
+                                        <?php elseif (!empty($item['grade_description'])): ?>
+                                        <br><small class="text-info"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($item['grade_description']) ?></small>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="text-center"><?= $item['quantity'] ?></td>
                                     <td class="text-end">R$ <?= number_format($item['unit_price'], 2, ',', '.') ?></td>
                                     <td class="text-end fw-bold">R$ <?= number_format($subtotal, 2, ',', '.') ?></td>
                                     <?php if (!$isReadOnly): ?>
                                     <td class="text-center">
-                                        <a href="/sistemaTiago/?page=orders&action=deleteItem&item_id=<?= $item['id'] ?>&order_id=<?= $order['id'] ?>&redirect=pipeline" 
+                                        <a href="?page=orders&action=deleteItem&item_id=<?= $item['id'] ?>&order_id=<?= $order['id'] ?>&redirect=pipeline" 
                                            class="btn btn-sm btn-outline-danger btn-delete-item" title="Remover item">
                                             <i class="fas fa-trash-alt"></i>
                                         </a>
@@ -369,7 +376,8 @@
                                         <?php foreach ($products as $prod): 
                                             $displayPrice = isset($customerPrices[$prod['id']]) ? $customerPrices[$prod['id']] : $prod['price'];
                                         ?>
-                                        <option value="<?= $prod['id'] ?>" data-price="<?= $displayPrice ?>" data-original-price="<?= $prod['price'] ?>">
+                                        <option value="<?= $prod['id'] ?>" data-price="<?= $displayPrice ?>" data-original-price="<?= $prod['price'] ?>"
+                                                data-has-combos="<?= !empty($productCombinations[$prod['id']]) ? '1' : '0' ?>">
                                             <?= htmlspecialchars($prod['name']) ?> — R$ <?= number_format($displayPrice, 2, ',', '.') ?>
                                             <?php if (isset($customerPrices[$prod['id']]) && $customerPrices[$prod['id']] != $prod['price']): ?>
                                             (base: R$ <?= number_format($prod['price'], 2, ',', '.') ?>)
@@ -377,6 +385,12 @@
                                         </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <!-- Seletor de variação (aparece dinamicamente) -->
+                                    <div id="variationWrapPipeline" class="mt-1" style="display:none;">
+                                        <select class="form-select form-select-sm" id="pipVariationSelect">
+                                            <option value="">Selecione a variação...</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label small fw-bold text-muted">Quantidade</label>
@@ -428,7 +442,7 @@
                                             </td>
                                             <?php if (!$isReadOnly): ?>
                                             <td class="text-center">
-                                                <a href="/sistemaTiago/?page=pipeline&action=deleteExtraCost&cost_id=<?= $ec['id'] ?>&order_id=<?= $order['id'] ?>" 
+                                                <a href="?page=pipeline&action=deleteExtraCost&cost_id=<?= $ec['id'] ?>&order_id=<?= $order['id'] ?>" 
                                                    class="btn btn-sm btn-outline-danger btn-delete-extra" title="Remover custo">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </a>
@@ -863,7 +877,7 @@
                                 <i class="fas fa-check-double me-2"></i>
                                 <strong>Preparo concluído!</strong> O pedido está pronto para avançar para Envio/Entrega.
                             </div>
-                            <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=envio" 
+                            <a href="?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=envio" 
                                class="btn btn-sm btn-success btn-move-stage" data-dir="Avançar" data-stage="Envio/Entrega">
                                 <i class="fas fa-truck me-1"></i> Avançar para Envio
                             </a>
@@ -1647,16 +1661,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Product combinations data for variation selector
+    const productCombosPipeline = <?= json_encode($productCombinations ?? []) ?>;
+
     // Auto-preencher preço ao selecionar produto (pipeline)
     const pipProductSelect = document.getElementById('pipProductSelect');
     const pipPriceInput = document.getElementById('pipPriceInput');
+    const pipVariationWrap = document.getElementById('variationWrapPipeline');
+    const pipVariationSelect = document.getElementById('pipVariationSelect');
+
     if (pipProductSelect && pipPriceInput) {
         pipProductSelect.addEventListener('change', function() {
             const opt = this.options[this.selectedIndex];
             if (opt && opt.dataset.price) {
                 pipPriceInput.value = parseFloat(opt.dataset.price).toFixed(2);
             }
+            // Show/hide variation selector
+            const pid = this.value;
+            if (pipVariationWrap && pipVariationSelect) {
+                if (pid && productCombosPipeline[pid] && productCombosPipeline[pid].length > 0) {
+                    pipVariationWrap.style.display = '';
+                    pipVariationSelect.innerHTML = '<option value="">Selecione a variação...</option>';
+                    productCombosPipeline[pid].forEach(c => {
+                        const lbl = c.combination_label + (c.price_override ? ' — R$ ' + parseFloat(c.price_override).toFixed(2).replace('.', ',') : '');
+                        pipVariationSelect.innerHTML += `<option value="${c.id}" data-price="${c.price_override || ''}" data-label="${c.combination_label}">${lbl}</option>`;
+                    });
+                } else {
+                    pipVariationWrap.style.display = 'none';
+                    pipVariationSelect.innerHTML = '';
+                }
+            }
         });
+
+        if (pipVariationSelect) {
+            pipVariationSelect.addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                if (opt && opt.dataset.price && opt.dataset.price !== '') {
+                    pipPriceInput.value = parseFloat(opt.dataset.price).toFixed(2);
+                }
+            });
+        }
     }
 
     // Adicionar item via form dinâmico (evita nesting de forms)
@@ -1672,15 +1716,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Get variation data
+            const varSelect = document.getElementById('pipVariationSelect');
+            let combinationId = '';
+            let gradeDescription = '';
+            if (varSelect && varSelect.value) {
+                combinationId = varSelect.value;
+                const varOpt = varSelect.options[varSelect.selectedIndex];
+                gradeDescription = varOpt ? (varOpt.dataset.label || '') : '';
+            }
+
             // Criar form dinamicamente e submeter
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '/sistemaTiago/?page=orders&action=addItem';
+            form.action = '?page=orders&action=addItem';
             form.innerHTML = `
                 <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
                 <input type="hidden" name="product_id" value="${productId}">
                 <input type="hidden" name="quantity" value="${quantity}">
                 <input type="hidden" name="unit_price" value="${price}">
+                <input type="hidden" name="combination_id" value="${combinationId}">
+                <input type="hidden" name="grade_description" value="${gradeDescription}">
                 <input type="hidden" name="redirect" value="pipeline">
             `;
             document.body.appendChild(form);
@@ -1719,7 +1775,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '/sistemaTiago/?page=pipeline&action=addExtraCost';
+            form.action = '?page=pipeline&action=addExtraCost';
             form.innerHTML = `
                 <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
                 <input type="hidden" name="extra_description" value="${description}">
@@ -1753,7 +1809,7 @@ document.addEventListener('DOMContentLoaded', function() {
         priceTableSelect.addEventListener('change', function() {
             const tableId = this.value;
             const customerId = '<?= $order['customer_id'] ?? '' ?>';
-            let url = '/sistemaTiago/?page=pipeline&action=getPricesByTable';
+            let url = '?page=pipeline&action=getPricesByTable';
             
             if (tableId) {
                 url += '&table_id=' + tableId;
@@ -1815,7 +1871,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar se já existe link ativo para este pedido
     function checkExistingCatalogLink() {
-        fetch('/sistemaTiago/?page=pipeline&action=getCatalogLink&order_id=<?= $order['id'] ?>')
+        fetch('?page=pipeline&action=getCatalogLink&order_id=<?= $order['id'] ?>')
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -1845,7 +1901,7 @@ function generateCatalogLink() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Gerando...';
     
-    fetch('/sistemaTiago/?page=pipeline&action=generateCatalogLink', {
+    fetch('?page=pipeline&action=generateCatalogLink', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `order_id=<?= $order['id'] ?>&show_prices=${showPrices}&expires_in=${expiresIn}`
@@ -1899,7 +1955,7 @@ function shareViaWhatsApp() {
 function deactivateCatalogLink() {
     if (!confirm('Desativar link? O cliente não poderá mais acessar o catálogo.')) return;
     
-    fetch('/sistemaTiago/?page=pipeline&action=deactivateCatalogLink', {
+    fetch('?page=pipeline&action=deactivateCatalogLink', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'order_id=<?= $order['id'] ?>'
@@ -2025,7 +2081,7 @@ function formatDateBR(dateStr) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Enviando...';
 
-            fetch('/sistemaTiago/?page=pipeline&action=addItemLog', {
+            fetch('?page=pipeline&action=addItemLog', {
                 method: 'POST',
                 body: formData
             })
@@ -2063,7 +2119,7 @@ function formatDateBR(dateStr) {
                 cancelButtonText: 'Cancelar'
             }).then(function(result) {
                 if (result.isConfirmed) {
-                    fetch('/sistemaTiago/?page=pipeline&action=deleteItemLog', {
+                    fetch('?page=pipeline&action=deleteItemLog', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: 'log_id=' + logId
@@ -2101,7 +2157,7 @@ function formatDateBR(dateStr) {
                 confirmButtonColor: '#1abc9c'
             }).then(function(result) {
                 if (result.isConfirmed) {
-                    fetch('/sistemaTiago/?page=pipeline&action=togglePreparation', {
+                    fetch('?page=pipeline&action=togglePreparation', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: 'order_id=<?= $order['id'] ?>&key=' + encodeURIComponent(key)
@@ -2176,7 +2232,7 @@ window.addEventListener('load', function() {
                     btnEl.disabled = true;
                     btnEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processando...';
 
-                    fetch('/sistemaTiago/?page=pipeline&action=moveSector', {
+                    fetch('?page=pipeline&action=moveSector', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: `order_id=${orderId}&order_item_id=${itemId}&sector_id=${sectorId}&move_action=${action}`
@@ -2232,7 +2288,7 @@ let lastItemCount = <?= count($orderItems ?? []) ?>;
 let catalogPollingToken = null;
 
 // Primeiro buscar o token do link ativo (se houver)
-fetch('/sistemaTiago/?page=pipeline&action=getCatalogLink&order_id=<?= $order['id'] ?>')
+fetch('?page=pipeline&action=getCatalogLink&order_id=<?= $order['id'] ?>')
     .then(r => r.json())
     .then(data => {
         if (data.success) {
@@ -2243,7 +2299,7 @@ fetch('/sistemaTiago/?page=pipeline&action=getCatalogLink&order_id=<?= $order['i
 
 setInterval(() => {
     if (!catalogPollingToken) return;
-    fetch('/sistemaTiago/?page=catalog&action=getCart&token=' + catalogPollingToken)
+    fetch('?page=catalog&action=getCart&token=' + catalogPollingToken)
         .then(r => r.json())
         .then(data => {
             if (data.success && data.cart_count !== lastItemCount) {
@@ -2616,7 +2672,7 @@ setInterval(() => {
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#f39c12'
                 }).then(r => {
-                    if (r.isConfirmed) window.open('/sistemaTiago/?page=settings&tab=boleto', '_blank');
+                    if (r.isConfirmed) window.open('?page=settings&tab=boleto', '_blank');
                 });
                 return;
             }
@@ -2631,7 +2687,7 @@ setInterval(() => {
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#f39c12'
                 }).then(r => {
-                    if (r.isConfirmed) window.open('/sistemaTiago/?page=settings&tab=boleto', '_blank');
+                    if (r.isConfirmed) window.open('?page=settings&tab=boleto', '_blank');
                 });
                 return;
             }

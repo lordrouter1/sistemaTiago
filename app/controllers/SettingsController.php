@@ -39,7 +39,7 @@ class SettingsController {
      */
     public function saveCompany() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /sistemaTiago/?page=settings');
+            header('Location: ?page=settings');
             exit;
         }
 
@@ -89,7 +89,7 @@ class SettingsController {
         $logger = new Logger($this->db);
         $logger->log('SETTINGS_UPDATE', 'Configurações da empresa atualizadas');
 
-        header('Location: /sistemaTiago/?page=settings&status=saved');
+        header('Location: ?page=settings&status=saved');
         exit;
     }
 
@@ -100,7 +100,7 @@ class SettingsController {
      */
     public function saveBankSettings() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /sistemaTiago/?page=settings&tab=boleto');
+            header('Location: ?page=settings&tab=boleto');
             exit;
         }
 
@@ -124,7 +124,7 @@ class SettingsController {
         $logger = new Logger($this->db);
         $logger->log('SETTINGS_UPDATE', 'Configurações bancárias/boleto atualizadas');
 
-        header('Location: /sistemaTiago/?page=settings&tab=boleto&status=saved');
+        header('Location: ?page=settings&tab=boleto&status=saved');
         exit;
     }
 
@@ -153,9 +153,9 @@ class SettingsController {
                 $this->priceTable->create($name, $description);
             }
             if ($refPage === 'price_tables') {
-                header('Location: /sistemaTiago/?page=price_tables&status=table_created');
+                header('Location: ?page=price_tables&status=table_created');
             } else {
-                header('Location: /sistemaTiago/?page=settings&tab=prices&status=table_created');
+                header('Location: ?page=settings&tab=prices&status=table_created');
             }
             exit;
         }
@@ -172,7 +172,7 @@ class SettingsController {
             if ($id && $name) {
                 $this->priceTable->update($id, $name, $description);
             }
-            header('Location: /sistemaTiago/?page=settings&tab=prices&status=table_updated');
+            header('Location: ?page=settings&tab=prices&status=table_updated');
             exit;
         }
     }
@@ -188,9 +188,9 @@ class SettingsController {
             $status = $result ? 'table_deleted' : 'table_default_error';
         }
         if ($refPage === 'price_tables') {
-            header('Location: /sistemaTiago/?page=price_tables&status=' . ($status ?? 'error'));
+            header('Location: ?page=price_tables&status=' . ($status ?? 'error'));
         } else {
-            header('Location: /sistemaTiago/?page=settings&tab=prices&status=' . ($status ?? 'error'));
+            header('Location: ?page=settings&tab=prices&status=' . ($status ?? 'error'));
         }
         exit;
     }
@@ -202,13 +202,13 @@ class SettingsController {
         $id = $_GET['id'] ?? null;
         $refPage = $_GET['ref'] ?? 'settings';
         if (!$id) {
-            header('Location: /sistemaTiago/?page=' . ($refPage === 'price_tables' ? 'price_tables' : 'settings&tab=prices'));
+            header('Location: ?page=' . ($refPage === 'price_tables' ? 'price_tables' : 'settings&tab=prices'));
             exit;
         }
 
         $table = $this->priceTable->readOne($id);
         if (!$table) {
-            header('Location: /sistemaTiago/?page=' . ($refPage === 'price_tables' ? 'price_tables' : 'settings&tab=prices'));
+            header('Location: ?page=' . ($refPage === 'price_tables' ? 'price_tables' : 'settings&tab=prices'));
             exit;
         }
 
@@ -242,7 +242,7 @@ class SettingsController {
                 $this->priceTable->setItemPrice($tableId, $productId, $price);
             }
             $basePage = ($refPage === 'price_tables') ? 'price_tables' : 'settings';
-            header('Location: /sistemaTiago/?page=' . $basePage . '&action=editPriceTable&id=' . $tableId . '&ref=' . $refPage . '&status=item_saved');
+            header('Location: ?page=' . $basePage . '&action=editPriceTable&id=' . $tableId . '&ref=' . $refPage . '&status=item_saved');
             exit;
         }
     }
@@ -259,7 +259,7 @@ class SettingsController {
             $this->priceTable->removeItem($itemId);
         }
         $basePage = ($refPage === 'price_tables') ? 'price_tables' : 'settings';
-        header('Location: /sistemaTiago/?page=' . $basePage . '&action=editPriceTable&id=' . $tableId . '&ref=' . $refPage . '&status=item_deleted');
+        header('Location: ?page=' . $basePage . '&action=editPriceTable&id=' . $tableId . '&ref=' . $refPage . '&status=item_deleted');
         exit;
     }
 
@@ -292,7 +292,7 @@ class SettingsController {
                 $this->preparationStep->add($key, $label, $description, $icon, $sortOrder);
             }
 
-            header('Location: /sistemaTiago/?page=settings&tab=preparation&status=step_added');
+            header('Location: ?page=settings&tab=preparation&status=step_added');
             exit;
         }
     }
@@ -313,7 +313,7 @@ class SettingsController {
                 $this->preparationStep->update($id, $label, $description, $icon, $sortOrder, $isActive);
             }
 
-            header('Location: /sistemaTiago/?page=settings&tab=preparation&status=step_updated');
+            header('Location: ?page=settings&tab=preparation&status=step_updated');
             exit;
         }
     }
@@ -326,7 +326,7 @@ class SettingsController {
         if ($id) {
             $this->preparationStep->delete($id);
         }
-        header('Location: /sistemaTiago/?page=settings&tab=preparation&status=step_deleted');
+        header('Location: ?page=settings&tab=preparation&status=step_deleted');
         exit;
     }
 
@@ -352,7 +352,7 @@ class SettingsController {
      */
     public function saveFiscalSettings() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /sistemaTiago/?page=settings&tab=fiscal');
+            header('Location: ?page=settings&tab=fiscal');
             exit;
         }
 
@@ -387,7 +387,7 @@ class SettingsController {
         $logger = new Logger($this->db);
         $logger->log('SETTINGS_UPDATE', 'Configurações fiscais/NF-e atualizadas');
 
-        header('Location: /sistemaTiago/?page=settings&tab=fiscal&status=saved');
+        header('Location: ?page=settings&tab=fiscal&status=saved');
         exit;
     }
 

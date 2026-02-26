@@ -1,13 +1,13 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-shopping-cart me-2"></i>Pedidos</h1>
     <div class="btn-toolbar mb-2 mb-md-0 gap-2">
-        <a href="/sistemaTiago/?page=orders&action=agenda" class="btn btn-sm btn-outline-purple" style="border-color:#9b59b6;color:#9b59b6;">
+        <a href="?page=orders&action=agenda" class="btn btn-sm btn-outline-purple" style="border-color:#9b59b6;color:#9b59b6;">
             <i class="fas fa-calendar-alt me-1"></i> Agenda
         </a>
-        <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-outline-info">
+        <a href="?page=pipeline" class="btn btn-sm btn-outline-info">
             <i class="fas fa-stream me-1"></i> Ver na Produção
         </a>
-        <a href="/sistemaTiago/?page=orders&action=create" class="btn btn-sm btn-primary">
+        <a href="?page=orders&action=create" class="btn btn-sm btn-primary">
             <i class="fas fa-plus me-1"></i> Novo Pedido
         </a>
     </div>
@@ -65,12 +65,12 @@
             ?>
             <tr>
                 <td class="ps-4 fw-bold">
-                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none text-dark">
+                    <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none text-dark">
                         #<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?>
                     </a>
                 </td>
                 <td>
-                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none text-dark">
+                    <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none text-dark">
                         <div class="d-flex align-items-center">
                             <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 0.75rem;">
                                 <?= $order['customer_name'] ? strtoupper(substr($order['customer_name'], 0, 1)) : '?' ?>
@@ -82,7 +82,7 @@
                 <td class="small"><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></td>
                 <td class="fw-bold">R$ <?= number_format($order['total_amount'], 2, ',', '.') ?></td>
                 <td>
-                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none">
+                    <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="text-decoration-none">
                         <span class="badge rounded-pill px-2 py-1" style="background:<?= $stageData['color'] ?>;font-size:0.72rem;">
                             <i class="<?= $stageData['icon'] ?> me-1"></i><?= $stageData['label'] ?>
                         </span>
@@ -114,10 +114,10 @@
                 </td>
                 <td class="text-end pe-4">
                     <div class="btn-group">
-                        <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-info" title="Ver Pedido">
+                        <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-info" title="Ver Pedido">
                             <i class="fas fa-eye"></i>
                         </a>
-                        <a href="/sistemaTiago/?page=orders&action=edit&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                        <a href="?page=orders&action=edit&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                             <i class="fas fa-edit"></i>
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-danger btn-delete-order" data-id="<?= $order['id'] ?>" title="Excluir">
@@ -133,7 +133,7 @@
                     <i class="fas fa-shopping-cart fa-3x mb-3 d-block text-secondary"></i>
                     Nenhum pedido encontrado.
                     <div class="mt-3">
-                        <a href="/sistemaTiago/?page=orders&action=create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Criar Primeiro Pedido</a>
+                        <a href="?page=orders&action=create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Criar Primeiro Pedido</a>
                     </div>
                 </td>
             </tr>
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = `/sistemaTiago/?page=orders&action=delete&id=${id}`;
+                    window.location.href = `?page=orders&action=delete&id=${id}`;
                 }
             });
         });

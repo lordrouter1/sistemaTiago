@@ -56,7 +56,7 @@ class StockController {
             ];
 
             if (empty($data['name'])) {
-                header('Location: /sistemaTiago/?page=stock&action=warehouses&error=name');
+                header('Location: ?page=stock&action=warehouses&error=name');
                 exit;
             }
 
@@ -64,7 +64,7 @@ class StockController {
             if ($id) {
                 $this->logger->log('STOCK_WAREHOUSE_CREATE', "Armazém criado: {$data['name']} (ID: $id)");
             }
-            header('Location: /sistemaTiago/?page=stock&action=warehouses&status=created');
+            header('Location: ?page=stock&action=warehouses&status=created');
             exit;
         }
     }
@@ -85,7 +85,7 @@ class StockController {
 
             $this->stockModel->updateWarehouse($data);
             $this->logger->log('STOCK_WAREHOUSE_UPDATE', "Armazém atualizado: {$data['name']} (ID: {$data['id']})");
-            header('Location: /sistemaTiago/?page=stock&action=warehouses&status=updated');
+            header('Location: ?page=stock&action=warehouses&status=updated');
             exit;
         }
     }
@@ -97,7 +97,7 @@ class StockController {
             $this->stockModel->deleteWarehouse($id);
             $this->logger->log('STOCK_WAREHOUSE_DELETE', "Armazém removido: " . ($wh['name'] ?? $id));
         }
-        header('Location: /sistemaTiago/?page=stock&action=warehouses&status=deleted');
+        header('Location: ?page=stock&action=warehouses&status=deleted');
         exit;
     }
 

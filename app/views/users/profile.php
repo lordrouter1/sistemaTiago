@@ -31,11 +31,11 @@
     <!-- Coluna do Formulário -->
     <div class="col-md-5">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white p-3">
-                <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Editar Perfil</h5>
+            <div class="card-header bg-primary p-3">
+                <h5 class="mb-0 text-white"><i class="fas fa-edit me-2"></i>Editar Perfil</h5>
             </div>
             <div class="card-body p-4">
-                <form id="profileForm" action="/sistemaTiago/?page=profile&action=update" method="POST">
+                <form id="profileForm" action="?page=profile&action=update" method="POST">
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Nome Completo</label>

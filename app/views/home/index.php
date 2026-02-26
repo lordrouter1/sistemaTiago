@@ -60,7 +60,7 @@
     <!-- Resumo Rápido -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
-            <a href="/sistemaTiago/?page=pipeline" class="text-decoration-none">
+            <a href="?page=pipeline" class="text-decoration-none">
                 <div class="card border-0 shadow-sm h-100 border-start border-primary border-4">
                     <div class="card-body p-3 text-center">
                         <div class="text-muted small fw-bold mb-1"><i class="fas fa-tasks me-1"></i>Pedidos Ativos</div>
@@ -70,7 +70,7 @@
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a href="/sistemaTiago/?page=orders" class="text-decoration-none">
+            <a href="?page=orders" class="text-decoration-none">
                 <div class="card border-0 shadow-sm h-100 border-start border-info border-4">
                     <div class="card-body p-3 text-center">
                         <div class="text-muted small fw-bold mb-1"><i class="fas fa-calendar-day me-1"></i>Criados Hoje</div>
@@ -80,7 +80,7 @@
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a href="/sistemaTiago/?page=pipeline" class="text-decoration-none">
+            <a href="?page=pipeline" class="text-decoration-none">
                 <div class="card border-0 shadow-sm h-100 border-start border-4 <?= $atrasados > 0 ? 'border-danger' : 'border-success' ?>">
                     <div class="card-body p-3 text-center">
                         <div class="text-muted small fw-bold mb-1"><i class="fas fa-exclamation-triangle me-1"></i>Atrasados</div>
@@ -90,7 +90,7 @@
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a href="/sistemaTiago/?page=agenda" class="text-decoration-none">
+            <a href="?page=agenda" class="text-decoration-none">
                 <div class="card border-0 shadow-sm h-100 border-start border-4" style="border-color:#9b59b6 !important;">
                     <div class="card-body p-3 text-center">
                         <div class="text-muted small fw-bold mb-1"><i class="fas fa-calendar-alt me-1"></i>Agenda Hoje</div>
@@ -111,25 +111,25 @@
         <div class="card-body p-3">
             <div class="row g-2">
                 <div class="col-6 col-md-3">
-                    <a href="/sistemaTiago/?page=orders&action=create" class="btn btn-outline-primary w-100 py-3">
+                    <a href="?page=orders&action=create" class="btn btn-outline-primary w-100 py-3">
                         <i class="fas fa-plus d-block mb-1 fs-4"></i>
                         <span class="small fw-bold">Novo Pedido</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="/sistemaTiago/?page=customers&action=create" class="btn btn-outline-success w-100 py-3">
+                    <a href="?page=customers&action=create" class="btn btn-outline-success w-100 py-3">
                         <i class="fas fa-user-plus d-block mb-1 fs-4"></i>
                         <span class="small fw-bold">Novo Cliente</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="/sistemaTiago/?page=pipeline" class="btn btn-outline-warning w-100 py-3 text-dark">
+                    <a href="?page=pipeline" class="btn btn-outline-warning w-100 py-3 text-dark">
                         <i class="fas fa-stream d-block mb-1 fs-4"></i>
                         <span class="small fw-bold">Pipeline</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="/sistemaTiago/?page=production_board" class="btn btn-outline-info w-100 py-3">
+                    <a href="?page=production_board" class="btn btn-outline-info w-100 py-3">
                         <i class="fas fa-tasks d-block mb-1 fs-4"></i>
                         <span class="small fw-bold">Produção</span>
                     </a>
@@ -144,7 +144,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 fw-bold" style="color:#9b59b6;"><i class="fas fa-calendar-check me-2"></i>Próximos Contatos</h6>
-                    <a href="/sistemaTiago/?page=agenda" class="btn btn-sm btn-outline-secondary py-0" style="font-size:0.75rem;">Ver Agenda</a>
+                    <a href="?page=agenda" class="btn btn-sm btn-outline-secondary py-0" style="font-size:0.75rem;">Ver Agenda</a>
                 </div>
                 <div class="card-body p-0">
                     <?php if (empty($proximosContatos)): ?>
@@ -157,7 +157,7 @@
                         <?php foreach ($proximosContatos as $contato): 
                             $isToday = (($contato['scheduled_date'] ?? '') == date('Y-m-d'));
                         ?>
-                        <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $contato['id'] ?>" class="list-group-item list-group-item-action py-2 px-3 <?= $isToday ? 'list-group-item-warning' : '' ?>">
+                        <a href="?page=pipeline&action=detail&id=<?= $contato['id'] ?>" class="list-group-item list-group-item-action py-2 px-3 <?= $isToday ? 'list-group-item-warning' : '' ?>">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <span class="fw-bold small">#<?= str_pad($contato['id'], 4, '0', STR_PAD_LEFT) ?></span>
@@ -184,7 +184,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-history me-2"></i>Atividade Recente</h6>
-                    <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-outline-secondary py-0" style="font-size:0.75rem;">Ver Pipeline</a>
+                    <a href="?page=pipeline" class="btn btn-sm btn-outline-secondary py-0" style="font-size:0.75rem;">Ver Pipeline</a>
                 </div>
                 <div class="card-body p-0">
                     <?php if (empty($recentesMov)): ?>
@@ -197,7 +197,7 @@
                         <?php foreach ($recentesMov as $mov): 
                             $stInfo = $stagesMap[$mov['to_stage']] ?? ['label'=>$mov['to_stage'],'color'=>'#999','icon'=>'fas fa-circle'];
                         ?>
-                        <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $mov['order_id'] ?>" class="list-group-item list-group-item-action py-2 px-3">
+                        <a href="?page=pipeline&action=detail&id=<?= $mov['order_id'] ?>" class="list-group-item list-group-item-action py-2 px-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="rounded-circle d-inline-flex align-items-center justify-content-center" 

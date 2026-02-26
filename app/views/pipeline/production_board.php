@@ -25,7 +25,7 @@ $activeSectorId = $_GET['sector'] ?? ($sectorList[0]['id'] ?? '');
             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
                 <i class="fas fa-sync-alt me-1"></i> Atualizar
             </button>
-            <a href="/sistemaTiago/?page=pipeline" class="btn btn-outline-primary btn-sm">
+            <a href="?page=pipeline" class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-stream me-1"></i> Pipeline
             </a>
         </div>
@@ -185,7 +185,7 @@ $activeSectorId = $_GET['sector'] ?? ($sectorList[0]['id'] ?? '');
                             <!-- Linha 1: Pedido + Prioridade -->
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div>
-                                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $item['order_id'] ?>" 
+                                    <a href="?page=pipeline&action=detail&id=<?= $item['order_id'] ?>" 
                                        class="text-decoration-none fw-bold" title="Abrir pedido">
                                         <i class="fas fa-file-alt me-1 text-primary"></i>#<?= str_pad($item['order_id'], 4, '0', STR_PAD_LEFT) ?>
                                     </a>
@@ -204,6 +204,11 @@ $activeSectorId = $_GET['sector'] ?? ($sectorList[0]['id'] ?? '');
                             <h6 class="mb-1 fw-bold text-truncate" title="<?= htmlspecialchars($item['product_name']) ?>">
                                 <?= htmlspecialchars($item['product_name']) ?>
                             </h6>
+                            <?php if (!empty($item['grade_description'])): ?>
+                            <div class="small mb-1">
+                                <span class="badge bg-info bg-opacity-25 text-info-emphasis"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($item['grade_description']) ?></span>
+                            </div>
+                            <?php endif; ?>
 
                             <!-- Detalhes -->
                             <div class="small text-muted mb-2">
@@ -285,7 +290,7 @@ $activeSectorId = $_GET['sector'] ?? ($sectorList[0]['id'] ?? '');
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
-                                        <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $item['order_id'] ?>" 
+                                        <a href="?page=pipeline&action=detail&id=<?= $item['order_id'] ?>" 
                                            class="text-decoration-none fw-bold" title="Abrir pedido">
                                             <i class="fas fa-file-alt me-1 text-primary"></i>#<?= str_pad($item['order_id'], 4, '0', STR_PAD_LEFT) ?>
                                         </a>
@@ -297,6 +302,11 @@ $activeSectorId = $_GET['sector'] ?? ($sectorList[0]['id'] ?? '');
                                 <h6 class="mb-1 fw-bold text-truncate text-success" title="<?= htmlspecialchars($item['product_name']) ?>">
                                     <?= htmlspecialchars($item['product_name']) ?>
                                 </h6>
+                                <?php if (!empty($item['grade_description'])): ?>
+                                <div class="small mb-1">
+                                    <span class="badge bg-info bg-opacity-25 text-info-emphasis"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($item['grade_description']) ?></span>
+                                </div>
+                                <?php endif; ?>
                                 <div class="small text-muted mb-1">
                                     <?php if (!empty($item['customer_name'])): ?>
                                     <span class="me-2"><i class="fas fa-user me-1"></i><?= htmlspecialchars($item['customer_name']) ?></span>
@@ -361,8 +371,8 @@ $activeSectorId = $_GET['sector'] ?? ($sectorList[0]['id'] ?? '');
 <div class="modal fade" id="itemLogModal" tabindex="-1" aria-labelledby="itemLogModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white py-2 px-3">
-                <h5 class="modal-title" id="itemLogModalLabel">
+            <div class="modal-header bg-primary py-2 px-3">
+                <h5 class="modal-title text-white " id="itemLogModalLabel">
                     <i class="fas fa-history me-2"></i>Histórico do Produto
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
@@ -470,6 +480,7 @@ var boardSearchData = <?php
                 'order_code'     => $orderCode,
                 'order_item_id'  => $it['order_item_id'],
                 'product_name'   => $it['product_name'],
+                'grade_description' => $it['grade_description'] ?? '',
                 'customer_name'  => $it['customer_name'] ?? '',
                 'quantity'       => $it['quantity'],
                 'priority'       => $it['priority'] ?? 'normal',
@@ -563,6 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var matches = boardSearchData.filter(function(item) {
             var searchable = [
                 item.product_name,
+                item.grade_description,
                 item.customer_name,
                 item.order_code,
                 String(item.order_id),
@@ -625,12 +637,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 html += '<div class="card-body p-2">';
                 // Header
                 html += '<div class="d-flex justify-content-between align-items-start mb-1">';
-                html += '<a href="/sistemaTiago/?page=pipeline&action=detail&id=' + item.order_id + '" class="text-decoration-none fw-bold small">';
+                html += '<a href="?page=pipeline&action=detail&id=' + item.order_id + '" class="text-decoration-none fw-bold small">';
                 html += '<i class="fas fa-file-alt me-1 text-primary"></i>' + escapeHtml(item.order_code) + '</a>';
                 html += statusBadge;
                 html += '</div>';
                 // Product name
                 html += '<h6 class="mb-1 fw-bold text-truncate small" title="' + escapeHtml(item.product_name) + '">' + escapeHtml(item.product_name) + '</h6>';
+                // Variation
+                if (item.grade_description) {
+                    html += '<div class="small mb-1"><span class="badge bg-info bg-opacity-25 text-info-emphasis" style="font-size:0.6rem;"><i class="fas fa-layer-group me-1"></i>' + escapeHtml(item.grade_description) + '</span></div>';
+                }
                 // Details
                 html += '<div class="small text-muted">';
                 if (item.customer_name) html += '<span class="me-2"><i class="fas fa-user me-1"></i>' + escapeHtml(item.customer_name) + '</span>';
@@ -695,7 +711,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var originalHTML = btnEl.innerHTML;
                     btnEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processando...';
 
-                    fetch('/sistemaTiago/?page=production_board&action=moveSector', {
+                    fetch('?page=production_board&action=moveSector', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: 'order_id=' + orderId + '&order_item_id=' + itemId + '&sector_id=' + sectorId + '&move_action=' + action
@@ -771,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 (customerName ? customerName + ' · ' : '') + 'Qtd: ' + quantity;
 
             // Atualizar links de acesso rápido ao pedido
-            var detailUrl = '/sistemaTiago/?page=pipeline&action=detail&id=' + orderId;
+            var detailUrl = '?page=pipeline&action=detail&id=' + orderId;
             document.getElementById('logModalOrderLink').href = detailUrl;
             document.getElementById('logModalDetailLink').href = detailUrl;
 
@@ -804,7 +820,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Enviando...';
 
-        fetch('/sistemaTiago/?page=production_board&action=addItemLog', {
+        fetch('?page=production_board&action=addItemLog', {
             method: 'POST',
             body: formData
         })
@@ -837,7 +853,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loading.classList.remove('d-none');
         content.innerHTML = '';
 
-        fetch('/sistemaTiago/?page=production_board&action=getItemLogs&order_item_id=' + itemId)
+        fetch('?page=production_board&action=getItemLogs&order_item_id=' + itemId)
         .then(function(r) { return r.json(); })
         .then(function(data) {
             loading.classList.add('d-none');
@@ -930,7 +946,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelButtonText: 'Cancelar'
         }).then(function(result) {
             if (result.isConfirmed) {
-                fetch('/sistemaTiago/?page=production_board&action=deleteItemLog', {
+                fetch('?page=production_board&action=deleteItemLog', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'log_id=' + logId

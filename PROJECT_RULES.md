@@ -1,4 +1,7 @@
-# Regras e Estrutura do Projeto - Sistema de Gestão para Gráfica
+# Akti - Gestão em Produção
+
+## Nome do Sistema
+**Akti - Gestão em Produção**
 
 ## Visão Geral
 Este projeto é uma plataforma online para gráfica e produtos personalizados, focando inicialmente no Sistema de Gestão (ERP/CRM básico).

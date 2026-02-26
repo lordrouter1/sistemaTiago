@@ -83,6 +83,16 @@ class CatalogLink {
      * Desativa todos os links de um pedido
      */
     public function deactivateByOrder($orderId) {
+        // Verificar se existem links ativos antes de tentar atualizar
+        $checkQuery = "SELECT COUNT(*) FROM {$this->table} WHERE order_id = :order_id AND is_active = 1";
+        $checkStmt = $this->conn->prepare($checkQuery);
+        $checkStmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+        $checkStmt->execute();
+        
+        if ((int)$checkStmt->fetchColumn() === 0) {
+            return true; // Nada para desativar
+        }
+
         $query = "UPDATE {$this->table} SET is_active = 0 WHERE order_id = :order_id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
@@ -117,6 +127,6 @@ class CatalogLink {
     public static function buildUrl($token) {
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        return "{$protocol}://{$host}/sistemaTiago/?page=catalog&token={$token}";
+        return "{$protocol}://{$host}?page=catalog&token={$token}";
     }
 }

@@ -34,7 +34,7 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
         <div class="col-lg-7">
             <h2 class="mb-4 text-primary"><i class="fas fa-cart-plus me-2"></i>Novo Pedido</h2>
             
-            <form id="orderForm" method="post" action="/sistemaTiago/?page=orders&action=store">
+            <form id="orderForm" method="post" action="?page=orders&action=store">
                 
                 <!-- Escolha da Etapa Inicial -->
                 <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
@@ -90,7 +90,7 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </select>
-                            <div class="form-text"><a href="/sistemaTiago/?page=customers&action=create" target="_blank"><i class="fas fa-plus-circle"></i> Cadastrar novo cliente</a></div>
+                            <div class="form-text"><a href="?page=customers&action=create" target="_blank"><i class="fas fa-plus-circle"></i> Cadastrar novo cliente</a></div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Prioridade</label>
@@ -178,10 +178,11 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
                             <table class="table table-bordered table-hover" id="orderItemsTable">
                                 <thead class="table-light">
                                     <tr>
-                                        <th width="40%">Produto</th>
-                                        <th width="15%">Qtd</th>
-                                        <th width="20%">Preço Unit.</th>
-                                        <th width="20%">Subtotal</th>
+                                        <th width="35%">Produto</th>
+                                        <th width="15%">Variação</th>
+                                        <th width="10%">Qtd</th>
+                                        <th width="15%">Preço Unit.</th>
+                                        <th width="15%">Subtotal</th>
                                         <th width="5%"></th>
                                     </tr>
                                 </thead>
@@ -191,6 +192,13 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
                                             <select class="form-select product-select" name="items[0][product_id]">
                                                 <option value="">Escolha...</option>
                                             </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select variation-select" name="items[0][combination_id]" style="display:none;">
+                                                <option value="">Variação...</option>
+                                            </select>
+                                            <input type="hidden" class="grade-desc-input" name="items[0][grade_description]" value="">
+                                            <span class="no-variation-text text-muted small">—</span>
                                         </td>
                                         <td>
                                             <input type="number" class="form-control item-qty" name="items[0][quantity]" value="1" min="1">
@@ -219,7 +227,7 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
                             <h4 class="mb-0 me-3">Total: <span class="text-primary fw-bold" id="grandTotalDisplay">R$ 0,00</span></h4>
                         </div>
                         <input type="hidden" name="total_amount" id="totalAmountInput" value="0">
-                        <a href="/sistemaTiago/?page=orders" class="btn btn-secondary px-4">Cancelar</a>
+                        <a href="?page=orders" class="btn btn-secondary px-4">Cancelar</a>
                         <button type="submit" class="btn btn-success px-4 btn-lg"><i class="fas fa-check-circle me-2"></i>Finalizar Pedido</button>
                     </div>
                 </div>
@@ -233,18 +241,18 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
                     <h5 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Agenda de Contatos</h5>
-                    <a href="/sistemaTiago/?page=orders&action=agenda" class="btn btn-sm btn-outline-primary">
+                    <a href="?page=orders&action=agenda" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-expand-alt me-1"></i>Expandir
                     </a>
                 </div>
                 <div class="card-body p-3">
                     <!-- Navegação do Mês -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <a href="/sistemaTiago/?page=orders&action=create&agenda_month=<?= $prevMonth ?>&agenda_year=<?= $prevYear ?>" class="btn btn-sm btn-outline-secondary">
+                        <a href="?page=orders&action=create&agenda_month=<?= $prevMonth ?>&agenda_year=<?= $prevYear ?>" class="btn btn-sm btn-outline-secondary">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                         <h6 class="mb-0 fw-bold"><?= $monthNames[$agendaMonth] ?> <?= $agendaYear ?></h6>
-                        <a href="/sistemaTiago/?page=orders&action=create&agenda_month=<?= $nextMonth ?>&agenda_year=<?= $nextYear ?>" class="btn btn-sm btn-outline-secondary">
+                        <a href="?page=orders&action=create&agenda_month=<?= $nextMonth ?>&agenda_year=<?= $nextYear ?>" class="btn btn-sm btn-outline-secondary">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     </div>
@@ -300,7 +308,7 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
                                                 }
                                                 $popoverContent .= '</div>';
                                             }
-                                            $popoverContent .= '<a href=&quot;/sistemaTiago/?page=orders&amp;action=report&amp;date=' . $currentDate . '&quot; target=&quot;_blank&quot; class=&quot;btn btn-sm btn-outline-primary w-100 mt-1&quot;><i class=&quot;fas fa-print me-1&quot;></i>Imprimir</a>';
+                                            $popoverContent .= '<a href=&quot;?page=orders&amp;action=report&amp;date=' . $currentDate . '&quot; target=&quot;_blank&quot; class=&quot;btn btn-sm btn-outline-primary w-100 mt-1&quot;><i class=&quot;fas fa-print me-1&quot;></i>Imprimir</a>';
                                             echo $popoverContent;
                                         ?>"
                                         <?php endif; ?>
@@ -412,6 +420,7 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const products = <?= json_encode($products ?? []) ?>;
+    const productCombosCreate = <?= json_encode($productCombinations ?? []) ?>;
     const sectionContato = document.getElementById('sectionContato');
     const sectionOrcamento = document.getElementById('sectionOrcamento');
     const totalSection = document.getElementById('totalSection');
@@ -442,8 +451,32 @@ document.addEventListener('DOMContentLoaded', function() {
             option.value = p.id;
             option.text = p.name;
             option.dataset.price = p.price;
+            option.dataset.hasCombos = (productCombosCreate[p.id] && productCombosCreate[p.id].length > 0) ? '1' : '0';
             selectElement.appendChild(option);
         });
+    }
+
+    function handleProductChange(row, selectElement) {
+        const pid = selectElement.value;
+        const variationSelect = row.querySelector('.variation-select');
+        const gradeDescInput = row.querySelector('.grade-desc-input');
+        const noVariation = row.querySelector('.no-variation-text');
+        
+        if (pid && productCombosCreate[pid] && productCombosCreate[pid].length > 0) {
+            variationSelect.style.display = '';
+            noVariation.style.display = 'none';
+            variationSelect.innerHTML = '<option value="">Variação...</option>';
+            productCombosCreate[pid].forEach(c => {
+                const lbl = c.combination_label + (c.price_override ? ' — R$ ' + parseFloat(c.price_override).toFixed(2).replace('.', ',') : '');
+                variationSelect.innerHTML += `<option value="${c.id}" data-price="${c.price_override || ''}" data-label="${c.combination_label}">${lbl}</option>`;
+            });
+            gradeDescInput.value = '';
+        } else {
+            variationSelect.style.display = 'none';
+            noVariation.style.display = '';
+            variationSelect.innerHTML = '';
+            gradeDescInput.value = '';
+        }
     }
 
     const firstSelect = document.querySelector('.product-select');
@@ -456,15 +489,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const newRow = tbody.rows[0].cloneNode(true);
         
         newRow.querySelectorAll('input').forEach(input => {
-            input.value = (input.classList.contains('item-qty')) ? 1 : '';
-            if(!input.classList.contains('item-subtotal')) {
-                input.name = input.name.replace(/\[\d+\]/, `[${rowCount}]`);
+            if (input.classList.contains('item-qty')) {
+                input.value = 1;
+            } else if (input.classList.contains('grade-desc-input')) {
+                input.value = '';
+            } else if (!input.classList.contains('item-subtotal')) {
+                input.value = '';
             }
+            if(input.name) input.name = input.name.replace(/\[\d+\]/, `[${rowCount}]`);
         });
         
-        const select = newRow.querySelector('select');
-        select.name = select.name.replace(/\[\d+\]/, `[${rowCount}]`);
-        select.value = "";
+        newRow.querySelectorAll('select').forEach(sel => {
+            sel.name = sel.name.replace(/\[\d+\]/, `[${rowCount}]`);
+            sel.value = "";
+        });
+
+        // Reset variation column
+        const varSel = newRow.querySelector('.variation-select');
+        if (varSel) { varSel.style.display = 'none'; varSel.innerHTML = ''; }
+        const noVar = newRow.querySelector('.no-variation-text');
+        if (noVar) noVar.style.display = '';
         
         tbody.appendChild(newRow);
     });
@@ -476,6 +520,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = e.target.closest('tr');
             row.querySelector('.item-price').value = price;
             calculateRow(row);
+            handleProductChange(row, e.target);
+        }
+        if(e.target.classList.contains('variation-select')) {
+            const opt = e.target.options[e.target.selectedIndex];
+            const row = e.target.closest('tr');
+            const gradeDesc = row.querySelector('.grade-desc-input');
+            if (gradeDesc) gradeDesc.value = opt ? (opt.dataset.label || '') : '';
+            // Override price if variation has specific price
+            if (opt && opt.dataset.price && opt.dataset.price !== '') {
+                row.querySelector('.item-price').value = parseFloat(opt.dataset.price).toFixed(2);
+                calculateRow(row);
+            }
         }
         if(e.target.classList.contains('item-qty') || e.target.classList.contains('item-price')) {
             calculateRow(e.target.closest('tr'));

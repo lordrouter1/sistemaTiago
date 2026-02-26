@@ -11,10 +11,10 @@
                 </span>
             </button>
             <?php endif; ?>
-            <a href="/sistemaTiago/?page=pipeline&action=settings" class="btn btn-sm btn-outline-secondary">
+            <a href="?page=pipeline&action=settings" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-sliders-h me-1"></i> Metas
             </a>
-            <a href="/sistemaTiago/?page=orders&action=create" class="btn btn-sm btn-primary">
+            <a href="?page=orders&action=create" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Novo Pedido
             </a>
         </div>
@@ -169,7 +169,7 @@
                             <div class="card-body p-2">
                                 <!-- Topo: Nº + Prioridade -->
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" 
+                                    <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>" 
                                        class="fw-bold text-decoration-none small text-dark">
                                         #<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?>
                                     </a>
@@ -247,16 +247,16 @@
 
                                 <!-- Botões de ação rápida -->
                                 <div class="d-flex gap-1 mt-2 pt-1 border-top">
-                                    <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" 
+                                    <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>" 
                                        class="btn btn-sm btn-outline-primary flex-fill py-0" style="font-size:0.7rem;" title="Detalhes">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <?php if ($stageKey === 'producao'): ?>
-                                    <a href="/sistemaTiago/?page=production_board" 
+                                    <a href="?page=production_board" 
                                        class="btn btn-sm btn-outline-success flex-fill py-0" style="font-size:0.7rem;" title="Painel de Produção">
                                         <i class="fas fa-tasks"></i> Produção
                                     </a>
-                                    <a href="/sistemaTiago/?page=pipeline&action=printProductionOrder&id=<?= $order['id'] ?>" 
+                                    <a href="?page=pipeline&action=printProductionOrder&id=<?= $order['id'] ?>" 
                                        target="_blank" class="btn btn-sm btn-outline-warning flex-fill py-0" style="font-size:0.7rem;" title="Imprimir Ordem de Produção">
                                         <i class="fas fa-print"></i>
                                     </a>
@@ -268,14 +268,14 @@
                                         $nextStage = ($currentIdx !== false && isset($stageKeys[$currentIdx + 1])) ? $stageKeys[$currentIdx + 1] : null;
                                     ?>
                                     <?php if ($nextStage): ?>
-                                    <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $nextStage ?>" 
+                                    <a href="?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=<?= $nextStage ?>" 
                                        class="btn btn-sm btn-outline-success flex-fill py-0 btn-advance-stage" style="font-size:0.7rem;" 
                                        title="Avançar para <?= $stages[$nextStage]['label'] ?>"
                                        data-order="<?= $order['id'] ?>" data-next="<?= $stages[$nextStage]['label'] ?>">
                                         <i class="fas fa-arrow-right"></i> Avançar
                                     </a>
                                     <?php endif; ?>
-                                    <a href="/sistemaTiago/?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=cancelado" 
+                                    <a href="?page=pipeline&action=move&id=<?= $order['id'] ?>&stage=cancelado" 
                                        class="btn btn-sm btn-outline-danger py-0 btn-cancel-order" style="font-size:0.7rem;" 
                                        title="Cancelar pedido"
                                        data-order="<?= $order['id'] ?>">
@@ -350,7 +350,7 @@
                                 <span class="badge bg-danger rounded-pill">+<?= $dOrder['delay_hours'] ?>h</span>
                             </td>
                             <td class="text-end pe-3">
-                                <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $dOrder['id'] ?>" class="btn btn-sm btn-outline-primary">
+                                <a href="?page=pipeline&action=detail&id=<?= $dOrder['id'] ?>" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-eye"></i>
                                 </a>
                             </td>

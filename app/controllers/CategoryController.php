@@ -97,7 +97,7 @@ class CategoryController {
                 }
             }
         }
-        header('Location: /sistemaTiago/?page=categories&status=success');
+        header('Location: ?page=categories&status=success');
         exit;
     }
 
@@ -116,7 +116,7 @@ class CategoryController {
                 $this->saveCategoryCombinationsState($_POST['id'], $_POST['category_combinations']);
             }
         }
-        header('Location: /sistemaTiago/?page=categories&status=success');
+        header('Location: ?page=categories&status=success');
         exit;
     }
 
@@ -125,7 +125,7 @@ class CategoryController {
             $this->categoryModel->delete($_GET['id']);
             $this->logger->log('DELETE_CATEGORY', 'Deleted category ID: ' . $_GET['id']);
         }
-        header('Location: /sistemaTiago/?page=categories&status=success');
+        header('Location: ?page=categories&status=success');
         exit;
     }
 
@@ -145,7 +145,7 @@ class CategoryController {
                 }
             }
         }
-        header('Location: /sistemaTiago/?page=categories&tab=subcategories&status=success');
+        header('Location: ?page=categories&tab=subcategories&status=success');
         exit;
     }
 
@@ -164,7 +164,7 @@ class CategoryController {
                 $this->saveSubcategoryCombinationsState($_POST['id'], $_POST['subcategory_combinations']);
             }
         }
-        header('Location: /sistemaTiago/?page=categories&tab=subcategories&status=success');
+        header('Location: ?page=categories&tab=subcategories&status=success');
         exit;
     }
 
@@ -173,7 +173,7 @@ class CategoryController {
             $this->subcategoryModel->delete($_GET['id']);
             $this->logger->log('DELETE_SUBCATEGORY', 'Deleted subcategory ID: ' . $_GET['id']);
         }
-        header('Location: /sistemaTiago/?page=categories&tab=subcategories&status=success');
+        header('Location: ?page=categories&tab=subcategories&status=success');
         exit;
     }
 

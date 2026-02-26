@@ -30,10 +30,10 @@ $prioIcons  = ['urgente'=>'🔴','alta'=>'🟡','normal'=>'🔵','baixa'=>'🟢'
     <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom">
         <h1 class="h2 mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Agenda de Contatos</h1>
         <div class="btn-toolbar gap-2">
-            <a href="/sistemaTiago/?page=orders&action=create" class="btn btn-sm btn-primary">
+            <a href="?page=orders&action=create" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i>Novo Pedido
             </a>
-            <a href="/sistemaTiago/?page=pipeline" class="btn btn-sm btn-outline-primary">
+            <a href="?page=pipeline" class="btn btn-sm btn-outline-primary">
                 <i class="fas fa-stream me-1"></i>Pipeline
             </a>
         </div>
@@ -44,11 +44,11 @@ $prioIcons  = ['urgente'=>'🔴','alta'=>'🟡','normal'=>'🔵','baixa'=>'🟢'
         <div class="col-lg-8">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <a href="/sistemaTiago/?page=agenda&month=<?= $prevMonth ?>&year=<?= $prevYear ?>" class="btn btn-outline-secondary btn-sm">
+                    <a href="?page=agenda&month=<?= $prevMonth ?>&year=<?= $prevYear ?>" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-chevron-left me-1"></i>Anterior
                     </a>
                     <h4 class="mb-0 fw-bold text-primary"><?= $monthNames[$agendaMonth] ?> <?= $agendaYear ?></h4>
-                    <a href="/sistemaTiago/?page=agenda&month=<?= $nextMonth ?>&year=<?= $nextYear ?>" class="btn btn-outline-secondary btn-sm">
+                    <a href="?page=agenda&month=<?= $nextMonth ?>&year=<?= $nextYear ?>" class="btn btn-outline-secondary btn-sm">
                         Próximo<i class="fas fa-chevron-right ms-1"></i>
                     </a>
                 </div>
@@ -85,7 +85,7 @@ $prioIcons  = ['urgente'=>'🔴','alta'=>'🟡','normal'=>'🔵','baixa'=>'🟢'
                                             <span class="fw-bold small <?= $isToday ? 'text-primary' : 'text-muted' ?>"><?= $dayCounter ?></span>
                                             <?php if ($hasContacts): ?>
                                                 <div class="d-flex gap-1">
-                                                    <a href="/sistemaTiago/?page=orders&action=report&date=<?= $currentDate ?>" target="_blank" 
+                                                    <a href="?page=orders&action=report&date=<?= $currentDate ?>" target="_blank" 
                                                        class="btn btn-outline-secondary px-1 py-0" style="font-size:0.6rem;" title="Imprimir relatório">
                                                         <i class="fas fa-print"></i>
                                                     </a>
@@ -162,7 +162,7 @@ $prioIcons  = ['urgente'=>'🔴','alta'=>'🟡','normal'=>'🔵','baixa'=>'🟢'
                                 $pi = $prioIcons[$c['priority']] ?? '🔵';
                                 $isPast = $c['scheduled_date'] < $today;
                             ?>
-                            <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $c['id'] ?>" 
+                            <a href="?page=pipeline&action=detail&id=<?= $c['id'] ?>" 
                                class="list-group-item list-group-item-action <?= $isPast ? 'bg-light' : '' ?>">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1">

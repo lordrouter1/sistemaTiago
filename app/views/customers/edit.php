@@ -1,10 +1,10 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2"><i class="fas fa-user-edit me-2"></i>Editar Cliente</h1>
-        <a href="/sistemaTiago/?page=customers" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
+        <a href="?page=customers" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
     </div>
     
-    <form id="customerForm" method="post" action="/sistemaTiago/?page=customers&action=update" enctype="multipart/form-data">
+    <form id="customerForm" method="post" action="?page=customers&action=update" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?= $customer['id'] ?>">
         <div class="row">
             <div class="col-md-3">
@@ -14,8 +14,8 @@
                     <div class="text-center">
                         <div class="mb-3 position-relative d-inline-block">
                              <img id="preview-photo" src="<?= !empty($customer['photo']) ? $customer['photo'] : 'assets/img/default-avatar.png' ?>" class="rounded-circle border border-3 border-light shadow-sm" style="width: 150px; height: 150px; object-fit: cover; background-color: #f8f9fa;">
-                             <label for="photo" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 shadow-sm" style="cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-camera"></i>
+                             <label for="photo" class="position-absolute bottom-0 end-0 bg-primary rounded-circle p-2 shadow-sm" style="cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-camera text-white"></i>
                              </label>
                              <input type="file" id="photo" name="photo" class="d-none" accept="image/*">
                         </div>
@@ -116,7 +116,7 @@
 
                 <div class="col-12 mt-4 text-end">
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="/sistemaTiago/?page=customers" class="btn btn-secondary px-4">Cancelar</a>
+                        <a href="?page=customers" class="btn btn-secondary px-4">Cancelar</a>
                         <button type="submit" class="btn btn-primary px-4 fw-bold"><i class="fas fa-save me-2"></i>Salvar Alterações</button>
                     </div>
                 </div>

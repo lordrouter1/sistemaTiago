@@ -1,14 +1,14 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center pt-2 pb-2 mb-4 border-bottom">
         <h1 class="h2 mb-0"><i class="fas fa-sliders-h me-2"></i>Metas da Linha de Produção</h1>
-        <a href="/sistemaTiago/?page=pipeline" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
+        <a href="?page=pipeline" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
     </div>
 
     <div class="row">
         <div class="col-md-8 mx-auto">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-primary text-white p-3">
-                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Tempo Máximo por Etapa (em horas)</h5>
+                <div class="card-header bg-primary p-3">
+                    <h5 class="mb-0 text-white"><i class="fas fa-clock me-2"></i>Tempo Máximo por Etapa (em horas)</h5>
                 </div>
                 <div class="card-body p-4">
                     <p class="text-muted small mb-4">
@@ -17,7 +17,7 @@
                         Coloque <strong>0</strong> para desativar o alerta em uma etapa.
                     </p>
 
-                    <form method="POST" action="/sistemaTiago/?page=pipeline&action=saveSettings">
+                    <form method="POST" action="?page=pipeline&action=saveSettings">
                         <?php foreach ($stages as $stageKey => $stageInfo): ?>
                         <?php $currentGoal = isset($goals[$stageKey]) ? (int)$goals[$stageKey]['max_hours'] : 24; ?>
                         <div class="row align-items-center mb-3 py-2 px-3 rounded" style="background: rgba(0,0,0,0.02);">
@@ -53,7 +53,7 @@
                         <?php endforeach; ?>
 
                         <div class="text-end mt-4 pt-3 border-top">
-                            <a href="/sistemaTiago/?page=pipeline" class="btn btn-secondary me-2">Cancelar</a>
+                            <a href="?page=pipeline" class="btn btn-secondary me-2">Cancelar</a>
                             <button type="submit" class="btn btn-primary fw-bold"><i class="fas fa-save me-2"></i>Salvar Metas</button>
                         </div>
                     </form>

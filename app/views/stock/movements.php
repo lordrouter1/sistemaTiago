@@ -14,8 +14,8 @@ $fDateTo = $_GET['date_to'] ?? '';
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-history me-2"></i>Movimentações de Estoque</h1>
     <div class="btn-toolbar mb-2 mb-md-0 gap-2">
-        <a href="/sistemaTiago/?page=stock&action=entry" class="btn btn-sm btn-success"><i class="fas fa-plus me-1"></i>Nova Movimentação</a>
-        <a href="/sistemaTiago/?page=stock" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Voltar</a>
+        <a href="?page=stock&action=entry" class="btn btn-sm btn-success"><i class="fas fa-plus me-1"></i>Nova Movimentação</a>
+        <a href="?page=stock" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Voltar</a>
     </div>
 </div>
 
@@ -61,7 +61,7 @@ $fDateTo = $_GET['date_to'] ?? '';
     </div>
     <div class="col-md-1 d-flex gap-1">
         <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-filter"></i></button>
-        <a href="/sistemaTiago/?page=stock&action=movements" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i></a>
+        <a href="?page=stock&action=movements" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i></a>
     </div>
 </form>
 

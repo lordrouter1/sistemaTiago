@@ -8,7 +8,7 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-building me-2"></i>Armazéns / Locais de Estoque</h1>
     <div class="btn-toolbar mb-2 mb-md-0 gap-2">
-        <a href="/sistemaTiago/?page=stock" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Voltar ao Estoque</a>
+        <a href="?page=stock" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Voltar ao Estoque</a>
         <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#warehouseModal" onclick="openNewWarehouse()">
             <i class="fas fa-plus me-1"></i> Novo Armazém
         </button>
@@ -87,8 +87,8 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="warehouseForm" method="post">
-                <div class="modal-header bg-primary text-white py-2">
-                    <h5 class="modal-title" id="whModalTitle"><i class="fas fa-warehouse me-2"></i>Novo Armazém</h5>
+                <div class="modal-header bg-primary py-2">
+                    <h5 class="modal-title text-white" id="whModalTitle"><i class="fas fa-warehouse me-2"></i>Novo Armazém</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -140,7 +140,7 @@
 <script>
 function openNewWarehouse() {
     document.getElementById('whModalTitle').innerHTML = '<i class="fas fa-warehouse me-2"></i>Novo Armazém';
-    document.getElementById('warehouseForm').action = '/sistemaTiago/?page=stock&action=storeWarehouse';
+    document.getElementById('warehouseForm').action = '?page=stock&action=storeWarehouse';
     document.getElementById('wh_id').value = '';
     document.getElementById('wh_name').value = '';
     document.getElementById('wh_address').value = '';
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.btn-edit-wh').forEach(btn => {
         btn.addEventListener('click', function() {
             document.getElementById('whModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Editar Armazém';
-            document.getElementById('warehouseForm').action = '/sistemaTiago/?page=stock&action=updateWarehouse';
+            document.getElementById('warehouseForm').action = '?page=stock&action=updateWarehouse';
             document.getElementById('wh_id').value = this.dataset.id;
             document.getElementById('wh_name').value = this.dataset.name;
             document.getElementById('wh_address').value = this.dataset.address;
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then(result => {
                 if (result.isConfirmed) {
-                    window.location.href = `/sistemaTiago/?page=stock&action=deleteWarehouse&id=${id}`;
+                    window.location.href = `?page=stock&action=deleteWarehouse&id=${id}`;
                 }
             });
         });

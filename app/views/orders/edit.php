@@ -2,8 +2,8 @@
     <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2"><i class="fas fa-edit me-2"></i>Editar Pedido #<?= str_pad($order['id'], 4, '0', STR_PAD_LEFT) ?></h1>
         <div class="d-flex gap-2">
-            <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-outline-info btn-sm"><i class="fas fa-stream me-1"></i> Ver no Pipeline</a>
-            <a href="/sistemaTiago/?page=orders" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
+            <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-outline-info btn-sm"><i class="fas fa-stream me-1"></i> Ver no Pipeline</a>
+            <a href="?page=orders" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Voltar</a>
         </div>
     </div>
 
@@ -32,12 +32,12 @@
                 <i class="<?= $stageData['icon'] ?> me-1"></i><?= $stageData['label'] ?>
             </span>
         </div>
-        <a href="/sistemaTiago/?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-primary">
+        <a href="?page=pipeline&action=detail&id=<?= $order['id'] ?>" class="btn btn-sm btn-outline-primary">
             <i class="fas fa-eye me-1"></i> Gerenciar no Pipeline
         </a>
     </div>
     
-    <form method="POST" action="/sistemaTiago/?page=orders&action=update">
+    <form method="POST" action="?page=orders&action=update">
         <input type="hidden" name="id" value="<?= $order['id'] ?>">
         
         <div class="row">
@@ -94,7 +94,7 @@
                 </fieldset>
 
                 <div class="text-end">
-                    <a href="/sistemaTiago/?page=orders" class="btn btn-secondary px-4 me-2">Cancelar</a>
+                    <a href="?page=orders" class="btn btn-secondary px-4 me-2">Cancelar</a>
                     <button type="submit" class="btn btn-primary px-4 fw-bold"><i class="fas fa-save me-2"></i>Salvar Alterações</button>
                 </div>
             </div>
@@ -113,7 +113,7 @@
             <fieldset class="border p-4 mb-4 rounded bg-white shadow-sm">
                 <legend class="float-none w-auto px-2 fs-5 text-primary fw-bold">
                     <i class="fas fa-file-invoice-dollar me-2"></i>Produtos do Orçamento
-                    <a href="/sistemaTiago/?page=orders&action=printQuote&id=<?= $order['id'] ?>" target="_blank" class="btn btn-sm btn-outline-success ms-3">
+                    <a href="?page=orders&action=printQuote&id=<?= $order['id'] ?>" target="_blank" class="btn btn-sm btn-outline-success ms-3">
                         <i class="fas fa-print me-1"></i> Imprimir Orçamento
                     </a>
                 </legend>
@@ -138,12 +138,17 @@
                             <tr>
                                 <td>
                                     <strong><?= htmlspecialchars($item['product_name']) ?></strong>
+                                    <?php if (!empty($item['combination_label'])): ?>
+                                    <br><small class="text-info"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($item['combination_label']) ?></small>
+                                    <?php elseif (!empty($item['grade_description'])): ?>
+                                    <br><small class="text-info"><i class="fas fa-layer-group me-1"></i><?= htmlspecialchars($item['grade_description']) ?></small>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="text-center"><?= $item['quantity'] ?></td>
                                 <td class="text-end">R$ <?= number_format($item['unit_price'], 2, ',', '.') ?></td>
                                 <td class="text-end fw-bold">R$ <?= number_format($subtotal, 2, ',', '.') ?></td>
                                 <td class="text-center">
-                                    <a href="/sistemaTiago/?page=orders&action=deleteItem&item_id=<?= $item['id'] ?>&order_id=<?= $order['id'] ?>&redirect=orders" 
+                                    <a href="?page=orders&action=deleteItem&item_id=<?= $item['id'] ?>&order_id=<?= $order['id'] ?>&redirect=orders" 
                                        class="btn btn-sm btn-outline-danger btn-delete-item" title="Remover item">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
@@ -172,9 +177,11 @@
                         <h6 class="mb-0 text-primary"><i class="fas fa-plus-circle me-2"></i>Adicionar Produto</h6>
                     </div>
                     <div class="card-body p-3">
-                        <form method="POST" action="/sistemaTiago/?page=orders&action=addItem" id="formAddItemEdit">
+                        <form method="POST" action="?page=orders&action=addItem" id="formAddItemEdit">
                             <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
                             <input type="hidden" name="redirect" value="orders">
+                            <input type="hidden" name="combination_id" id="combinationIdEdit" value="">
+                            <input type="hidden" name="grade_description" id="gradeDescriptionEdit" value="">
                             <div class="row g-2 align-items-end">
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold text-muted">Produto</label>
@@ -183,7 +190,8 @@
                                         <?php foreach ($products as $prod): 
                                             $displayPrice = isset($customerPrices[$prod['id']]) ? $customerPrices[$prod['id']] : $prod['price'];
                                         ?>
-                                        <option value="<?= $prod['id'] ?>" data-price="<?= $displayPrice ?>" data-original-price="<?= $prod['price'] ?>">
+                                        <option value="<?= $prod['id'] ?>" data-price="<?= $displayPrice ?>" data-original-price="<?= $prod['price'] ?>"
+                                                data-has-combos="<?= !empty($productCombinations[$prod['id']]) ? '1' : '0' ?>">
                                             <?= htmlspecialchars($prod['name']) ?> — R$ <?= number_format($displayPrice, 2, ',', '.') ?>
                                             <?php if (isset($customerPrices[$prod['id']]) && $customerPrices[$prod['id']] != $prod['price']): ?>
                                             (base: R$ <?= number_format($prod['price'], 2, ',', '.') ?>)
@@ -191,6 +199,12 @@
                                         </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <!-- Seletor de variação (aparece dinamicamente) -->
+                                    <div id="variationWrapEdit" class="mt-1" style="display:none;">
+                                        <select class="form-select form-select-sm" id="variationSelectEdit">
+                                            <option value="">Selecione a variação...</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label small fw-bold text-muted">Quantidade</label>
@@ -217,17 +231,52 @@
     </div>
 
     <script>
+    // Product combinations data from server
+    const productCombosEdit = <?= json_encode($productCombinations ?? []) ?>;
+
     document.addEventListener('DOMContentLoaded', function() {
         // Auto-preencher preço ao selecionar produto
         const productSelect = document.getElementById('productSelectEdit');
         const priceInput = document.getElementById('priceInputEdit');
+        const variationWrap = document.getElementById('variationWrapEdit');
+        const variationSelect = document.getElementById('variationSelectEdit');
+        const combinationIdInput = document.getElementById('combinationIdEdit');
+        const gradeDescInput = document.getElementById('gradeDescriptionEdit');
+
         if (productSelect && priceInput) {
             productSelect.addEventListener('change', function() {
                 const opt = this.options[this.selectedIndex];
                 if (opt && opt.dataset.price) {
                     priceInput.value = parseFloat(opt.dataset.price).toFixed(2);
                 }
+                // Show/hide variation selector
+                const pid = this.value;
+                combinationIdInput.value = '';
+                gradeDescInput.value = '';
+                if (pid && productCombosEdit[pid] && productCombosEdit[pid].length > 0) {
+                    variationWrap.style.display = '';
+                    variationSelect.innerHTML = '<option value="">Selecione a variação...</option>';
+                    productCombosEdit[pid].forEach(c => {
+                        const lbl = c.combination_label + (c.price_override ? ' — R$ ' + parseFloat(c.price_override).toFixed(2).replace('.', ',') : '');
+                        variationSelect.innerHTML += `<option value="${c.id}" data-price="${c.price_override || ''}" data-label="${c.combination_label}">${lbl}</option>`;
+                    });
+                } else {
+                    variationWrap.style.display = 'none';
+                    variationSelect.innerHTML = '';
+                }
             });
+
+            if (variationSelect) {
+                variationSelect.addEventListener('change', function() {
+                    const opt = this.options[this.selectedIndex];
+                    combinationIdInput.value = this.value;
+                    gradeDescInput.value = opt ? (opt.dataset.label || '') : '';
+                    // Override price if combination has specific price
+                    if (opt && opt.dataset.price && opt.dataset.price !== '') {
+                        priceInput.value = parseFloat(opt.dataset.price).toFixed(2);
+                    }
+                });
+            }
         }
         // Confirmar remoção de item
         document.querySelectorAll('.btn-delete-item').forEach(btn => {

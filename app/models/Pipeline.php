@@ -422,7 +422,7 @@ class Pipeline {
         // Buscar TODOS os registros de produção para pedidos em produção
         $sql = "SELECT ops.*, 
                 s.name as sector_name, s.icon as sector_icon, s.color as sector_color, s.id as sector_id,
-                oi.product_id, oi.quantity, 
+                oi.product_id, oi.quantity, oi.grade_combination_id, oi.grade_description,
                 p.name as product_name,
                 o.id as order_id, o.created_at as order_created_at, o.priority, o.deadline,
                 c.name as customer_name,

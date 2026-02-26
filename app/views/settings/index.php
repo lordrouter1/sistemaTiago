@@ -7,27 +7,27 @@
     <!-- Tabs -->
     <ul class="nav nav-tabs mb-4" role="tablist">
         <li class="nav-item">
-            <a class="nav-link <?= $activeTab === 'company' ? 'active' : '' ?>" href="/sistemaTiago/?page=settings&tab=company">
+            <a class="nav-link <?= $activeTab === 'company' ? 'active' : '' ?>" href="?page=settings&tab=company">
                 <i class="fas fa-building me-1"></i> Dados da Empresa
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $activeTab === 'prices' ? 'active' : '' ?>" href="/sistemaTiago/?page=settings&tab=prices">
+            <a class="nav-link <?= $activeTab === 'prices' ? 'active' : '' ?>" href="?page=settings&tab=prices">
                 <i class="fas fa-tags me-1"></i> Tabelas de Preço
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $activeTab === 'preparation' ? 'active' : '' ?>" href="/sistemaTiago/?page=settings&tab=preparation">
+            <a class="nav-link <?= $activeTab === 'preparation' ? 'active' : '' ?>" href="?page=settings&tab=preparation">
                 <i class="fas fa-boxes-packing me-1"></i> Etapas de Preparo
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $activeTab === 'boleto' ? 'active' : '' ?>" href="/sistemaTiago/?page=settings&tab=boleto">
+            <a class="nav-link <?= $activeTab === 'boleto' ? 'active' : '' ?>" href="?page=settings&tab=boleto">
                 <i class="fas fa-barcode me-1"></i> Boleto / Bancário
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $activeTab === 'fiscal' ? 'active' : '' ?>" href="/sistemaTiago/?page=settings&tab=fiscal">
+            <a class="nav-link <?= $activeTab === 'fiscal' ? 'active' : '' ?>" href="?page=settings&tab=fiscal">
                 <i class="fas fa-file-invoice me-1"></i> Fiscal / NF-e
             </a>
         </li>
@@ -35,7 +35,7 @@
 
     <?php if ($activeTab === 'company'): ?>
     <!-- ══════════ ABA: DADOS DA EMPRESA ══════════ -->
-    <form method="POST" action="/sistemaTiago/?page=settings&action=saveCompany" enctype="multipart/form-data">
+    <form method="POST" action="?page=settings&action=saveCompany" enctype="multipart/form-data">
         <div class="row">
             <div class="col-lg-8">
                 <!-- Dados Básicos -->
@@ -144,7 +144,7 @@
                     </legend>
                     <div class="text-center mb-3">
                         <?php if (!empty($settings['company_logo']) && file_exists($settings['company_logo'])): ?>
-                            <img src="/sistemaTiago/<?= $settings['company_logo'] ?>" alt="Logo" class="img-fluid rounded shadow-sm" style="max-height: 200px;">
+                            <img src="<?= $settings['company_logo'] ?>" alt="Logo" class="img-fluid rounded shadow-sm" style="max-height: 200px;">
                             <div class="mt-2">
                                 <label class="form-check-label small text-danger">
                                     <input type="checkbox" name="remove_logo" value="1" class="form-check-input"> Remover logo atual
@@ -171,7 +171,7 @@
                     </div>
                     <div class="card-body text-center">
                         <?php if (!empty($settings['company_logo']) && file_exists($settings['company_logo'])): ?>
-                            <img src="/sistemaTiago/<?= $settings['company_logo'] ?>" alt="Logo" style="max-height: 60px;" class="mb-2">
+                            <img src="<?= $settings['company_logo'] ?>" alt="Logo" style="max-height: 60px;" class="mb-2">
                         <?php else: ?>
                             <i class="fas fa-print me-2 text-primary" style="font-size:1.5rem;"></i>
                         <?php endif; ?>
@@ -234,11 +234,11 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="/sistemaTiago/?page=settings&action=editPriceTable&id=<?= $pt['id'] ?>" class="btn btn-outline-primary" title="Editar Preços">
+                                            <a href="?page=settings&action=editPriceTable&id=<?= $pt['id'] ?>" class="btn btn-outline-primary" title="Editar Preços">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <?php if (!$pt['is_default']): ?>
-                                            <a href="/sistemaTiago/?page=settings&action=deletePriceTable&id=<?= $pt['id'] ?>" class="btn btn-outline-danger btn-delete-table" title="Excluir">
+                                            <a href="?page=settings&action=deletePriceTable&id=<?= $pt['id'] ?>" class="btn btn-outline-danger btn-delete-table" title="Excluir">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
                                             <?php endif; ?>
@@ -277,7 +277,7 @@
     <!-- Modal Nova Tabela -->
     <div class="modal fade" id="modalNewTable" tabindex="-1">
         <div class="modal-dialog">
-            <form method="POST" action="/sistemaTiago/?page=settings&action=createPriceTable">
+            <form method="POST" action="?page=settings&action=createPriceTable">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Nova Tabela de Preço</h5>
@@ -364,7 +364,7 @@
                                                     title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <a href="/sistemaTiago/?page=settings&action=deletePreparationStep&id=<?= $step['id'] ?>" 
+                                            <a href="?page=settings&action=deletePreparationStep&id=<?= $step['id'] ?>" 
                                                class="btn btn-outline-danger btn-delete-step" title="Excluir">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
@@ -438,7 +438,7 @@
     <!-- Modal Nova Etapa -->
     <div class="modal fade" id="modalNewStep" tabindex="-1">
         <div class="modal-dialog">
-            <form method="POST" action="/sistemaTiago/?page=settings&action=addPreparationStep">
+            <form method="POST" action="?page=settings&action=addPreparationStep">
                 <div class="modal-content">
                     <div class="modal-header" style="background:#e0f7f1;">
                         <h5 class="modal-title" style="color:#1abc9c;"><i class="fas fa-plus-circle me-2"></i>Nova Etapa de Preparo</h5>
@@ -493,7 +493,7 @@
     <!-- Modal Editar Etapa -->
     <div class="modal fade" id="modalEditStep" tabindex="-1">
         <div class="modal-dialog">
-            <form method="POST" action="/sistemaTiago/?page=settings&action=updatePreparationStep">
+            <form method="POST" action="?page=settings&action=updatePreparationStep">
                 <div class="modal-content">
                     <div class="modal-header" style="background:#e0f7f1;">
                         <h5 class="modal-title" style="color:#1abc9c;"><i class="fas fa-edit me-2"></i>Editar Etapa de Preparo</h5>
@@ -541,7 +541,7 @@
 
     <?php if ($activeTab === 'boleto'): ?>
     <!-- ══════════ ABA: BOLETO / BANCÁRIO ══════════ -->
-    <form method="POST" action="/sistemaTiago/?page=settings&action=saveBankSettings">
+    <form method="POST" action="?page=settings&action=saveBankSettings">
         <div class="row">
             <div class="col-lg-8">
                 <!-- Dados Bancários do Cedente -->
@@ -773,7 +773,7 @@
 
     <?php if ($activeTab === 'fiscal'): ?>
     <!-- ══════════ ABA: FISCAL / NF-e ══════════ -->
-    <form method="POST" action="/sistemaTiago/?page=settings&action=saveFiscalSettings">
+    <form method="POST" action="?page=settings&action=saveFiscalSettings">
         <div class="row">
             <div class="col-lg-8">
                 <!-- Identificação Fiscal da Empresa -->
@@ -1156,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.btn-toggle-step').forEach(btn => {
         btn.addEventListener('click', function() {
             const stepId = this.dataset.stepId;
-            fetch('/sistemaTiago/?page=settings&action=togglePreparationStep', {
+            fetch('?page=settings&action=togglePreparationStep', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'id=' + stepId
